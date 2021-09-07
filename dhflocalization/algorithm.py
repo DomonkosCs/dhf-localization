@@ -6,7 +6,7 @@ from scipy.interpolate import RectBivariateSpline
 from scipy import ndimage
 import numpy as np
 import matplotlib.pyplot as plt
-
+from measurement.measurement import Measurement
 from matplotlib import cm
 %matplotlib widget
 # %%
@@ -46,5 +46,8 @@ edt = ndimage.distance_transform_edt(1 - grid_data)
 edt_interp = RectBivariateSpline(
     np.arange(test.width), np.arange(test.height), edt)
 
-ocg.
+# %%
+
+z = Measurement().do_measurement(0, 4, 10, 0)
+z
 # %%
