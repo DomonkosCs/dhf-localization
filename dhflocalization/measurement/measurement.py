@@ -1,21 +1,40 @@
 
 
+from gridmap.grid_map import GridMap
+from measurement.sensor import Detection
+from state.state import RobotState
 import numpy as np
 
 
-class Measurement():
-    def __init__(self):
-        pass
+class Measurement:
+    def __init__(self, detection, state, ogm):
+        self.detection: Detection = detection
+        self.state: RobotState = state
+        self.ogm: GridMap = ogm
+        self.processDetection()
 
-    def do_measurement(self, range_min, range_max, sample_num, inf_prob):
+    def processDetection(self):
+        x_o = np.zeros_like(self.detection.z)
+        z = self.detection.z
+        ogm = self.ogm
 
-        r = (range_max-range_min)*np.random.rand(sample_num)+range_min
-        for idx, range in enumerate(r):
-            r[idx] = np.inf if np.random.rand() < inf_prob else range
+        r_cos = np.multiply(z[:, 1], np.cos(
+            z[:, 0]+self.state.fi))
+        r_sin = np.multiply(z[:, 1], np.sin(
+            z[:, 0]+self.state.fi))
+        x_o[:, 0] = r_cos + self.state.x
+        x_o[:, 1] = r_sin + self.state.y
+        self.x_o = x_o
 
-        theta = np.linspace(0, 360, sample_num, endpoint=False)
-        z = np.zeros([sample_num, 2])
-        z[:, 0] = theta
-        z[:, 1] = r
+        df_d_x = ogm.calc_distance_function_derivate_interp(
+            x_o[:, 0], x_o[:, 1], 1, 0)
+        df_d_y = ogm.calc_distance_function_derivate_interp(
+            x_o[:, 0], x_o[:, 1], 0, 1)
+        cd_d_x = df_d_x.mean()
+        cd_d_y = df_d_y.mean()
+        cd_d_fi = (np.multiply(cd_d_x, -r_sin) +
+                   np.multiply(cd_d_y, r_cos)).mean()
+        self.grad_cd_x = [cd_d_x, cd_d_y, cd_d_fi]  # grad_hx
 
-        return z
+        self.grad_cd_z = np.multiply((np.multiply(df_d_x, np.cos(z[:, 0]+self.state.fi)) +
+                                      np.multiply(df_d_y, np.sin(z[:, 0]+self.state.fi))), 1/z.shape[0])

@@ -1,31 +1,18 @@
 #!/usr/bin/env python
 
 # %%
+import matplotlib
+from measurement.measurement import Measurement
+from measurement.sensor import Detection, Sensor
+from state.state import RobotState
 from gridmap.grid_map import GridMap
 from scipy.interpolate import RectBivariateSpline
 from scipy import ndimage
 import numpy as np
 import matplotlib.pyplot as plt
-from measurement.measurement import Measurement
 from matplotlib import cm
 %matplotlib widget
 # %%
-
-
-def do_measurement():
-    def produce_ranges(inf_prob):
-        ranges = 100*np.random.rand(samples)-50
-        for idx, range in enumerate(ranges):
-            ranges[idx] = np.inf if np.random.rand() < inf_prob else range
-        return ranges
-
-    samples = 360
-    thetas = np.linspace(0, 360, samples, endpoint=False)
-    measurements = np.zeros([samples, 2])
-    measurements[:, 0] = thetas
-    measurements[:, 1] = produce_ranges(0.1)
-
-    return measurements
 
 
 def transform_to_global(measurements, robot_state):
@@ -47,7 +34,10 @@ edt_interp = RectBivariateSpline(
     np.arange(test.width), np.arange(test.height), edt)
 
 # %%
+ogm = GridMap.load_grid_map_from_csv('map_test.csv', 1, 0, 0)
+sensor = Sensor(0, 2, 10, 0)
+state = RobotState(5, 5, 0, 0)
+detection = Detection(sensor=sensor, timestamp=0)
+m = Measurement(detection=detection, state=state, ogm=ogm)
 
-z = Measurement().do_measurement(0, 4, 10, 0)
-z
 # %%

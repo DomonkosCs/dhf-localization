@@ -161,13 +161,13 @@ class GridMap:
         edt = self.distance_transform()
         edt_interp = RectBivariateSpline(
             np.arange(self.width), np.arange(self.height), edt)
-        return edt_interp(y_pos, x_pos)  # ! Javít
+        return edt_interp.ev(y_pos, x_pos)  # ! Javít
 
     def calc_distance_function_derivate_interp(self, x_pos, y_pos, dx, dy):
         edt = self.distance_transform()
         edt_interp = RectBivariateSpline(
             np.arange(self.width), np.arange(self.height), edt)
-        return edt_interp(y_pos, x_pos, dy, dx)
+        return edt_interp.ev(y_pos, x_pos, dy, dx)
 
     def check_occupied_from_xy_index(self, xind, yind, occupied_val=1.0):
 
@@ -212,7 +212,7 @@ class GridMap:
             fig, ax = plt.subplots()
         heat_map = ax.pcolor(grid_data, cmap="Blues", vmin=0.0, vmax=1.0)
         plt.axis("equal")
-
+        plt.grid()
         return heat_map
 
     def plot_distance_transform(self, fig):
