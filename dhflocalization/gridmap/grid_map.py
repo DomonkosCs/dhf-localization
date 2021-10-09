@@ -65,6 +65,25 @@ class GridMap:
                 self=gm, x_ind=idx[0], y_ind=idx[1], val=val)
         return gm
 
+    @classmethod
+    def load_grid_map_from_array(cls, map, resolution, center_x, center_y):
+        height = map.shape[0]
+        width = map.shape[1]
+        resolution = resolution
+        center_x = center_x
+        center_y = center_y
+
+        gm = cls(height=height,
+                 width=width,
+                 resolution=resolution,
+                 center_x=center_x,
+                 center_y=center_y)
+
+        for idx, val in np.ndenumerate(map):
+            cls.set_value_from_xy_index(
+                self=gm, x_ind=idx[0], y_ind=idx[1], val=val)
+        return gm
+
     def get_value_from_xy_index(self, x_ind, y_ind):
         """get_value_from_xy_index
         when the index is out of grid map area, return None

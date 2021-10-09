@@ -7,10 +7,10 @@ import numpy as np
 
 
 class Measurement:
-    def __init__(self, detection, state, ogm):
-        self.detection: Detection = detection
-        self.state: RobotState = state
-        self.ogm: GridMap = ogm
+    def __init__(self, detection: Detection, state: RobotState, ogm: GridMap):
+        self.detection = detection
+        self.state = state
+        self.ogm = ogm
         self.processDetection()
 
     def processDetection(self):
@@ -19,11 +19,11 @@ class Measurement:
         ogm = self.ogm
 
         r_cos = np.multiply(z[:, 1], np.cos(
-            z[:, 0]+self.state.fi))
+            z[:, 0]+self.state.state[2]))
         r_sin = np.multiply(z[:, 1], np.sin(
-            z[:, 0]+self.state.fi))
-        x_o[:, 0] = r_cos + self.state.x
-        x_o[:, 1] = r_sin + self.state.y
+            z[:, 0]+self.state.state[2]))
+        x_o[:, 0] = r_cos + self.state.state[0]
+        x_o[:, 1] = r_sin + self.state.state[1]
         self.x_o = x_o
 
         df_d_x = ogm.calc_distance_function_derivate_interp(
@@ -36,5 +36,5 @@ class Measurement:
                    np.multiply(cd_d_y, r_cos)).mean()
         self.grad_cd_x = [cd_d_x, cd_d_y, cd_d_fi]  # grad_hx
 
-        self.grad_cd_z = np.multiply((np.multiply(df_d_x, np.cos(z[:, 0]+self.state.fi)) +
-                                      np.multiply(df_d_y, np.sin(z[:, 0]+self.state.fi))), 1/z.shape[0])
+        self.grad_cd_z = np.multiply((np.multiply(df_d_x, np.cos(z[:, 0]+self.state.state[2])) +
+                                      np.multiply(df_d_y, np.sin(z[:, 0]+self.state.state[2]))), 1/z.shape[0])
