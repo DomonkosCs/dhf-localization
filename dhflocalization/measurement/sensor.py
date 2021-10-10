@@ -2,7 +2,6 @@
 
 import numpy as np
 from gridmap.grid_map import GridMap
-from state.state import RobotState
 
 
 class Sensor():
@@ -14,7 +13,7 @@ class Sensor():
 
 
 class Detection():
-    def __init__(self, state: RobotState, ogm: GridMap, sensor: Sensor, timestamp):
+    def __init__(self, state, ogm: GridMap, sensor: Sensor, timestamp):
         self.timestamp = timestamp
         self.state = state
         self.ogm = ogm
