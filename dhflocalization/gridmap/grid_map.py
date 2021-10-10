@@ -173,13 +173,16 @@ class GridMap:
         return edt
 
     def calc_distance_transform_xy_index(self, x_ind, y_ind):
-        return self.distance_transform[y_ind, x_ind]
+        edt = self.distance_transform()
+        return edt[y_ind, x_ind]
 
     def calc_distance_transform_xy_pos(self, x_pos, y_pos):
         edt = self.distance_transform()
         edt_interp = RectBivariateSpline(
-            np.arange(self.width), np.arange(self.height), edt)
-        return edt_interp.ev(y_pos, x_pos)  # ! Javít
+            np.arange(self.width)*self.resolution, np.arange(self.height)*self.resolution, edt*self.resolution)
+
+        # zero at the middle of the cell
+        return edt_interp.ev(y_pos-self.left_lower_y-self.resolution/2, x_pos-self.left_lower_x-self.resolution/2)
 
     def calc_distance_function_derivate_interp(self, x_pos, y_pos, dx, dy):
         edt = self.distance_transform()
