@@ -33,8 +33,10 @@ class GridMap:
         self.center_x = center_x
         self.center_y = center_y
 
-        self.left_lower_x = self.center_x - self.width / 2.0 * self.resolution
-        self.left_lower_y = self.center_y - self.height / 2.0 * self.resolution
+        #self.left_lower_x = self.center_x - self.width / 2.0 * self.resolution
+        #self.left_lower_y = self.center_y - self.height / 2.0 * self.resolution
+        self.left_lower_x = -self.center_x
+        self.left_lower_y = -self.center_y
 
         self.ndata = self.width * self.height
         self.data = [init_val] * self.ndata
