@@ -102,7 +102,7 @@ class OdometryMotionModel(MotionModel):
         J_state_13 = -delta_trans*np.sin(fi + delta_rot_1)
         J_state_23 = delta_trans*np.cos(fi + delta_rot_1)
         J_state = np.matrix(
-            [[1, 0, J_state_13], [0, 1, J_state_23], [0, 0, 0]])
+            [[1, 0, J_state_13], [0, 1, J_state_23], [0, 0, 1]])
 
         J_input_11 = -delta_trans*np.sin(fi + delta_rot_1)
         J_input_21 = delta_trans*np.cos(fi + delta_rot_1)
