@@ -41,6 +41,9 @@ class GridMap:
         self.ndata = self.width * self.height
         self.data = [init_val] * self.ndata
 
+        self.distance_transform = None
+        self.distance_transform_interp = None
+
     @classmethod
     def load_grid_map_from_csv(cls, csv_fn, resolution, center_x, center_y):
         path = pkg_resources.resource_filename(
@@ -60,11 +63,16 @@ class GridMap:
                  width=width,
                  resolution=resolution,
                  center_x=center_x,
-                 center_y=center_y)
+                 center_y=center_y,
+                 )
 
         for idx, val in np.ndenumerate(map):
             cls.set_value_from_xy_index(
                 self=gm, x_ind=idx[0], y_ind=idx[1], val=val)
+
+        gm.distance_transform = cls.calc_distance_transform(gm)
+        gm.distance_transform_interp = RectBivariateSpline(
+            np.arange(width)*resolution, np.arange(height)*resolution, gm.distance_transform*resolution)
         return gm
 
     @classmethod
@@ -81,6 +89,10 @@ class GridMap:
         for idx, val in np.ndenumerate(map):
             cls.set_value_from_xy_index(
                 self=gm, x_ind=idx[1], y_ind=height-idx[0], val=val)
+
+        gm.distance_transform = cls.calc_distance_transform(gm)
+        gm.distance_transform_interp = RectBivariateSpline(
+            np.arange(width)*resolution, np.arange(height)*resolution, gm.distance_transform*resolution)
         return gm
 
     def get_value_from_xy_index(self, x_ind, y_ind):
@@ -167,27 +179,24 @@ class GridMap:
         else:
             return None
 
-    def distance_transform(self):
+    def calc_distance_transform(self):
         grid_data = np.reshape(np.array(self.data), (self.height, self.width))
         edt = ndimage.distance_transform_edt(1 - grid_data)
         return edt
 
     def calc_distance_transform_xy_index(self, x_ind, y_ind):
-        edt = self.distance_transform()
+        edt = self.distance_transform
         return edt[y_ind, x_ind]
 
     def calc_distance_transform_xy_pos(self, x_pos, y_pos):
-        edt = self.distance_transform()
-        edt_interp = RectBivariateSpline(
-            np.arange(self.width)*self.resolution, np.arange(self.height)*self.resolution, edt*self.resolution)
+        edt_interp = self.distance_transform_interp
 
         # zero at the middle of the cell
         return edt_interp.ev(y_pos-self.left_lower_y-self.resolution/2, x_pos-self.left_lower_x-self.resolution/2)
 
     def calc_distance_function_derivate_interp(self, x_pos, y_pos, dx, dy):
-        edt = self.distance_transform()
-        edt_interp = RectBivariateSpline(
-            np.arange(self.width), np.arange(self.height), edt)
+        edt = self.distance_transform
+        edt_interp = self.distance_transform_interp
         return edt_interp.ev(y_pos, x_pos, dy, dx)
 
     def check_occupied_from_xy_index(self, xind, yind, occupied_val=1.0):
@@ -226,19 +235,20 @@ class GridMap:
         print("left_lower_y:", self.left_lower_y)
         print("ndata:", self.ndata)
 
-    def plot_grid_map(self, ax=None):
+    def plot_grid_map(self, ax=None, zorder=1):
 
         grid_data = np.reshape(np.array(self.data), (self.height, self.width))
         if not ax:
             fig, ax = plt.subplots()
-        heat_map = ax.pcolor(grid_data, cmap="Blues", vmin=0.0, vmax=1.0)
+        heat_map = ax.pcolor(grid_data, cmap="Blues",
+                             vmin=0.0, vmax=1.0, zorder=zorder)
         plt.axis("equal")
         plt.grid()
         return heat_map
 
     def plot_distance_transform(self, fig):
 
-        edt = self.distance_transform().ravel()
+        edt = self.edt.ravel()
         _x = np.arange(self.width)
         _y = np.arange(self.height)
         _xx, _yy = np.meshgrid(_x, _y)
