@@ -20,9 +20,8 @@ class EKF:
 
     def update(self, state: StateHypothesis, measurement) -> StateHypothesis:
 
-        cd, grad_cd_x, grad_cd_z = self.measurement_model.processDetection(
+        cd, grad_cd_x, grad_cd_z, ray_endpoints = self.measurement_model.processDetection(
             state, measurement)
-
         updated_state = StateHypothesis()
 
         measurement_covar = self.measurement_model.range_noise_std**2 * \
@@ -34,4 +33,4 @@ class EKF:
         updated_state.pose = state.pose - K * cd
 
         updated_state.covar = (npm.eye(3)-K*grad_cd_x.T)*state.covar
-        return updated_state
+        return updated_state, ray_endpoints

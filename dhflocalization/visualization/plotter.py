@@ -68,12 +68,15 @@ class Plotter:
 
         if self.background_map is not None:
             self.background_map.plot_grid_map(ax=self.ax)
-
+            x_coords = [(state.pose[mapping[0], 0] - self.background_map.left_lower_x) /
+                        self.background_map.resolution for state in truth]
+            y_coords = [(state.pose[mapping[1], 0] - self.background_map.left_lower_y)/self.background_map.resolution
+                        for state in truth]
+        else:
+            x_coords = [state.pose[mapping[0], 0] for state in truth]
+            y_coords = [state.pose[mapping[1], 0] for state in truth]
         # for truth in truths:
-        x_coords = [(state.pose[mapping[0], 0] - self.background_map.left_lower_x) /
-                    self.background_map.resolution for state in truth]
-        y_coords = [(state.pose[mapping[1], 0] - self.background_map.left_lower_y)/self.background_map.resolution
-                    for state in truth]
+
         self.ax.plot(x_coords,
                      y_coords,
                      **truths_kwargs, zorder=2)
@@ -223,7 +226,7 @@ class Plotter:
         for track in tracks:
             line = self.ax.plot([state.state_vector[mapping[0]] for state in track],
                                 [state.state_vector[mapping[1]]
-                                    for state in track],
+                                for state in track],
                                 **tracks_kwargs)
             track_colors[track] = plt.getp(line[0], 'color')
 
@@ -288,7 +291,7 @@ class Plotter:
             self.ax.legend(handles=self.handles_list, labels=self.labels_list)
 
     # Ellipse legend patch (used in Tutorial 3)
-    @staticmethod
+    @ staticmethod
     def ellipse_legend(ax, label_list, color_list, **kwargs):
         """Adds an ellipse patch to the legend on the axes. One patch added for each item in
         `label_list` with the corresponding color from `color_list`.

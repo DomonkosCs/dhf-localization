@@ -192,12 +192,12 @@ class GridMap:
         edt_interp = self.distance_transform_interp
 
         # zero at the middle of the cell
-        return edt_interp.ev(y_pos-self.left_lower_y-self.resolution/2, x_pos-self.left_lower_x-self.resolution/2)
+        return edt_interp.ev(y_pos-self.left_lower_y-self.resolution/2.0, x_pos-self.left_lower_x-self.resolution/2.0)
 
     def calc_distance_function_derivate_interp(self, x_pos, y_pos, dx, dy):
         edt = self.distance_transform
         edt_interp = self.distance_transform_interp
-        return edt_interp.ev(y_pos, x_pos, dy, dx)
+        return edt_interp.ev(y_pos-self.left_lower_y-self.resolution/2.0, x_pos-self.left_lower_x-self.resolution/2.0, dy, dx)
 
     def check_occupied_from_xy_index(self, xind, yind, occupied_val=1.0):
 
@@ -278,45 +278,3 @@ class GridMap:
         ax = fig.add_subplot(122, projection='3d')
         ax.plot_surface(_xx, _yy, np.array(z).reshape(_xx.shape),
                         cmap='jet', edgecolor='none')
-
-
-def test_polygon_set():
-    ox = [0.0, 20.0, 50.0, 100.0, 130.0, 40.0]
-    oy = [0.0, -20.0, 0.0, 30.0, 60.0, 80.0]
-
-    grid_map = GridMap(600, 290, 0.7, 60.0, 30.5)
-
-    grid_map.set_value_from_polygon(ox, oy, 1.0, inside=False)
-
-    grid_map.plot_grid_map()
-
-    plt.axis("equal")
-    plt.grid(True)
-
-
-def test_position_set():
-    grid_map = GridMap(100, 120, 0.5, 10.0, -0.5)
-
-    grid_map.set_value_from_xy_pos(10.1, -1.1, 1.0)
-    grid_map.set_value_from_xy_pos(10.1, -0.1, 1.0)
-    grid_map.set_value_from_xy_pos(10.1, 1.1, 1.0)
-    grid_map.set_value_from_xy_pos(11.1, 0.1, 1.0)
-    grid_map.set_value_from_xy_pos(10.1, 0.1, 1.0)
-    grid_map.set_value_from_xy_pos(9.1, 0.1, 1.0)
-
-    grid_map.plot_grid_map()
-
-
-def main():
-    print("start!!")
-
-    test_position_set()
-    test_polygon_set()
-
-    plt.show()
-
-    print("done!!")
-
-
-if __name__ == '__main__':
-    main()
