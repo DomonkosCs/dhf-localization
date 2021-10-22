@@ -11,9 +11,7 @@ class EKF:
         pass
 
     def propagate(self, state: StateHypothesis, control_input) -> StateHypothesis:
-        predicted_state = StateHypothesis()
-
-        predicted_state.pose, predicted_state.covar = self.motion_model.propagate(
+        predicted_state = self.motion_model.propagate(
             state, control_input)
 
         return predicted_state

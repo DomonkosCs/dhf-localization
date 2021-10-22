@@ -1,13 +1,7 @@
 
-from __future__ import annotations
 from abc import ABC, abstractmethod
 import numpy as np
-
-from typing import TYPE_CHECKING
-
-
-if TYPE_CHECKING:
-    from state.state import StateHypothesis
+from state.state import StateHypothesis
 
 
 class MotionModel(ABC):
@@ -66,7 +60,7 @@ class OdometryMotionModel(MotionModel):
         self.alfa_4 = alfas[3]
         pass
 
-    def propagate(self, state: StateHypothesis, control_input):
+    def propagate(self, state: StateHypothesis, control_input, noise=False) -> StateHypothesis:
 
         state_odom_prev = control_input[0]
         state_odom_now = control_input[1]
@@ -82,20 +76,28 @@ class OdometryMotionModel(MotionModel):
 
         delta_rot_2 = state_odom_now[2] - state_odom_prev[2] - delta_rot_1
 
+        control_covar = self.calcControlNoiseCovar(
+            delta_rot_1, delta_rot_2, delta_trans)
+
+        if noise:
+            delta_rot_1 -= np.sqrt(control_covar[0, 0]) * np.random.randn()
+            delta_trans -= np.sqrt(control_covar[1, 1]) * np.random.randn()
+            delta_rot_2 -= np.sqrt(control_covar[2, 2]) * np.random.randn()
+
         prop_pose = state.pose + np.matrix([delta_trans*np.cos(fi + delta_rot_1),
                                             delta_trans *
                                             np.sin(fi + delta_rot_1),
                                             delta_rot_1 + delta_rot_2]).T
 
-        jacobi_state, jacobi_input = self.calcJacobians(
-            delta_rot_1, delta_trans, fi)
-        control_covar = self.calcControlNoiseCovar(
-            delta_rot_1, delta_rot_2, delta_trans)
+        if state.covar is not None:
+            jacobi_state, jacobi_input = self.calcJacobians(
+                delta_rot_1, delta_trans, fi)
+            prop_covar = jacobi_state * state.covar * jacobi_state.T
+            + jacobi_input * control_covar * jacobi_input.T
+        else:
+            prop_covar = None
 
-        prop_covar = jacobi_state*state.covar*jacobi_state.T
-        + jacobi_input * control_covar * jacobi_input.T
-
-        return prop_pose, prop_covar
+        return StateHypothesis(prop_pose, prop_covar)
 
     def calcJacobians(self, delta_rot_1, delta_trans, fi):
 
@@ -118,10 +120,10 @@ class OdometryMotionModel(MotionModel):
     def calcControlNoiseCovar(self, delta_rot_1, delta_rot_2, delta_trans):
 
         control_covar_11 = self.alfa_1 * \
-            abs(delta_rot_1) + self.alfa_2 * delta_trans
-        control_covar_22 = self.alfa_3 * delta_trans + \
-            self.alfa_4*(abs(delta_rot_1) + abs(delta_rot_2))
+            delta_rot_1**2 + self.alfa_2 * delta_trans**2
+        control_covar_22 = self.alfa_3 * delta_trans**2 + \
+            self.alfa_4*(abs(delta_rot_1)**2 + abs(delta_rot_2)**2)
         control_covar_33 = self.alfa_1 * \
-            abs(delta_rot_2) + self.alfa_2 * delta_trans
+            abs(delta_rot_2)**2 + self.alfa_2 * delta_trans**2
 
         return np.diag([control_covar_11, control_covar_22, control_covar_33])
