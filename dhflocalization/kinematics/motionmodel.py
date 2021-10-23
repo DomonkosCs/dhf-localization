@@ -84,26 +84,35 @@ class OdometryMotionModel(MotionModel):
             delta_trans -= np.sqrt(control_covar[1, 1]) * np.random.randn()
             delta_rot_2 -= np.sqrt(control_covar[2, 2]) * np.random.randn()
 
-        prop_pose = state.pose + np.matrix([delta_trans*np.cos(fi + delta_rot_1),
+        prop_pose = state.pose + np.array([[delta_trans*np.cos(fi + delta_rot_1),
                                             delta_trans *
                                             np.sin(fi + delta_rot_1),
-                                            delta_rot_1 + delta_rot_2]).T
+                                            delta_rot_1 + delta_rot_2]]).T
 
         if state.covar is not None:
             jacobi_state, jacobi_input = self.calcJacobians(
                 delta_rot_1, delta_trans, fi)
-            prop_covar = jacobi_state * state.covar * jacobi_state.T
-            + jacobi_input * control_covar * jacobi_input.T
+            prop_covar = jacobi_state @ state.covar @ jacobi_state.T
+            + jacobi_input @ control_covar @ jacobi_input.T
         else:
             prop_covar = None
 
         return StateHypothesis(prop_pose, prop_covar)
 
+    def propagate_particles(self, particle_poses, control_input):
+        def propagate(pose):
+            return self.propagate(StateHypothesis(np.array([pose]).T, None), control_input, noise=True).pose
+
+        particle_poses_next = np.array(
+            list(map(propagate, particle_poses))).squeeze()
+
+        return particle_poses_next
+
     def calcJacobians(self, delta_rot_1, delta_trans, fi):
 
         J_state_13 = -delta_trans*np.sin(fi + delta_rot_1)
         J_state_23 = delta_trans*np.cos(fi + delta_rot_1)
-        J_state = np.matrix(
+        J_state = np.array(
             [[1, 0, J_state_13], [0, 1, J_state_23], [0, 0, 1]])
 
         J_input_11 = -delta_trans*np.sin(fi + delta_rot_1)
@@ -111,9 +120,9 @@ class OdometryMotionModel(MotionModel):
         J_input_12 = np.cos(fi + delta_rot_1)
         J_input_22 = np.sin(fi + delta_rot_1)
 
-        J_input = np.matrix([[J_input_11, J_input_12, 0],
-                             [J_input_21, J_input_22, 0],
-                             [1, 0, 1]])
+        J_input = np.array([[J_input_11, J_input_12, 0],
+                            [J_input_21, J_input_22, 0],
+                            [1, 0, 1]])
 
         return [J_state, J_input]
 

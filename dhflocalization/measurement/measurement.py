@@ -37,9 +37,9 @@ class Measurement:
         cd_d_y = df_d_y.mean()
         cd_d_fi = (np.multiply(df_d_x, -r_sin) +
                    np.multiply(df_d_y, r_cos)).mean()
-        grad_cd_x = np.matrix([cd_d_x, cd_d_y, cd_d_fi]).T  # grad_hx
+        grad_cd_x = np.array([[cd_d_x, cd_d_y, cd_d_fi]]).T  # grad_hx
 
-        grad_cd_z = np.multiply((np.multiply(df_d_x, np.cos(angles+state.pose[2])) +
-                                 np.multiply(df_d_y, np.sin(angles+state.pose[2]))), 1/len(angles)).T
+        grad_cd_z = np.array([(df_d_x * np.cos(angles+state.pose[2]) +
+                               df_d_y * np.sin(angles+state.pose[2])) * 1/len(angles)]).T
 
         return cd, grad_cd_x, grad_cd_z, x_o

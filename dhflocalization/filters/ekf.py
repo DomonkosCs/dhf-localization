@@ -1,7 +1,7 @@
 from kinematics.motionmodel import MotionModel
 from measurement.measurement import Measurement
 from state.state import StateHypothesis
-import numpy.matlib as npm
+import numpy as np
 
 
 class EKF:
@@ -23,12 +23,12 @@ class EKF:
         updated_state = StateHypothesis()
 
         measurement_covar = self.measurement_model.range_noise_std**2 * \
-            npm.eye(grad_cd_z.shape[0])
+            np.eye(grad_cd_z.shape[0])
 
-        K = state.covar * grad_cd_x * \
-            (grad_cd_x.T * state.covar * grad_cd_x +
-             grad_cd_z.T * measurement_covar*grad_cd_z).I
+        K = state.covar @ grad_cd_x / \
+            (grad_cd_x.T @ state.covar @ grad_cd_x +
+             grad_cd_z.T @ measurement_covar @ grad_cd_z)
         updated_state.pose = state.pose - K * cd
 
-        updated_state.covar = (npm.eye(3)-K*grad_cd_x.T)*state.covar
+        updated_state.covar = (np.eye(3) - K @ grad_cd_x.T) @ state.covar
         return updated_state, ray_endpoints
