@@ -8,7 +8,6 @@ class EKF:
     def __init__(self, motion_model: MotionModel, measurement_model: Measurement):
         self.motion_model = motion_model
         self.measurement_model = measurement_model
-        pass
 
     def propagate(self, state: StateHypothesis, control_input) -> StateHypothesis:
         predicted_state = self.motion_model.propagate(
@@ -31,4 +30,4 @@ class EKF:
         updated_state.pose = state.pose - K * cd
 
         updated_state.covar = (np.eye(3) - K @ grad_cd_x.T) @ state.covar
-        return updated_state, ray_endpoints
+        return updated_state
