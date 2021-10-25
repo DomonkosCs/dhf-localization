@@ -10,7 +10,7 @@
 
 - ## Mobile Robot Localization
 
-  - ### Objectives
+  - ### Introduction
 
   - ### Robot (TurtleBot3)
 
@@ -19,6 +19,8 @@
   - ### Map
 
         occupancy grid maps
+
+  - ### The Localization Task
 
   - ### Measurement Model
 
@@ -51,3 +53,5 @@
   - ### Evaluation
 
 - ## Conclusion and Future Work
+
+# **Megjegyzések**
