@@ -248,7 +248,7 @@ class GridMap:
 
     def plot_distance_transform(self, fig):
 
-        edt = self.edt.ravel()
+        edt = self.distance_transform.ravel()
         _x = np.arange(self.width)
         _y = np.arange(self.height)
         _xx, _yy = np.meshgrid(_x, _y)
