@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 # %%
+from visualization.plotter import Plotter
 from os import stat
 import matplotlib
 from filters.edh import EDH
@@ -9,7 +10,6 @@ from kinematics.motionmodel import OdometryMotionModel, VelocityMotionModel
 from measurement.measurement import Measurement
 from measurement.sensor import Detection, Sensor
 from rawdata.loadsimudata import RawDataLoader
-from state.particle import ParticleSet
 from state.state import StateHypothesis
 from filters.ekf import EKF
 from gridmap.grid_map import GridMap
@@ -21,8 +21,7 @@ from matplotlib import cm
 import cProfile
 import pstats
 import re
-
-from visualization.plotter import Plotter
+%matplotlib widget
 # %%
 map_fn = '/Users/domonkoscsuzdi/Desktop/Research/Localization/code/dhflocalization/resources/tb3_house_true.pgm'
 simu_data_fn = '/Users/domonkoscsuzdi/Desktop/Research/Localization/code/dhflocalization/resources/topicexport_2.json'
@@ -40,48 +39,45 @@ edh = EDH(motion_model, measurement_model)
 x_odom, measurement, x_true = RawDataLoader.loadFromJson(simu_data_fn)
 
 particle_num = 500
-# d_lambda = 0.1
-# lambdas = np.linspace(d_lambda, 1, 10)
-dhf_particle_sets = []
+
+# dhf_particle_sets = []
+edh_states = []
 ekf_filtered_states = []
 
 # Draw from the prior
 init_particle_mean = [-3, 1, 0]
 init_particle_covar = [[0.2**2, 0, 0], [0, 0.2**2, 0], [0, 0, 0.02**2]]
-init_particle_set = ParticleSet.init_from_prior(
+# init_particle_set = ParticleSet.init_from_prior(
+#     particle_num, init_particle_mean, init_particle_covar)
+init_state = StateHypothesis.init_from_particle_prior(
     particle_num, init_particle_mean, init_particle_covar)
-
-dhf_particle_sets.append(init_particle_set)
-ekf_filtered_states.append(init_particle_set.mean_state)
+edh_states.append(init_state)
+# dhf_particle_sets.append(init_particle_set)
+ekf_filtered_states.append(init_state)
 
 
 for i in range(1, len(x_odom), 1):
-    particle_set = edh.propagate(
-        dhf_particle_sets[-1], [x_odom[i-1], x_odom[i]])
+    edh_state = edh.propagate(
+        edh_states[-1], [x_odom[i-1], x_odom[i]])
     ekf_state = ekf.propagate(
         ekf_filtered_states[-1], [x_odom[i-1], x_odom[i]])
 
-    particle_set = edh.update(
-        particle_set, ekf_state.covar, measurement[i])
+    edh_state = edh.update(
+        edh_state, ekf_state.covar, measurement[i])
     ekf_state = ekf.update(ekf_state, measurement[i])
 
     ekf_filtered_states.append(ekf_state)
-    dhf_particle_sets.append(particle_set)
-
-
-dhf_filtered_states = [
-    particle_set.mean_state for particle_set in dhf_particle_sets]
+    edh_states.append(edh_state)
 
 plotter.plot_ground_truths(
-    dhf_filtered_states, [0, 1], truths_label="Filtered", linestyle="dotted")
+    edh_states, [0, 1], truths_label="Filtered", linestyle="dotted")
 
 plotter.plot_ground_truths(
     ekf_filtered_states, [0, 1], truths_label="Filtered", linestyle="dotted")
 
-
-plotter.plot_ground_truths([StateHypothesis(np.asmatrix(odom_pose).T+np.matrix(
-    [-3, 1, 0]).T, None) for odom_pose in x_odom], [0, 1], truths_label="Odom", linestyle="--")
-plotter.plot_ground_truths([StateHypothesis(np.asmatrix(true_pose).T, None)
+plotter.plot_ground_truths([StateHypothesis(np.array(odom_pose)+np.array([-3, 1, 0]))
+                           for odom_pose in x_odom], [0, 1], truths_label="Odom", linestyle="--")
+plotter.plot_ground_truths([StateHypothesis(true_pose)
                            for true_pose in x_true], [0, 1], truths_label="True", linestyle="-")
 # %%
 dhf_poses = [

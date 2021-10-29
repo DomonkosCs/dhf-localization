@@ -1,7 +1,6 @@
 from matplotlib.pyplot import axis
 from kinematics.motionmodel import MotionModel
 from measurement.measurement import Measurement
-from state.particle import ParticleSet
 import numpy as np
 
 from state.state import StateHypothesis
@@ -14,23 +13,23 @@ class EDH:
         self.d_lambda = 0.1
         self.lambdas = np.linspace(self.d_lambda, 1, 10)
 
-    def propagate(self, particle_set: ParticleSet, control_input):
+    def propagate(self, state: StateHypothesis, control_input):
         particle_poses = self.motion_model.propagate_particles(
-            particle_set.particle_poses, control_input)
+            state.particles, control_input)
 
-        return ParticleSet(particle_poses)
+        return StateHypothesis.init_from_particle_poses(particle_poses)
 
-    def update(self, particle_set: ParticleSet, ekf_covar, measurement):
+    def update(self, state: StateHypothesis, ekf_covar, measurement):
 
         num_of_rays = len(measurement)
         measurement_covar = self.measurement_model.range_noise_std**2 * \
             np.eye(num_of_rays)
 
-        particle_poses = particle_set.particle_poses
+        particle_poses = state.particles
         for l in self.lambdas:
             particle_poses_mean = np.mean(particle_poses, axis=0)
             cd, grad_cd_x, grad_cd_z, _ = self.measurement_model.processDetection(
-                StateHypothesis(np.array([particle_poses_mean]).T), measurement)
+                StateHypothesis(particle_poses_mean), measurement)
 
             y = - cd + grad_cd_x.T @ particle_poses_mean
 
@@ -46,4 +45,4 @@ class EDH:
                 [B @ particle_state for particle_state in particle_poses]) + b.T)
             particle_poses[particle_poses[:, 2] > np.pi, 2] -= 2*np.pi
             particle_poses[particle_poses[:, 2] < -np.pi, 2] += 2*np.pi
-        return ParticleSet(particle_poses)
+        return StateHypothesis.init_from_particle_poses(particle_poses)

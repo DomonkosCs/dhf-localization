@@ -93,7 +93,7 @@ class OdometryMotionModel(MotionModel):
         elif prop_pose[2] < -np.pi:
             prop_pose[2] += 2*np.pi
 
-        if state.covar is not None:
+        if len(state.covar):
             jacobi_state, jacobi_input = self.calcJacobians(
                 delta_rot_1, delta_trans, fi)
             prop_covar = jacobi_state @ state.covar @ jacobi_state.T
@@ -101,11 +101,14 @@ class OdometryMotionModel(MotionModel):
         else:
             prop_covar = None
 
-        return StateHypothesis(prop_pose, prop_covar)
+        prop_state = StateHypothesis()
+        prop_state.pose = prop_pose
+        prop_state.covar = prop_covar
+        return prop_state
 
     def propagate_particles(self, particle_poses, control_input):
         def propagate(pose):
-            return self.propagate(StateHypothesis(np.array([pose]).T, None), control_input, noise=True).pose
+            return self.propagate(StateHypothesis(pose), control_input, noise=True).pose
 
         particle_poses_next = np.array(
             list(map(propagate, particle_poses))).squeeze()
