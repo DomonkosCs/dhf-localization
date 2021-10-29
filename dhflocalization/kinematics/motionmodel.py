@@ -88,6 +88,10 @@ class OdometryMotionModel(MotionModel):
                                             delta_trans *
                                             np.sin(fi + delta_rot_1),
                                             delta_rot_1 + delta_rot_2]]).T
+        if prop_pose[2] > np.pi:
+            prop_pose[2] -= 2*np.pi
+        elif prop_pose[2] < -np.pi:
+            prop_pose[2] += 2*np.pi
 
         if state.covar is not None:
             jacobi_state, jacobi_input = self.calcJacobians(
