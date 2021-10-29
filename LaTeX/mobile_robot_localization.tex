@@ -112,7 +112,7 @@ For a pure localization task, the map is considered as ground truth,
 therefore the previously introduced odometry noise was omitted during the mapping process.
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\linewidth]{tb3-house-ogm-2.pdf}
+    \includegraphics[width=\linewidth]{tb3-house-ogm.pdf}
     \caption{The top-down view of the TurtleBot3 House in Gazebo, and its OGM representation (mind the open doors in the building).
         Grey pixels represent unknown area, black pixels are occupied, white pixels are free cells.
         1 pixel (cell) in the OGM has a size of $0.05 \times 0.05$ m. }
@@ -182,3 +182,357 @@ are obtained by,
     \theta_t     & = \theta_{t-1} + \hat{\delta}_{\mathrm{rot1}} + \hat{\delta}_{\mathrm{rot2}},         \\
     \mathbf{x}_t & = \left(x_t\;\;y_t\;\;\theta_t\right)^\top.
 \end{align}
+
+\section{Measurement Model}
+
+\subsection{Introduction}
+As the form of the motion model depends on many factors, for example the kinematics of the robot
+(differential drive, car like structure, etc.), and the used control input interpretation
+(odometry-based, or velocity-based), measurement models are no different.
+However, the used proprioceptive sensor (LiDAR), and the map representation (OGM) in this task
+narrow the possibilities.
+
+\subsection{Standard Measurement Models on Different Map Realizations}
+Wide-spread algorithms are often established for topological (feature-based) maps.
+Here, the environment is described by detected shapes (features), rather than using a location based representation
+like the OGMs do, as they assign an occupancy value for every location on the map.
+
+For a topological map, the probability distribution of $p(\mathbf{\mathbf{z}}_t | \mathbf{x}_t)$,
+enhanced with the known map $\mathbf{m}$ (resulting in $p(\mathbf{\mathbf{z}}_t | \mathbf{x}_t,\mathbf{m})$)
+is described a Gaussian distribution:
+\begin{align}
+    h(\mathbf{x}_t,\mathbf{m}) = \mathbf{z}^*_t + \xi, \quad \xi \sim \mathcal{N}(0,\mathbf{R}), \\
+    \Rightarrow p(\mathbf{\mathbf{z}}_t | \mathbf{x}_t,\mathbf{m}) \sim \mathcal{N}(\mathbf{z}_t^*,\mathbf{R}).
+\end{align}
+where $\mathbf{R}$ is the covariance matrix of the measurement.
+This closed-form description is required for Kalman Filters.
+
+However, for location based (metric) maps, the form of $\mathbf{m}$ is different, therefore
+to make the above model work, features have to be extracted \cite{Durrant-Whyte1991},
+effectively making the map feature-based.
+
+For purely metric maps (without feature extraction), Thrun et al. proposed the \emph{beam range finder model}
+in \cite{Thrun2005}, especially fitted for range finders, like LiDARs, or sonars.
+This model describes  $p(\mathbf{\mathbf{z}}_t | \mathbf{x}_t,\mathbf{m})$ as a composition of
+probability densities, resulting in a distribution indicated in Figure \ref{fig:beam-model}.
+Here, the value $\mathbf{z}_t^*$ is calculated by ray tracing: at a given robot pose,
+the expected measurement can be calculated, by tracing a ray along the map, starting form
+the robot pose, and ending in the nearest obstacle. Then the travelled distance is recorded,
+which together with the angle of the beam, serves as $\mathbf{z}_t^*$.
+
+The resulting distribution combines different measurement error possibilities:
+random measurements (uniform distribution), local measurement noise (Gaussian distr.),
+failures (``very narrow'' uniform distribution, modelling a Dirac delta) and unexpected
+objects (exponential distribution).
+\begin{figure}[htbp]
+    \centering
+    \includegraphics{beam-model.pdf}
+    \caption{The probability distribution of $p(z_t | \mathbf{x}_t,\mathbf{m})$.
+        The figure is based on \cite{Thrun2005}.}
+    \label{fig:beam-model}
+\end{figure}
+
+However, the resulting probability distribution does not have a closed form description, which is
+not a problem for particle filters, but it is for Kalman filters.
+
+\subsection{The Distance Function based Measurement Model}
+The method, which enables the use of Kalman filters with laser range finder measurements on an OGM is proposed
+by Dantanarayana et al. in \cite{Dantanarayana2013,Dantanarayana2016}.
+In the following, this method is going to be detailed, based on \cite{Dantanarayana2016b}.
+
+The key idea is the utilization of the distance transform (DT), which is widely used in
+image processing.
+For a given binary image (or in this case, an OGM), the distance transform
+produces an image/map (with the same size), where the value of each pixel/cell is
+determined by the closest distance to any occupied pixel/cell.
+If $V$ is the set of the occupied cells, and $\mathbf{x}$ is an arbitrary point on the map, then
+\begin{equation}
+    d_{D F}=D F(\mathbf{x})=\min _{\mathbf{v}_{\mathbf{j}} \in V}\left\|\mathbf{x}-\mathbf{v}_{\mathbf{j}}\right\|,
+\end{equation}
+in which an Euclidean norm is usually applied.
+The distance transform then could be pre-calculated for a given map.
+Figure \ref{fig:simple-dt} shows the DT in a simplified environment,
+while the DT of one part of the OGM from Figure \ref{fig:gazebo-map-ogm-dt}. can be seen on Figure
+\begin{figure}[htbp]
+    \centering
+    \includegraphics{simple_dt.pdf}
+    \caption{A simple shape and its distance transform. Figure source: \cite{Dantanarayana2016b}.}
+    \label{fig:simple-dt}
+\end{figure}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics{dt_on_ogm.pdf}
+    \caption{Part of the OGM of the TurtleBot3 House, and its distance transform.}
+    \label{fig:gazebo-map-ogm-dt}
+\end{figure}
+
+Now using the LiDAR measurements, which in this case come in the form of angle-range pairs,
+each detection can be transformed to map coordinates, and assigned a distance transform value.
+Theoretically, if the estimated pose of the robot, and the true pose of the robot aligns,
+and the sensor is noiseless, each reading should indicate an occupied cell on the OGM.
+Therefore, all the projected detections should have a DT of zero.
+It other cases, the ray endpoints could end up on free cells, thus having a DT value larger,
+than zero.
+
+The method of transforming (projecting) the laser scans to the map, based on the estimated
+location of the robot is shown in Figure \ref{fig:ogm-laser-projection}.
+Mathematically, these projections are obtained as
+\begin{equation}
+    \mathbf{x}_{\mathrm{o}i} = \begin{bmatrix}x_{\mathrm{o}i}\\y_{\mathrm{o}i}\end{bmatrix}
+    = \begin{bmatrix}x + r_i\cos(\varphi_i + \theta)\\y + r_i\sin(\varphi_i + \theta)\end{bmatrix},
+\end{equation}
+where the variables are according to Figure \ref{fig:ogm-laser-projection}. (the time dependency is omitted).
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\linewidth]{dt_mapping_lidar}
+    \caption{Projection of the LiDAR scans to the OGM, based on the pose of the robot.}
+    \label{fig:ogm-laser-projection}
+\end{figure}
+
+Based on a set of measurements (for a whole revolution of the LiDAR), a vector can be constructed as follows:
+\begin{equation}\label{eq:df-vector}
+    \mathbf{d}_{\text{DF}} =
+    \begin{bmatrix}
+        DF(\mathbf{x}_{\text{o}1}) \\
+        DF(\mathbf{x}_{\text{o}2}) \\
+        \vdots                     \\
+        DF(\mathbf{x}_{\text{o}n}) \\
+    \end{bmatrix},
+\end{equation}
+where $n$ is the number of valid LiDAR readings for a whole revolution
+(a valid reading occurs when the laser ray actually collided with an object within range, and this was
+detected by the sensor).
+To obtain a single scalar value, which indicates the disparity between the projected measurements,
+and the map, the Chamfer distance (CD) is formulated. For a set of measurements,
+\begin{equation}
+    d_{\text{CD}} = \frac{1}{n}\sum_{i=1}^nDF(\mathbf{x}_{\text{o}i}).
+\end{equation}
+The CD is a good indicator for the estimation of the robot's pose: $CD=0$ means,
+that every ray endpoint for a set of measurement at time $t$ is at the right place,
+therefore the initial robot pose estimation is good.
+Although, it is important to mention that this assumption does not hold in every
+scenario. Consider an extreme case: for a whole revolution, the LiDAR only records
+one measurement (one ray), and the OGM only contains many occupied cell.
+Then the CD (effectively the DT) would equals to zero at a plethora of robot poses, thus not indicating the sought true pose.
+For a detailed map and sufficiently many LiDAR reading per revolution, this deficiency is minimized.
+
+Using the CD, the measurement model is formulated as
+\begin{equation}
+    p(\mathbf{\mathbf{z}}_t | \mathbf{x}_t, DF_t) \sim \mathcal{F}(d_{\text{CD}t},\boldsymbol\Sigma_{\text{CDt}}).
+\end{equation},
+where $\mathcal{F}$ denotes the folded Gaussian distribution.
+The covariance is calculated as
+\begin{equation}
+    \boldsymbol\Sigma_{\text{CD}} = \mathbf{J}_{\text{CD}}\mathbf{R}\mathbf{J}_{\text{CD}}^{\top},
+\end{equation}
+where $\mathbf{R}$ is the measurement covariance matrix, and $\mathbf{J}_{CD}$ is the Jacobian of the
+Chamfer distance with respect to $\mathbf{z}_i = \begin{bmatrix}\varphi_i&r_i\end{bmatrix}^{\top}$,
+evaluated at $\mathbf{x}$. However, due to the assumption, that the measurement only has error
+in $r_i$, the differentiation with regarding to $\varphi_i$ is omitted.
+
+Due to the fact, that the expected CD is zero at the true pose,
+the measurement equation has the close form of
+\begin{equation}
+    d_{CD} :=h(\mathbf{x}_t,\mathbf{z}_t) = 0,
+\end{equation}
+forming an implicit equation for $\mathbf{x}_t$ and $\mathbf{z}_t$, which is
+applicable for Kalman filters.
+
+\subsection{The Kalman Filters}
+\subsubsection{Kalman Filter}
+The Kalman filter (KF) assumes that ``everything'' \emph{is} linear and Gaussian, and under these assumptions it can be proved that ``everything'' \emph{stays} linear and Gaussian during the Bayes filter updates. A Gaussian distribution can be fully characterized by its first two moments, therefore the Kalman filter offers a recursion to calculate the mean $\boldsymbol{\mu}_t$ and the covariance $\mathbf{\Sigma}_t$ of the belief $bel(\mathbf{x}_t)$. In this context only the discrete-time KF is going to be discussed.
+
+Consider the discrete-time (linear) state space model of a system:
+\begin{align}\label{key}
+    \mathbf{x}_t & = \mathbf{A}_t\mathbf{x}_{t-1} + \mathbf{B}_t\mathbf{u}_t + \mathbf{G}_t\mathbf{v}_t, \\
+    \mathbf{z}_t & = \mathbf{C}_t\mathbf{x}_t + \mathbf{w}_t,
+\end{align}
+where $\mathbf{A}_t$ is the state transition matrix, $\mathbf{B}_t$ is the input gain, $\mathbf{G}_t$ is the noise gain, $\mathbf{C}_t$ is the measurement matrix. To incorporate uncertainties and inaccuracies into the system, the process noise $\mathbf{v}_t$ and the measurement noise $\mathbf{w}_t$ is introduced. Both are Gaussian random variables: $\mathbf{v}_t \sim \mathcal{N}(\mathbf{0},\mathbf{Q})$, $\mathbf{w}_t \sim \mathcal{N}(\mathbf{0},\mathbf{R})$, with $\mathbf{Q}$ as process noise covariance, and $\mathbf{R}$ as measurement noise covariance.
+
+Using the linear nature of the model, and assuming, that the probability distributions in the Bayes filter are Gaussian distributions, the motion model has the following form:
+\begin{equation}\label{key}
+    p(\mathbf{x}_t|\mathbf{x}_{t-1}, \mathbf{u}_t) = \mathrm{det}(2\pi{\tilde{\mathbf{Q}}_t})^{-\frac{1}{2}}\mathrm{exp}\{-\frac{1}{2}(\mathbf{x}_t-\mathbf{A}_t\mathbf{x}_{t-1}-\mathbf{B}_t\mathbf{u}_t)^\top\tilde{\mathbf{Q}}_t^{-1}(\mathbf{x}_t-\mathbf{A}_t\mathbf{x}_{t-1}-\mathbf{B}_t\mathbf{u}_t)\},
+\end{equation}
+where $\tilde{\mathbf{Q}}_t = \mathbf{G}_t\mathbf{Q}_t\mathbf{G}_t^\top$.
+The measurement model can be calculated similarly.
+
+The derivation of the Kalman filter algorithm is not trivial, and does not fall within the scope of this document. The algorithm can be seen in Algorithm \ref{alg:kf}., where $\mathbf{I}$ denotes the identity matrix.
+
+\begin{algorithm}
+    \caption{Kalman filter($\boldsymbol{\mu}_{t-1},\mathbf{\Sigma}_{t-1},\mathbf{u}_t,\mathbf{z}_t$)}\label{alg:kf}
+    \begin{algorithmic}[1]
+        \BState \emph{prediction}:
+        \State\indent$\overline{\boldsymbol{\mu}}_t = \mathbf{A}_t{\boldsymbol{\mu}}_{t-1} + \mathbf{B}_t\mathbf{u}_t$
+        \State\indent $\overline{\mathbf{\Sigma}}_t = \mathbf{A}_t\mathbf{\Sigma}_{t-1}\mathbf{A}^\top_t + \tilde{\mathbf{Q}}_t$
+        \BState \emph{update/correction}:
+        \State\indent $\mathbf{K}_t = \overline{\mathbf{\Sigma}}_t\mathbf{C}_t^\top\left(\mathbf{C}_t\overline{\mathbf{\Sigma}}_t\mathbf{C}_t^\top+\mathbf{R}_t\right)^{-1}$
+        \State\indent $\boldsymbol{\mu}_t = \overline{\boldsymbol{\mu}}_t + \mathbf{K}_t\left(\mathbf{z}_t-\mathbf{C}_t\overline{\boldsymbol{\mu}}_t\right)$
+        \State\indent $\mathbf{\Sigma}_t = \left(\mathbf{I}-\mathbf{K}_t\mathbf{C}_t\right)\overline{\mathbf{\Sigma}}_t$
+        \State\Return $\boldsymbol{\mu}_t,\mathbf{\Sigma}_t$
+    \end{algorithmic}
+\end{algorithm}
+\subsubsection{Extended Kalman Filter}
+However, assuming a linear state space model is a rather strong assumption. For a nonlinear model the general state space equations are (not considering nonlinear noise gain):
+\begin{align}\label{key}
+    \mathbf{x}_t & = \mathbf{a}(\mathbf{u}_t,\mathbf{x}_{t-1}) + \mathbf{G}_t\mathbf{v}_t, \\
+    \mathbf{z}_t & = \mathbf{h}(\mathbf{x}_t) + \mathbf{w}_t.
+\end{align}
+The state propagation function $\mathbf{a}(.)$ can be locally linearized around the previous state $\mathbf{x}_{t-1} = \boldsymbol{\mu}_{t-1}$, resulting $\tilde{\mathbf{A}}_t$. The measurement function $\mathbf{h}(.)$ is linearized around the current predicted state $\overline{\boldsymbol{\mu}}_t$, resulting $\mathbf{H}_t$.
+
+The EKF algorithm is the extension of the KF by handling nonlinear state equations through their linearized forms. Algorithm \ref{alg:ekf}. contains the EKF algorithm.
+
+\begin{algorithm}
+    \caption{Extended Kalman filter($\boldsymbol{\mu}_{t-1},\mathbf{\Sigma}_{t-1},\mathbf{u}_t,\mathbf{z}_t$)}\label{alg:ekf}
+    \begin{algorithmic}[1]
+        \BState \emph{prediction}:
+        \State\indent$\overline{\boldsymbol{\mu}}_t = a(\mathbf{u}_t,\boldsymbol{\mu}_{t-1})$
+        \State\indent $\overline{\mathbf{\Sigma}}_t = \tilde{\mathbf{A}}_t\mathbf{\Sigma}_{t-1}\tilde{\mathbf{A}}^\top_t + \tilde{\mathbf{Q}}_t$
+        \BState \emph{update/correction}:
+        \State\indent $\mathbf{K}_t = \overline{\mathbf{\Sigma}}_t\mathbf{H}_t^\top\left(\mathbf{H}_t\overline{\mathbf{\Sigma}}_t\mathbf{H}_t^\top+\mathbf{R}_t\right)^{-1}$
+        \State\indent $\boldsymbol{\mu}_t = \overline{\boldsymbol{\mu}}_t + \mathbf{K}_t\left(\mathbf{z}_t-h(\overline{\boldsymbol{\mu}}_t)\right)$
+        \State\indent $\mathbf{\Sigma}_t = \left(\mathbf{I}-\mathbf{K}_t\mathbf{H}_t\right)\overline{\mathbf{\Sigma}}_t$
+        \State\Return $\boldsymbol{\mu}_t,\mathbf{\Sigma}_t$
+    \end{algorithmic}
+\end{algorithm}
+\subsubsection{Advantages and Disadvantages of Kalman Filters}
+
+Under linear and Gaussian assumptions the Kalman filter yields the optimal estimation (by calculated mean square error). However, these criteria are rarely satisfied, and the optimal estimation property does not hold any more. Another major problem comes from the nature of Gaussian distributions: they are unimodal, therefore the Kalman Filter cannot track multiple high-probability hypotheses.
+
+EKF offers one type of solution to the nonlinearity: linearization by Taylor expansion. This however, introduces linearization error into the system. For highly nonlinear equations not only the first order approximation is the problem, but its center point as well. As were mention before, the state equation is linearized around the previous state; but now this state also an approximation. This overall effect can cause the algorithm to diverge, or to yield poor results. In addition, the initial conditions also have to be carefully chosen in order to obtain desired results.
+
+Despite these, the EKF is still one of the most popular state estimation algorithm in robotics, and often used in Global Navigation Satellite Systems (GNSS) as well, thanks to its computational simplicity and easy  implementation. Other Kalman filter based realizations are including but not limited to the unscented Kalman filter (UKF), which uses a different type of linearization instead of the Taylor expansion based one, and the ensemble Kalman Filter (EnKF), which is suited for high dimensional estimation problems.
+
+\subsection{The Particle Filters}
+\subsubsection{Main concepts}
+
+Particle filters (PF) are used to solve nonlinear filtering problems. Unlike EKF and other nonlinear extensions of the Kalman filter, this method uses a nonparametric representation of the estimated posterior. This nonparametric nature enables the estimation of various distributions, including multimodal and/or non-Gaussian.
+
+The main concept in PF is to represent arbitrary probability distributions by cumulative probability mass of particles. When for example a Gaussian distribution is sampled multiple times, more samples come from regions with high probability density. This (trivial) effect can also be used in reverse: if samples are given, what is the probability distribution from which they were sampled? If the number of particles is sufficiently large (ideally infinity), they can offer a good approximation of the probability distribution.
+
+The Bayesian filtering framework is implemented in as follows . First, draw $N$ samples (called as particles) from a prior distribution. Then migrate each of these particles according to the motion model. Now the particle set will approximately describe the predicted belief \eqref{eq:predbel}. (In the KF this predicted belief was described by its mean and covariance, as it was assumed to be a Gaussian distribution. Now, it is described by particles, and the Gaussian nature is not required.)
+
+The KF used the $\mathbf{K}_t$ Kalman gain as a weight to calculate the posterior from the predicted belief. Particle filters use \emph{importance sampling} for this task: each sample is given an importance weight which describes its relevance. If this relevance is high, it means that the specific particle is a good approximation of the true (sought) state. Choosing a proper weighting method is a difficult task. Generally, weights are calculated from a target and a proposal distribution. The target distribution is the posterior, the proposal distribution however, can be arbitrary (under some criteria). Now using the particles and their weights, the posterior distribution is approximated.
+
+The next step of the filter is optional, although essential: resampling. Here, a new (same sized) particle set is constructed by drawing particles from the old set with replacement, according to their weights. This means that some  particles can be chosen multiple times (more likely high-weighted ones), thus certain particles can be eliminated. Finally, their weights are equalized. With the resulting particle set (either the new, redrawn one, or the old, weighted one), the algorithm is repeated in the new time step.
+
+Generally, the most demanding task when designing PFs is the proper selection of the proposal density and the resampling frequency (i.e. when to resample). Choosing the right proposal distribution and the right time to resample is crucial in the performance of the PF. In the next subsection, the bootstrap particle filter method with adaptive resampling is introduced in detail.
+\subsubsection{The Bootstrap Particle Filter}
+
+Denote the particles and their set at time $t$  as:
+\begin{equation}\label{key}
+    \mathcal{X}_t = \{\mathbf{x}_t^{[1]},\mathbf{x}_t^{[2]}, \dots \mathbf{x}_t^{[N]}\}.
+\end{equation}
+
+The bootstrap particle filter uses the predicted belief as the proposal distribution, which results in the following weight assignment:
+\begin{equation}\label{key}
+    w_t^{[n]} = p(\mathbf{z}_t|\mathbf{x}_t^{[n]}).
+\end{equation}
+This means, that  if the proposal distribution is the predicted belief, the weight is calculated according to the measurement model (the mathematical derivation is omitted). In the original algorithm \cite{bpf}, resampling is performed in every step. However, this might not be beneficial, therefore an effective sample size based adaptive resampling is applied \cite{ess}. One major problem with particle filters is when many particles are in irrelevant locations, therefore only a few of them represent the high probability region of the posterior properly. This called particle degeneracy. However, the value of the weights can indicate this ill-favored situation. The effective sample size ($ESS$ or $N_{\mathrm{eff}}$) can be approximated as the following:
+\begin{equation}\label{eq:neff}
+    N_{\mathrm{eff}} = \frac{1}{\sum_{i = 1}^{N}(w_t^{[i]})^2},
+\end{equation}
+if the sum of weights are 1 (normalized). Consider the situation where all the weights are equal, thus $w_t^{[1]} = w_t^{[2]} = \dots = w_t^{[N]} = 1/N$. This results in $N_{\mathrm{eff}} = N$, which is beneficial. The worst case scenario is when one weight is 1, and all the others are 0, which results in $N_{\mathrm{eff}} = 1$. It is common to define a threshold $N_{T}$, where if $N_{\mathrm{eff}} < N_T$, a resampling is performed.
+
+The pseudocode of the bootstrap particle filter with adaptive resampling is presented in Algorithm \ref{alg:bpf}.
+\begin{algorithm}[b!]
+    \caption{Bootstrap particle filter ($\mathcal{X}_{t-1}, \mathbf{u}_t, \mathbf{z}_t$)}\label{alg:bpf}
+    \begin{algorithmic}[1]
+        \State $\overline{\mathcal{X}}_t = \mathcal{X}_t = \emptyset$
+        \For{ $n$ = 1 to $N$ }
+        \State sample $\mathbf{x}_t^{[n]} \sim p(\mathbf{x}_t|\mathbf{x}_{t-1}^{[n]},\mathbf{u}_t)$
+        \State$w_t^{[n]} = p(\mathbf{z}_t|\mathbf{x}_{t}^{[n]})w_{t-1}^{[n]}$
+        \EndFor
+        \State calculate weight sum $\hat{w}_{t} = \sum_{i = 1}^{N}w_t^{[i]}$
+        \For{ $n$ = 1 to $N$ }
+        \State normalize $w_t^{[n]} = w_t^{[n]}\hat{w}_t^{-1}$
+        \State$\overline{\mathcal{X}}_t = \overline{\mathcal{X}}_t + \langle \mathbf{x}_t^{[n]},w_t^{[n]}\rangle$
+        \EndFor
+        \State calculate $N_{\mathrm{eff}}$ using \eqref{eq:neff}
+        \If{$N_{\mathrm{eff}} < N_T$}
+        \For{ $n$ = 1 to $N$ }
+        \State draw $i$ with probability $\propto w_t^{[i]}$ \label{line:bpf_resaml}
+        \State${\mathcal{X}}_t ={\mathcal{X}}_t + \langle \mathbf{x}_t^{[i]},N^{-1}\rangle$
+        \EndFor
+        \State\Return $\mathcal{X}_t$
+        \Else
+        \State$\mathcal{X}_t = \overline{\mathcal{X}}_t$
+        \State\Return $\mathcal{X}_t$
+        \EndIf
+    \end{algorithmic}
+\end{algorithm}
+There are several ways to implement the resampling in Line \ref{line:bpf_resaml}: the most basic method is the ''roulette wheel'' sampling, but in this scenario, the stratified sampling \cite{stratified} is used.
+\subsubsection{Advantages and Disadvantages of Particle Filters}\label{sec:pf_adv_disadv}
+Particle filters are well suited for nonlinear and non-Gaussian state estimation. They are especially versatile: many PF variations can be constructed for a plethora of applications. They are easy to implement, and demand low computational power. Their main usages are most importantly robot localization \cite{amcl} and  SLAM \cite{gmapping1}.
+
+However, its numeric solution method (approximate probability distributions by samples) leaves a lot of room for errors. Most importantly, the particle filter can suffer from the so called \emph{curse of dimensionality}, which is described in \cite{bpf} as ``One must expect $N$ (the number of particles) to rise rapidly with the dimension of the space (...) It is most difficult to make any precise provable statement on the crucial question of how many samples are required to give a satisfactory representation of the densities for filter operation''. With a good proposal distribution, this unwanted property can be avoided. Daum and Huang in \cite{curse_of_dim} showed that the BPF suffers from this phenomena, while for example the unscented particle filter does not.
+
+The curse of dimensionality problem is connected to the so called particle degeneracy phenomenon. It means that only a low amount of samples estimates the target posterior efficiently; others are in regions with very low probability. This occurs when the proposal distribution and the target distribution are not matched well. Figure \ref{fig:pf-degen}. shows a setup which demonstrates this effect: the prior distribution (the predicted belief in the case of the BPF) is colored in blue, and represented by its particles, shown as black dots. The weighting of the particles is done according to the likelihood (red curve), which is the measurement model in the BPF. As a result, only 3 particles are going to have weights other, than 0. Upon resampling, only these 3 particles will represent the target posterior; the others are eliminated. (Of course the size of the particle set will not change, only that they are distributed across 3 distinct positions). By common sense, a probability distribution is hardly represented properly by 3 particles. Counter-intuitively, having a more precise sensor (i.e. having a ''thinner'' likelihood function) only makes this worse.
+
+\begin{figure}[htb!]
+    \centering
+    \includegraphics[width = \linewidth]{pf_degen.pdf}
+    \caption{Particle degeneracy, shown in a one-dimensional example with 30 particles.}
+    \label{fig:pf-degen}
+\end{figure}
+There are three possible ways to minimalize particle degeneracy: the most obvious one is to have more particles (populate the state space more densely). However, in higher dimensions this demands exponentially more particles. Another solution is to use a different proposal density, therefore having a different likelihood function. In this way the target distribution could be more effectively represented by particles. The third one is resampling: having more particles on top of each other in the same place is better than having only a few of them, while all the others are spread across the domain with negligible weights.
+
+
+Although particle filters demand low computational power, this only holds when the algorithm is properly tuned, therefore requires the minimal amount of particles. A poor choice of a particle filter, or a poorly designed particle filter requires a lot of computational capacity to give proper results: the particle requirement can be in the order of millions. As were mentioned in \cite{curse_of_dim}, ``for typical low dimensional tracking problems, the PF requires 2 to 6 orders of magnitude more computer throughput than the extended Kalman filter, to achieve the same accuracy.''
+
+\subsection{The Daum--Huang filters}
+\subsubsection{Main concepts}
+To overcome the  undesirable properties of the particle filters (especially the curse of dimensionality), Daum and Huang proposed a new method, where the state estimation is based on log-homotopy based particle flow \cite{dhf_first}. This new filtering method is called Daum-Huang filter (DHF) \cite{dhf_name}.
+
+In particle filters, the problem lies where the Bayes' law is performed to obtain the posterior (this is done though weighting). Upon resampling, the particles ``jump'' from the prior to the posterior. The main concept behind the DHF is to eliminate this often faulty ``jump'', and handle it as a continuous movement. Consider a homotopy in $\lambda$, based on the logarithmic form of the Bayes' law:
+\begin{equation}\label{eq:bayes-loghom}
+    \log p(\mathbf{x},\lambda) = \log g(\mathbf{x}) + \lambda \log h(\mathbf{x}) - \log K(\lambda),
+\end{equation}
+where $g(.)$ is the prior, $h(.)$ is the likelihood, $K(.)$ is a normalization constant, and $\lambda$ is the parameter of the homotopy: $\lambda \in [0,1]$. As $\lambda$ changes continuously form 0 to 1, $p(.)$ changes from being the prior $g(.)$, to becoming the posterior, as $\lambda = 1$ (this gives back the standard Bayes' rule). This is essentially the time evolution (in this case $\lambda$ is \emph{pseudotime}) of $p(.)$. Meanwhile the particles that represent the probability distribution also have to move: this movement is described by a stochastic law of motion, see \eqref{eq:nonlin_stoch} with the modification, that $t := \lambda$. The question is that how to move these particles according to the also evolving probability distribution, from which they were sampled.
+
+The evolution of a probability density under a governing SDE is described by the Fokker--Planck equation, if $\mathbf{x} \in \mathbb{R}^d$:
+\begin{equation}\label{eq:fpe}
+    \frac{\partial p(\mathbf{x},\lambda)}{\partial \lambda} = -\sum_{i = 1}^{d}\frac{\partial}{\partial x_i}\left[a_i(\mathbf{x},\lambda)p(\mathbf{x},\lambda)\right] + \frac{1}{2}\sum_{i = 1}^{d}\sum_{j = 1}^{d}\frac{\partial^2}{\partial x_i \partial x_j}\left[B_{i,j}(\mathbf{x},\lambda)p(\mathbf{x},\lambda)\right],
+\end{equation}
+where
+\begin{equation}\label{key}
+    \mathbf{B} = \frac{1}{2}\mathbf{b}\mathbf{b}^\top.
+\end{equation}
+Now if \eqref{eq:bayes-loghom} is partially derivated according to $\lambda$, it can be substituted into the left hand side of \eqref{eq:fpe}. After some simplification, the flow equation in its final form:
+\begin{align}\label{eq:dhf-eq}
+    \log h(\mathbf{x}) - \frac{\partial \log K(\lambda)}{\partial \lambda} & = -\mathbf{a}^\top(\mathbf{x},\lambda)\cdot\nabla\log p(\mathbf{x},\lambda) - \nabla\cdot \mathbf{a}(\mathbf{x},\lambda)       \\
+                                                                           & + \frac{1}{2p(\mathbf{x},\lambda)}\left(\nabla^\top\mathbf{B}(\mathbf{x},\lambda)p(\mathbf{x},\lambda)\nabla\right). \nonumber
+\end{align}
+
+The main difference between different DHF realizations is the method to solve \eqref{eq:dhf-eq} for $\mathbf{a}(.)$. This is still open question, and holds many room for innovation even to this day.  Here, only the exact flow simplification \cite{edh-orig} is discussed, where the diffusion term ($\mathbf{B}$) is neglected.
+
+\subsection{The Exact Flow Daum--Huang Filter}
+
+Under the criteria, that the process noise $\mathbf{v}$, and the measurement noise $\mathbf{w}$ belong to the exponential family of probability distributions, the solution for \eqref{eq:dhf-eq} can be expressed as:
+\begin{equation}\label{key}
+    \mathbf{a}(\mathbf{x},\lambda) = \mathbf{C}(\lambda)\mathbf{x} + \mathbf{c}(\lambda),
+\end{equation}
+where
+\begin{align}\label{eq:edh_inv}
+     & \mathbf{C}(\lambda) = -\frac{1}{2}\mathbf{\mathbf{\overline\Sigma}}\mathbf{H}^\top\left(\lambda\mathbf{H}\mathbf{\overline\Sigma}\mathbf{H}^\top + \mathbf{R}\right)^{-1}\mathbf{H},                                      \\
+     & \mathbf{c}(\lambda) = \left(\mathbf{I}+2\lambda\mathbf{C}\right)\left[\left(\mathbf{I}+\lambda\mathbf{C}\right)\mathbf{\overline\Sigma}\mathbf{H}^\top\mathbf{R}^{-1}\mathbf{z} + \mathbf{C}\overline{\mathbf{x}}\right].
+\end{align}
+Here, $\overline{\mathbf{x}}$ denotes the state average at $\lambda = 0$ across all the particles. The matrix $\mathbf{H}$ is the first order Taylor expansion of the measurement matrix, performed around the current state average at a given $\lambda$. The pseudocode of the exact flow Daum--Huang filter (EDH) can be found in \cite{EDH-Coates}, Algoritm 1. However, the method is also summarized here.
+
+In one timestep, first the particles are propagated just like in the case of the PF, then $\overline{\mathbf{\Sigma}}$ is calculated using the prediction part of an EKF/UKF.  After this, the homotopy is discretized: $\lambda$ is equally divided into a certain amount of steps, e.g. 10. For each \emph{pseudotime} step, $\mathbf{H}_t$ is calculated  by linearization around the current state average of the particles, then using the predicted covariance $\overline{\mathbf{\Sigma}}_t$, the measurement $\mathbf{z}_t$, the measurement noise covariance $\mathbf{R}_t$, and the initial ($\lambda = 0$) state average $\overline{\mathbf{x}}_t$, $\mathbf{C}(\lambda)$ and $\mathbf{c}(\lambda)$ is calculated. By this, the drift function $\mathbf{a}(.)$ is obtained. Recall \eqref{eq:nonlin_stoch}, where the diffusion term is assumed to be 0. In this case, a simple numerical integration yields the new state of the particles. This is repeated for all $\lambda$. It is important to mention that during the homotopy, the time does not change, only the pseudotime. After $\lambda$ reached 1, the particles are in the position, where they estimate the posterior distribution. Now, the state estimation at $t$ can be calculated by taking the average of the particles. Finally, the EKF/UKF update is performed. This was one time step (and along with it, 10 pseudotime step) of the EDH filter.
+
+Figure \ref{fig:dhf-ill}. illustrates the particle flow of the DHF. The time is fixed, and the homotopy is performed from $\lambda = 0$ to $\lambda = 1$. At $\lambda = 1$, the particles moved from the predicted belief (prior, in this context) to their position where they represent the posterior. The true state is indicated by a red square, while the orange dot is the average of the particles. The red arrows show the value of the drift vector $\mathbf{a}(\mathbf{x},\lambda)$. As $\lambda$ evolves, the particle average gets closer and closer to the (unknown) true position.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.98\linewidth]{DHF-visu1.pdf}
+    \caption{The particle flow of the DHF (calculated using the exact flow simplification). The time is at a fixed value, while the homotopy is performed from $\lambda = 0$ to $\lambda = 1$.}
+    \label{fig:dhf-ill}
+\end{figure}
+
+\subsubsection{Other Daum--Huang Filter realizations}
+
+Solving \eqref{eq:dhf-eq} requires various simplifications. Assuming exact flow, where the diffusion part is neglected (only deterministic flow is considered), the measurement model is linear (or linearized), and the noise acting on the system is a Gaussian random variable (or from the exponential family) is only one variation of the Daum--Huang filter. When the linearization of the measurement function is performed around the location of \emph{each} particle instead of their average, the local exact flow Daum--Huang filter is constructed \cite{EDH-Coates}. Particle weighting can be developed for Daum--Huang filters as well, proposed in \cite{pfpf_coates}.
+
+Another simplification is the assumption of incompressible flow \cite{dhf_first}  (this was the first type of the Daum--Huang filter), the assumption of geodesic flow \cite{geodesic}, and the latest results are from the consideration of stochastic particle flow (the diffusion term is no longer neglected), using Gromov's method \cite{gromov}.
+
+It is difficult to summarize the performance of Daum--Huang filters, so is the case with particle filters. Many realizations exist, each with they own advantages and disadvantages. The main problem is with computational capacity: a method with much more advanced and/or more precise calculations can yield better results at a cost of computational time. The main challenge is to develop algorithms and variations that does not require significantly more computation, yet result in a more stable and precise estimation of the state.

@@ -65,3 +65,44 @@
   title    = {Learning probabilistic motion models for mobile robots},
   year     = {2004}
 }
+@article{Durrant-Whyte1991,
+  abstract = {This short paper presents the application of the extended Kalman filter (EKF) to the problem of mobile robot navigation in a known environment. We have developed an algorithm for model-based localization that relies on the concept of a geometric beacon—a naturally occurring environment feature that can be reliably observed in successive sensor measurements and can be accurately described in terms of a concise geometric parameterization. The algorithm is based on an EKF that utilizes matches between observed geometric beacons and an a priori map of beacon locations. We describe two implementations of this navigation algorithm, both of which use sonar. The first implementation uses a simple vehicle with point kinematics equipped with a single rotating sonar. The second implementation uses a “Robuter” mobile robot and employs six static sonar transducers to provide localization information while the vehicle moves at typical speeds of 30 cm/s. © 1991 IEEE},
+  author   = {John J. Leonard and Hugh F. Durrant-Whyte},
+  doi      = {10.1109/70.88147},
+  issue    = {3},
+  journal  = {IEEE Transactions on Robotics and Automation},
+  pages    = {376-382},
+  title    = {Mobile Robot Localization by Tracking Geometric Beacons},
+  volume   = {7},
+  year     = {1991}
+}
+@inproceedings{Dantanarayana2013,
+  abstract = {In this paper, the problem of localising a robot within a known two-dimensional environment is formulated as one of minimising the Chamfer Distance between the corresponding occupancy grid map and information gathered from a sensor such as a laser range finder. It is shown that this nonlinear optimisation problem can be solved efficiently and that the resulting localisation algorithm has a number of attractive characteristics when compared with the conventional particle filter based solution for robot localisation in occupancy grids. The proposed algorithm is able to perform well even when robot odometry is unavailable, insensitive to noise models and does not critically depend on any tuning parameters. Experimental results based on a number of public domain datasets as well as data collected by the authors are used to demonstrate the effectiveness of the proposed algorithm. © 2013 IEEE.},
+  author   = {Lakshitha Dantanarayana and Ravindra Ranasinghe and Gamini Dissanayake},
+  doi      = {10.1109/IROS.2013.6696379},
+  isbn     = {9781467363587},
+  issn     = {21530858},
+  journal  = {IEEE International Conference on Intelligent Robots and Systems},
+  pages    = {376-381},
+  title    = {C-LOG: A Chamfer Distance based method for localisation in occupancy grid-maps},
+  year     = {2013}
+}
+@inproceedings{Dantanarayana2016,
+  abstract  = {The main contribution of this paper is an extended Kalman filter (EKF) based framework for mobile robot localisation in occupancy grid maps (OGMs), when the initial location is approximately known. We propose that the observation equation be formulated using the unsigned distance transform based Chamfer Distance (CD) that corresponds to a laser scan placed within the OGM, as a constraint. This formulation provides an alternative to the ray-casting model, which generally limited localisation in OGMs to Particle Filter (PF) based frameworks that can efficiently deal with observation models that are not analytic. Usage of an EKF is attractive due to its computational efficiency, especially as it can be applied to modern day field robots with limited on-board computing power. Furthermore, well-developed tools for dealing with potential outliers in the observations or changes to the motion model, exists in the EKF framework. The effectiveness of the proposed algorithm is demonstrated using a number of simulation and real life examples, including one in a dynamic environment populated with people.},
+  author    = {Lakshitha Dantanarayana and Gamini Dissanayake and Ravindra Ranasinghe and Tomonari Furukawa},
+  doi       = {10.1109/ICIINFS.2015.7399048},
+  isbn      = {9781479918768},
+  journal   = {2015 IEEE 10th International Conference on Industrial and Information Systems, ICIIS 2015 - Conference Proceedings},
+  month     = {2},
+  pages     = {419-424},
+  publisher = {Institute of Electrical and Electronics Engineers Inc.},
+  title     = {An extended Kalman filter for localisation in occupancy grid maps},
+  year      = {2016}
+}
+@report{Dantanarayana2016b,
+  author   = {Lakshitha Dantanarayana},
+  keywords = {Control,Localisation,Mapping,Robot Navigation},
+  title    = {Navigation and Control for Assistive Robotics},
+  year     = {2016}
+}
+
