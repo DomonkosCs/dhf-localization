@@ -23,10 +23,9 @@ import pstats
 import re
 
 from visualization.plotter import Plotter
-# %matplotlib widget
 # %%
 map_fn = '/Users/domonkoscsuzdi/Desktop/Research/Localization/code/dhflocalization/resources/tb3_house_true.pgm'
-simu_data_fn = '/Users/domonkoscsuzdi/Desktop/Research/Localization/code/dhflocalization/resources/topicexport.json'
+simu_data_fn = '/Users/domonkoscsuzdi/Desktop/Research/Localization/code/dhflocalization/resources/topicexport_2.json'
 
 ogm = GridMap.load_grid_map_from_array(
     PgmProcesser.read_pgm(map_fn), 0.05, 10, 10.05)
@@ -34,13 +33,13 @@ ogm = GridMap.load_grid_map_from_array(
 plotter = Plotter()
 plotter.background_map = ogm
 
-motion_model = OdometryMotionModel([0.8, 0.8, 0.8, 0.8])
+motion_model = OdometryMotionModel([0.1, 0.1, 0.1, 0.1])
 measurement_model = Measurement(ogm, 0.03)
 ekf = EKF(motion_model, measurement_model)
 edh = EDH(motion_model, measurement_model)
 x_odom, measurement, x_true = RawDataLoader.loadFromJson(simu_data_fn)
 
-particle_num = 100
+particle_num = 500
 # d_lambda = 0.1
 # lambdas = np.linspace(d_lambda, 1, 10)
 dhf_particle_sets = []
@@ -81,9 +80,9 @@ plotter.plot_ground_truths(
 
 
 plotter.plot_ground_truths([StateHypothesis(np.asmatrix(odom_pose).T+np.matrix(
-    [-3, 1, 0]).T, None, 0) for odom_pose in x_odom], [0, 1], truths_label="Odom", linestyle="--")
-plotter.plot_ground_truths([StateHypothesis(np.asmatrix(odom_pose).T, None, 0)
-                           for odom_pose in x_true], [0, 1], truths_label="True", linestyle="-")
+    [-3, 1, 0]).T, None) for odom_pose in x_odom], [0, 1], truths_label="Odom", linestyle="--")
+plotter.plot_ground_truths([StateHypothesis(np.asmatrix(true_pose).T, None)
+                           for true_pose in x_true], [0, 1], truths_label="True", linestyle="-")
 # %%
 dhf_poses = [
     dhf_filtered_state.pose for dhf_filtered_state in dhf_filtered_states]
@@ -95,10 +94,13 @@ ekf_poses = [
 
 ekf_poses = np.array(ekf_poses).squeeze()[:, :-1]
 
-true_poses = np.array(x_odom+np.array([-3, 1, 0]))[:, :-1]
+true_poses = np.array(x_true)[:, :-1]
 
 print(np.sqrt(np.mean(np.linalg.norm(true_poses-dhf_poses, axis=1)**2)))
 print(np.sqrt(np.mean(np.linalg.norm(true_poses-ekf_poses, axis=1)**2)))
+
+
+# ! TODO Szöget normalizálni.
 # %%
 %load_ext snakeviz
 %snakeviz - -new-tab foo()
