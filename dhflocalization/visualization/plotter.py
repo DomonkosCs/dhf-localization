@@ -186,7 +186,7 @@ class Plotter:
         # Generate legend
         self.ax.legend(handles=self.handles_list, labels=self.labels_list)
 
-    def plot_tracks(self, tracks, mapping, uncertainty=False, particle=False, track_label="Track",
+    def plot_tracks(self, track, mapping, uncertainty=False, particle=False, track_label="Track",
                     **kwargs):
         """Plots track(s)
 
@@ -218,17 +218,15 @@ class Plotter:
 
         tracks_kwargs = dict(linestyle='-', marker=".", color=None)
         tracks_kwargs.update(kwargs)
-        if not isinstance(tracks, set):
-            tracks = {tracks}  # Make a set of length 1
 
         # Plot tracks
-        track_colors = {}
-        for track in tracks:
-            line = self.ax.plot([state.state_vector[mapping[0]] for state in track],
-                                [state.state_vector[mapping[1]]
-                                for state in track],
-                                **tracks_kwargs)
-            track_colors[track] = plt.getp(line[0], 'color')
+
+        line = self.ax.plot([(state.pose[mapping[0], 0] - self.background_map.left_lower_x) /
+                             self.background_map.resolution for state in track],
+                            [(state.pose[mapping[1], 0] - self.background_map.left_lower_y)/self.background_map.resolution
+                             for state in track],
+                            **tracks_kwargs)
+        track_color = plt.getp(line[0], 'color')
 
         # Assuming a single track or all plotted as the same colour then the following will work.
         # Otherwise will just render the final track colour.
@@ -271,11 +269,14 @@ class Plotter:
 
         elif particle:
             # Plot particles
-            for track in tracks:
-                for state in track:
-                    data = state.particles.state_vector[mapping[:2], :]
-                    self.ax.plot(data[0], data[1], linestyle='', marker=".",
-                                 markersize=1, alpha=0.5)
+            for state in track:
+                data = state.particles[:, mapping[:2]]
+                self.ax.plot(
+                    (data[0] - self.background_map.left_lower_x) /
+                    self.background_map.resolution,
+                    (data[1] - self.background_map.left_lower_y) /
+                    self.background_map.resolution,
+                    linestyle='', marker=".", markersize=1, alpha=0.5)
 
             # Generate legend items for particles
             particle_handle = Line2D(

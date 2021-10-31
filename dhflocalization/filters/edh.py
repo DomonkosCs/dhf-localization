@@ -43,6 +43,6 @@ class EDH:
 
             particle_poses = particle_poses + self.d_lambda * (np.array(
                 [B @ particle_state for particle_state in particle_poses]) + b.T)
-            particle_poses[particle_poses[:, 2] > np.pi, 2] -= 2*np.pi
-            particle_poses[particle_poses[:, 2] < -np.pi, 2] += 2*np.pi
+            # particle_poses[particle_poses[:, 2] > np.pi, 2] -= 2*np.pi
+            # particle_poses[particle_poses[:, 2] < -np.pi, 2] += 2*np.pi
         return StateHypothesis.init_from_particle_poses(particle_poses)
