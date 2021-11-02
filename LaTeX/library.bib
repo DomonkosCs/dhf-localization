@@ -105,4 +105,128 @@
   title    = {Navigation and Control for Assistive Robotics},
   year     = {2016}
 }
+@article{Steffen2013,
+  abstract = {In the field of photogrammetry, computer vision and robotics recursive estimation of time dependent processes is an important task. Usually Kalman filter based techniques are used which rely on explicit model functions that directly and explicitly describe the effect of the parameters on the observations. However, some problems naturally result in implicit constraints between the observations and the parameters, for instance all those resulting in homogeneous equation systems. By implicit we mean that the constraints are given by equations that are not easily solvable for the observation vector. We propose an iterative extended Kalman filter based on implicit measurement equations. The derived filter is useful for various applications, where the possibility to use implicit constraints simplifies the modeling. As an extension, we introduce a robustification technique similar to TrNG et al. (2007) and HUBER (1981) which down-weights the influence of potential outliers. The feasibility of the proposed framework is demonstrated at a number of typical computer vision applications. © 2013 E. Schweizerbart'sche Verlagsbuchhandlung, Stuttgart, Germany.},
+  author   = {Richard Steffen},
+  doi      = {10.1127/1432-8364/2013/0180},
+  issn     = {14328364},
+  issue    = {4},
+  journal  = {Photogrammetrie, Fernerkundung, Geoinformation},
+  keywords = {Estimation,Implicit iterative update,Kalman filter},
+  month    = {8},
+  pages    = {323-332},
+  title    = {A robust iterative kalman filter based on implicit measurement equations},
+  volume   = {2013},
+  year     = {2013}
+}
+@report{Zhang2012,
+  author   = {Zhengyou Zhang},
+  keywords = {A Tutorial with Application to Conic Fitting,Parameter Estimation Techniques},
+  title    = {Parameter Estimation Techniques: A Tutorial with Application to Conic Fitting},
+  url      = {https://hal.inria.fr/inria-00074015}
+}
+@article{Gordon1993,
+  abstract = {An algorithm, the bootstrap filter, is proposed for implementing recursive Bayesian filters. The required density of the state vector is represented as a set of random samples, which are updated and propagated by the algorithm. The method is not restricted by assumptions of linearity or Gaussian noise: it may be applied to any state transition or measurement model. A simulation example of the bearings only tracking problem is presented. This simulation includes schemes for improving the efficiency of the basic algorithm. For this example, the performance of the bootstrap filter is greatly superior to the standard extended Kalman filter.},
+  author   = {N. J. Gordon and D. J. Salmond and A. F.M. Smith},
+  doi      = {10.1049/IP-F-2.1993.0015},
+  issue    = {2},
+  journal  = {IEE Proceedings, Part F: Radar and Signal Processing},
+  pages    = {107-113},
+  title    = {Novel approach to nonlinear/non-gaussian Bayesian state estimation},
+  volume   = {140},
+  year     = {1993}
+}
+@article{Liu2004,
+  abstract  = {To generate random variables that follow a general probability distribution function 1r, we need first to generate random variables uniformly distributed in [0,1]. These random variables are often called random numbers for simplicity. However, this "simple-sounding" task is not easily achievable on a computer. But even if it were possible, it might not be desirable to use authentic random numbers because of the need to debug computer programs. In debugging a program, we often have to repeat the same computation many times; this require us to reproduce the same sequence of random numbers repeatedly. What becomes an accepted alternative in the community of scientific computing is to generate pseudo-random numbers. More formally, we can define a uniform pseudo-random number generator as an algorithm which, starting from an initial value u0 (i.e., the seed), produces a sequence (u;) = (Di(u0)) of values in [0,1]. For all n, the values (u1 , ... , un) should reproduce the behavior of an i.i.d. sample (V1 , ... , Vn) of uniform random variables. A few very good pseudo-random number generators are available; we refer the reader to Marsaglia and Zaman (1993) and Knuth (1997) for further reference. Consequently, we assume from now on that uniform random variables can be satisfactorily produced on the computer. The following simple lemma enables us to produce nonuniform random variables. Its proof is left as an exercise for the reader.},
+  author    = {Jun S. Liu},
+  doi       = {10.1007/978-0-387-76371-2_2},
+  pages     = {23-52},
+  publisher = {Springer, New York, NY},
+  title     = {Basic Principles: Rejection, Weighting, and Others},
+  url       = {https://link.springer.com/chapter/10.1007/978-0-387-76371-2_2},
+  year      = {2004}
+}
+@article{Li2015,
+  abstract  = {Two decades ago, with the publication of [1], we witnessed the rebirth of particle filtering (PF) as a methodology for sequential signal processing. Since then, PF has become very popular because of its ability to process observations represented by nonlinear state-space models where the noises of the model can be non-Gaussian. This methodology has been adopted in various fields, including finance, geophysical systems, wireless communications, control, navigation and tracking, and robotics [2]. The popularity of PF has also spurred the publication of several review articles [2]-[6].},
+  author    = {Tiancheng Li and Miodrag Bolić and Petar M. Djurić},
+  doi       = {10.1109/MSP.2014.2330626},
+  issue     = {3},
+  journal   = {IEEE Signal Processing Magazine},
+  month     = {5},
+  pages     = {70-86},
+  publisher = {Institute of Electrical and Electronics Engineers Inc.},
+  title     = {Resampling Methods for Particle Filtering: Classification, implementation, and strategies},
+  volume    = {32},
+  year      = {2015}
+}
+@article{Daum2003,
+  abstract = {Particle filtering (PF) is a new class of algorithms to solve the nonlinear filtering problem. These PFs are very general and easy to code. The main issue with PF is the large computational complexity. In particular, for typical low dimensional tracking problems, the PF requires 2 to 6 orders of magnitude more computer throughput than the extended Kalman filter, to achieve the same accuracy. It has been asserted that the PF avoids the curse of dimensionality, but there is no formula or theorem that bounds or, approximates the computational complexity of the PF as a function of dimension (d). In this paper, we derive a simple back-of-the-envelope formula that explains why a carefully designed PF should mitigate the curse of dimensionality for certain filtering problems, but the PF does not avoid the curse of dimensionality in general. We also show experimental results which confii our simple formula. We consider this a triumph of theory. This new theory hinges on the fact that the volume of the d dimensional unit sphere is an amazingly small fraction of the volume of the d dimensional unit cube, for large d. © 2003 IEEE.},
+  author   = {Fred Daum and Jim Huang},
+  doi      = {10.1109/AERO.2003.1235126},
+  journal  = {IEEE Aerospace Conference Proceedings},
+  pages    = {1979-1993},
+  title    = {Curse of dimensionality and particle filters},
+  volume   = {4},
+  year     = {2003}
+}
+@article{Daum2007,
+  abstract  = {We derive and test a new nonlinear filter that implements Bayes' rule using an ODE rather than with a pointwise multiplication of two functions. This avoids one of the fundamental and well known problems in particle filters, namely "particle collapse" as a result of Bayes' rule. We use a log-homotopy to construct this ODE. Our new algorithm is vastly superior to the classic particle filter, and we do not use any proposal density supplied by an EKF or UKF or other outside source. This paper was written for normal engineers, who do not have homotopy for breakfast.},
+  author    = {Fred Daum and Jim Huang},
+  doi       = {10.1117/12.725684},
+  journal   = {Signal and Data Processing of Small Targets 2007},
+  month     = {9},
+  pages     = {669918-669918-15},
+  publisher = {SPIE},
+  title     = {Nonlinear filters with log-homotopy},
+  volume    = {6699},
+  year      = {2007}
+}
+@article{Choi2011,
+  author    = {Sora Choi and Peter Willett and Fred Daum and Jim Huang and Sora Choi and Peter Willett and Fred Daum and Jim Huang},
+  doi       = {10.1117/12.886385},
+  issn      = {0277-786X},
+  journal   = {SPIE},
+  month     = {5},
+  pages     = {805021},
+  publisher = {SPIE},
+  title     = {Discussion and application of the homotopy filter},
+  volume    = {8050},
+  url       = {https://ui.adsabs.harvard.edu/abs/2011SPIE.8050E..21C/abstract},
+  year      = {2011}
+}
+@article{Daum2010,
+  abstract  = {We have invented a new theory of exact particle flow for nonlinear filters. This
+               generalizes our theory of particle flow that is already many orders of magnitude faster than
+               standard particle filters and which is several orders of magnitude more accurate than the
+               extended Kalman filter for difficult nonlinear problems. The new theory generalizes our recent
+               log-homotopy particle flow filters in three ways: (1) the particle flow corresponds to the exact flow
+               of the conditional probability density; (2) roughly speaking, the old theory was based on
+               incompressible flow (like subsonic flight in air), whereas the new theory allows compressible flow
+               (like supersonic flight in air); (3) the old theory suffers from obstruction of particle flow as well as
+               singularities in the equations for flow, whereas the new theory has no obstructions and no
+               singularities. Moreover, our basic filter theory is a radical departure from all other particle filters in
+               three ways: (a) we do not use any proposal density; (b) we never resample; and (c) we compute
+               Bayes' rule by particle flow rather than as a point wise multiplication.},
+  author    = {Fred Daum and Jim Huang and Arjang Noushin},
+  doi       = {10.1117/12.839590},
+  journal   = {https://doi.org/10.1117/12.839590},
+  keywords  = {Computing systems,Diffusion,Filtering (signal processing),Fluid dynamics,Monte Carlo methods,Nonlinear filtering,Palladium,Particle filters,Particles,Probability theory},
+  month     = {4},
+  pages     = {92-110},
+  publisher = {SPIE},
+  title     = {Exact particle flow for nonlinear filters},
+  volume    = {7697},
+  url       = {https://www.spiedigitallibrary.org/conference-proceedings-of-spie/7697/769704/Exact-particle-flow-for-nonlinear-filters/10.1117/12.839590.full https://www.spiedigitallibrary.org/conference-proceedings-of-spie/7697/769704/Exact-particle-flow-for-nonlinear-filters/10.1117/12.839590.short},
+  year      = {2010}
+}
+@article{Khan2018,
+  author    = {Muhammad Altamash Ahmed Khan},
+  keywords  = {Alternating least squares,Alternierende kleinste Quadrate,Confidence sampling,Fokker,Fokker Planck equation,Gaussian mixture flow equation,Gaussian mixture models,Gauß'sche Gemischflussgleichung,Gaußsche Mischungsmodelle,Gleichung,Homotopy,Kette Monte Carlo,Log,Log homotopy based particle flow filter,Massive Sensordaten,Massive sensor data,Planck,Sequential Markov chain Monte Carlo,Sequenzielle Markov,Subsampling,Tensor decomposition,Tensorzersetzung,Vertrauensstichproben,basierter Partikelflussfilter,ddc:004},
+  month     = {10},
+  publisher = {Universitäts- und Landesbibliothek Bonn},
+  title     = {Nonlinear Filtering based on Log-homotopy Particle Flow},
+  url       = {https://bonndoc.ulb.uni-bonn.de/xmlui/handle/20.500.11811/7648},
+  year      = {2018}
+}
+
 

@@ -1,0 +1,153 @@
+\subsection{Introduction}
+As the form of the motion model depends on many factors, for example the kinematics of the robot
+(differential drive, car like structure, etc.), and the used control input interpretation
+(odometry-based, or velocity-based), measurement models are no different.
+However, the used proprioceptive sensor (LiDAR), and the map representation (OGM) in this task
+narrow the possibilities.
+
+\subsection{Standard Measurement Models on Different Map Realizations}
+Wide-spread algorithms are often established for topological (feature-based) maps.
+Here, the environment is described by detected shapes (features), rather than using a location based representation
+like the OGMs do, as they assign an occupancy value for every location on the map.
+
+For a topological map, the probability distribution of $p(\mathbf{\mathbf{z}}_t | \mathbf{x}_t)$,
+enhanced with the known map $\mathbf{m}$ (resulting in $p(\mathbf{\mathbf{z}}_t | \mathbf{x}_t,\mathbf{m})$)
+is described a Gaussian distribution:
+\begin{align}
+    \psi(\mathbf{x}_t,\mathbf{m}) = \mathbf{z}^*_t + \xi, \quad \xi \sim \mathcal{N}(0,\mathbf{R}), \\
+    \Rightarrow p(\mathbf{\mathbf{z}}_t | \mathbf{x}_t,\mathbf{m}) \sim \mathcal{N}(\mathbf{z}_t^*,\mathbf{R}).
+\end{align}
+where $\mathbf{R}$ is the covariance matrix of the measurement.
+This closed-form description is required for Kalman Filters.
+
+However, for location based (metric) maps, the form of $\mathbf{m}$ is different, therefore
+to make the above model work, features have to be extracted \cite{Durrant-Whyte1991},
+effectively making the map feature-based.
+
+For purely metric maps (without feature extraction), Thrun et al. proposed the \emph{beam range finder model}
+in \cite{Thrun2005}, especially fitted for range finders, like LiDARs, or sonars.
+This model describes  $p(\mathbf{\mathbf{z}}_t | \mathbf{x}_t,\mathbf{m})$ as a composition of
+probability densities, resulting in a distribution indicated in Figure \ref{fig:beam-model}.
+Here, the value $\mathbf{z}_t^*$ is calculated by ray tracing: at a given robot pose,
+the expected measurement can be calculated, by tracing a ray along the map, starting form
+the robot pose, and ending in the nearest obstacle. Then the travelled distance is recorded,
+which together with the angle of the beam, serves as $\mathbf{z}_t^*$.
+
+The resulting distribution combines different measurement error possibilities:
+random measurements (uniform distribution), local measurement noise (Gaussian distr.),
+failures (``very narrow'' uniform distribution, modelling a Dirac delta) and unexpected
+objects (exponential distribution).
+\begin{figure}[htbp]
+    \centering
+    \includegraphics{beam-model.pdf}
+    \caption{The probability distribution of $p(z_t | \mathbf{x}_t,\mathbf{m})$.
+        The figure is based on \cite{Thrun2005}.}
+    \label{fig:beam-model}
+\end{figure}
+
+However, the resulting probability distribution does not have a closed form description, which is
+not a problem for particle filters, but it is for Kalman filters.
+
+\subsection{The Distance Function based Measurement Model}\label{subsec:dt-meas-model}
+The method, which enables the use of Kalman filters with laser range finder measurements on an OGM is proposed
+by Dantanarayana et al. in \cite{Dantanarayana2013,Dantanarayana2016}.
+In the following, this method is going to be detailed, based on \cite{Dantanarayana2016b}.
+
+The key idea is the utilization of the distance transform (DT), which is widely used in
+image processing.
+For a given binary image (or in this case, an OGM), the distance transform
+produces an image/map (with the same size), where the value of each pixel/cell is
+determined by the closest distance to any occupied pixel/cell.
+If $V$ is the set of the occupied cells, and $\mathbf{x}$ is an arbitrary point on the map, then
+\begin{equation}
+    d_{D F}=D F(\mathbf{x})=\min _{\mathbf{v}_{\mathbf{j}} \in V}\left\|\mathbf{x}-\mathbf{v}_{\mathbf{j}}\right\|,
+\end{equation}
+in which an Euclidean norm is usually applied.
+The distance transform then could be pre-calculated for a given map.
+Figure \ref{fig:simple-dt} shows the DT in a simplified environment,
+while the DT of the OGM from Figure \ref{fig:tb3-house-ogm}. can be seen on Figure \ref{fig:gazebo-map-ogm-dt}.
+\begin{figure}[htbp]
+    \centering
+    \includegraphics{simple_dt.pdf}
+    \caption{A simple shape and its distance transform. Figure source: \cite{Dantanarayana2016b}.}
+    \label{fig:simple-dt}
+\end{figure}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics{dt_on_ogm.pdf}
+    \caption{Part of the OGM of the TurtleBot3 House, and its distance transform.}
+    \label{fig:gazebo-map-ogm-dt}
+\end{figure}
+
+Now using the LiDAR measurements, which in this case come in the form of angle-range pairs,
+each detection can be transformed to map coordinates, and assigned a distance transform value.
+Theoretically, if the estimated pose of the robot, and the true pose of the robot aligns,
+and the sensor is noiseless, each reading should indicate an occupied cell on the OGM.
+Therefore, all the projected detections should have a DT of 0.
+In other cases, the ray endpoints could end up on free cells, thus having a DT value larger,
+than 0.
+
+The method of transforming (projecting) the laser scans to the map, based on the estimated
+location of the robot is shown in Figure \ref{fig:ogm-laser-projection}.
+Mathematically, these projections are obtained as
+\begin{equation}
+    \mathbf{x}_{\mathrm{o}i} = \begin{bmatrix}x_{\mathrm{o}i}\\y_{\mathrm{o}i}\end{bmatrix}
+    = \begin{bmatrix}x + r_i\cos(\varphi_i + \theta)\\y + r_i\sin(\varphi_i + \theta)\end{bmatrix},
+\end{equation}
+where the variables are according to Figure \ref{fig:ogm-laser-projection}. (the time dependency is omitted).
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]{dt_mapping_lidar}
+    \caption{Projection of the LiDAR scans to the OGM, based on the pose of the robot.}
+    % ! Magyarázat képaláírásban  
+    \label{fig:ogm-laser-projection}
+\end{figure}
+
+Based on a set of measurements (for a whole revolution of the LiDAR), a vector can be constructed as follows:
+\begin{equation}\label{eq:df-vector}
+    \mathbf{d}_{\text{DF}} =
+    \begin{bmatrix}
+        DF(\mathbf{x}_{\text{o}1}) \\
+        DF(\mathbf{x}_{\text{o}2}) \\
+        \vdots                     \\
+        DF(\mathbf{x}_{\text{o}n}) \\
+    \end{bmatrix},
+\end{equation}
+where $n$ is the number of valid LiDAR readings for a whole revolution
+(a valid reading occurs when the laser ray actually collided with an object within range, and this was
+detected by the sensor).
+To obtain a single scalar value, which indicates the disparity between the projected measurements,
+and the map, the Chamfer distance (CD) is formulated. For a set of measurements,
+\begin{equation}
+    d_{\text{CD}} = \frac{1}{n}\sum_{i=1}^nDF(\mathbf{x}_{\text{o}i}).
+\end{equation}
+The CD is a good indicator for the estimation of the robot's pose: $\mathrm{CD}=0$ means
+that every ray endpoint for a set of measurement at time $t$ is at the right place,
+therefore the initial robot pose estimation is good.
+Although, it is important to mention that this assumption does not hold in every
+scenario. Consider an extreme case: for a whole revolution, the LiDAR only records
+one measurement (one ray), and the OGM contains many occupied cell.
+Then the CD (effectively the DT) would equals to zero at a plethora of robot poses, thus not indicating the sought true pose.
+For a detailed map and sufficiently many LiDAR reading per revolution, this deficiency is minimized.
+
+Using the CD, the measurement model is formulated as
+\begin{equation}
+    p(\mathbf{\mathbf{z}}_t | \mathbf{x}_t, DF_t) \sim \mathcal{F}(d_{\text{CD}t},\boldsymbol\Sigma_{\text{CDt}}),
+\end{equation}
+where $\mathcal{F}$ denotes the folded Gaussian distribution (this comes from the fact that the DT is nonnegative).
+The covariance is calculated as
+\begin{equation}
+    \boldsymbol\Sigma_{\text{CD}} = \mathbf{J}_{\text{CD}}\mathbf{R}\mathbf{J}_{\text{CD}}^{\top},
+\end{equation}
+where $\mathbf{R}$ is the measurement covariance matrix, and $\mathbf{J}_{CD}$ is the Jacobian of the
+Chamfer distance with respect to $\mathbf{z}_i = (\varphi_i\;\;r_i)^{\top}$,
+evaluated at $\mathbf{x}$. However, according to the assumption, that the measurement only has error
+in $r_i$, the differentiation with regarding to $\varphi_i$ is omitted.
+
+Due to the fact, that the expected CD is zero at the true pose,
+the measurement equation has the closed form of
+\begin{equation}\label{eq:implicit-meas-eq}
+    d_{CD} :=\psi(\mathbf{x}_t,\mathbf{z}_t) = 0,
+\end{equation}
+forming an implicit equation for $\mathbf{x}_t$ and $\mathbf{z}_t$, which is
+applicable for Kalman filters.
