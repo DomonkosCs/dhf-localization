@@ -31,10 +31,10 @@ The measurement model can be calculated similarly.
 The derivation of the Kalman filter algorithm is not trivial, and does not fall within the scope of this document. The algorithm can be seen in Algorithm \ref{alg:kf}., where $\mathbf{I}$ denotes the identity matrix, $\mathbf{z}'_t$ is the actual measurement.
 
 \begin{algorithm}
-    \caption{Kalman filter($\boldsymbol{\mu}_{t-1},\mathbf{\Sigma}_{t-1},\mathbf{u}_t,\mathbf{z}'_t$)}\label{alg:kf}
+    \caption{Kalman filter($\boldsymbol{\mu}_{t-1},\mathbf{\Sigma}_{t-1},\mathbf{u}'_t,\mathbf{z}'_t$)}\label{alg:kf}
     \begin{algorithmic}[1]
         \BState \emph{prediction}:
-        \State\indent$\overline{\boldsymbol{\mu}}_t = \mathbf{A}_t{\boldsymbol{\mu}}_{t-1} + \mathbf{B}_t\mathbf{u}_t$
+        \State\indent$\overline{\boldsymbol{\mu}}_t = \mathbf{A}_t{\boldsymbol{\mu}}_{t-1} + \mathbf{B}_t\mathbf{u}'_t$
         \State\indent $\overline{\mathbf{\Sigma}}_t = \mathbf{A}_t\mathbf{\Sigma}_{t-1}\mathbf{A}^\top_t + \tilde{\mathbf{Q}}_t$
         \BState \emph{update/correction}:
         \State\indent $\mathbf{K}_t = \overline{\mathbf{\Sigma}}_t\mathbf{C}_t^\top\left(\mathbf{C}_t\overline{\mathbf{\Sigma}}_t\mathbf{C}_t^\top+\mathbf{R}_t\right)^{-1}$
@@ -49,17 +49,18 @@ However, assuming a linear state space model is a rather strong assumption. For 
     \mathbf{x}_t & = \phi(\mathbf{x}_{t-1},\mathbf{u}_t,\mathbf{v}_t) \label{eq:explicit-mot-eq} \\
     \mathbf{z}_t & = \psi(\mathbf{x}_t,\mathbf{w}_t).  \label{eq:explicit-meas-eq}
 \end{align}
-The state propagation function $\phi(.)$ can be locally linearized around the previous state $\mathbf{x}_{t-1} = \boldsymbol{\mu}_{t-1}$ with respect to $\mathbf{x}_{t-1}$ and $\mathbf{u}_t$, resulting in $\nabla \phi _x$ and $\nabla \phi_u$.
-The measurement function $\psi(.)$ is linearized around the current predicted state $\overline{\boldsymbol{\mu}}_t$,
-resulting in $\nabla \psi_x$.
+The state propagation function $\phi(.)$ can be locally linearized about $\mathbf{x}_{t-1} = \boldsymbol{\mu}_{t-1}, \mathbf{u}_t = \mathbf{u}'_t$ with respect to $\mathbf{x}_{t-1}$ and $\mathbf{u}_t$, resulting in $\nabla \phi _x(\boldsymbol{\mu}_{t-1},\mathbf{u}'_t)$ and $\nabla \phi_u(\boldsymbol{\mu}_{t-1},\mathbf{u}'_t)$.
+The measurement function $\psi(.)$ is linearized about the current predicted state $\overline{\boldsymbol{\mu}}_t$,
+resulting in $\nabla \psi_x(\overline{\boldsymbol{\mu}}_t)$.
+From now on, the arguments of the Jacobians are omitted.
 
 As a summarization, the EKF algorithm (see in Algorithm \ref{alg:ekf}.) is the extension of the KF by handling nonlinear state equations through their Jacobians.
 
 \begin{algorithm}
-    \caption{Extended Kalman filter($\boldsymbol{\mu}_{t-1},\mathbf{\Sigma}_{t-1},\mathbf{u}_t,\mathbf{z}'_t$)}\label{alg:ekf}
+    \caption{Extended Kalman filter($\boldsymbol{\mu}_{t-1},\mathbf{\Sigma}_{t-1},\mathbf{u}'_t,\mathbf{z}'_t$)}\label{alg:ekf}
     \begin{algorithmic}[1]
         \BState \emph{prediction}:
-        \State\indent$\overline{\boldsymbol{\mu}}_t = \phi(\mathbf{u}_t,\boldsymbol{\mu}_{t-1},0)$
+        \State\indent$\overline{\boldsymbol{\mu}}_t = \phi(\mathbf{u}'_t,\boldsymbol{\mu}_{t-1},0)$
         \State\indent $\overline{\mathbf{\Sigma}}_t = \nabla \phi_x\mathbf{\Sigma}_{t-1}\nabla \phi_x^{\top} +
             \nabla \phi _u\mathbf{Q}_t \nabla \phi_u^{\top}$
         \BState \emph{update/correction}:
@@ -272,7 +273,13 @@ equation is:
      & \mathbf{C}(\lambda) = -\frac{1}{2}\mathbf{\mathbf{\overline\Sigma}}\nabla \psi_x^\top\left(\lambda \nabla \psi_x\mathbf{\overline\Sigma}\nabla \psi_x^\top + \nabla \psi_z\mathbf{R}\nabla \psi_z^{\top}\right)^{-1}\nabla \psi_x,                              \\
      & \mathbf{c}(\lambda) = \left(\mathbf{I}+2\lambda\mathbf{C}\right)\left[\left(\mathbf{I}+\lambda\mathbf{C}\right)\mathbf{\overline\Sigma}\nabla \psi_x^\top(\nabla \psi_z\mathbf{R}\nabla \psi_z^{\top})^{-1}\mathbf{y} + \mathbf{C}\overline{\mathbf{x}}\right].
 \end{align}
-\subsection{Other Daum--Huang Filter realizations}
+\subsection{Realization of the EDH for the Inspected Localization Problem}
+
+Now, that the implicit EDH is introduced, along with the motion and measurement models
+of the localization problem in scope, the full algorithm for the EDH can be formulated.
+First, the EDH algorithm is given in Algorithm XX, followed by the interpretation of
+the required values, given the
+\subsection{Other Daum--Huang Filter Variants}
 
 Solving \eqref{eq:dhf-eq} requires various simplifications. Assuming exact flow, where the diffusion part is neglected (only deterministic flow is considered), the measurement model is linear (or linearized), and the noise acting on the system is a Gaussian random variable (or from the exponential family) is only one variation of the Daum--Huang filter. When the linearization of the measurement function is performed around the location of \emph{each} particle instead of their average, the local exact flow Daum--Huang filter is constructed \cite{EDH-Coates}. Particle weighting can be developed for Daum--Huang filters as well, proposed in \cite{pfpf_coates}.
 

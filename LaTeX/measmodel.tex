@@ -53,11 +53,12 @@ The method, which enables the use of Kalman filters with laser range finder meas
 by Dantanarayana et al. in \cite{Dantanarayana2013,Dantanarayana2016}.
 In the following, this method is going to be detailed, based on \cite{Dantanarayana2016b}.
 
-The key idea is the utilization of the distance transform (DT), which is widely used in
+The key idea is the utilization of the distance transform (DT) operator, which is widely used in
 image processing.
 For a given binary image (or in this case, an OGM), the distance transform
 produces an image/map (with the same size), where the value of each pixel/cell is
-determined by the closest distance to any occupied pixel/cell.
+determined by the closest distance to any occupied pixel/cell,
+by the evaluation of the distance function (DF).
 If $V$ is the set of the occupied cells, and $\mathbf{x}$ is an arbitrary point on the map, then
 \begin{equation}
     d_{D F}=D F(\mathbf{x})=\min _{\mathbf{v}_{\mathbf{j}} \in V}\left\|\mathbf{x}-\mathbf{v}_{\mathbf{j}}\right\|,
@@ -90,7 +91,7 @@ than 0.
 The method of transforming (projecting) the laser scans to the map, based on the estimated
 location of the robot is shown in Figure \ref{fig:ogm-laser-projection}.
 Mathematically, these projections are obtained as
-\begin{equation}
+\begin{equation}\label{eq:ray-projection}
     \mathbf{x}_{\mathrm{o}i} = \begin{bmatrix}x_{\mathrm{o}i}\\y_{\mathrm{o}i}\end{bmatrix}
     = \begin{bmatrix}x + r_i\cos(\varphi_i + \theta)\\y + r_i\sin(\varphi_i + \theta)\end{bmatrix},
 \end{equation}
@@ -98,8 +99,14 @@ where the variables are according to Figure \ref{fig:ogm-laser-projection}. (the
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.8\linewidth]{dt_mapping_lidar}
-    \caption{Projection of the LiDAR scans to the OGM, based on the pose of the robot.}
-    % ! Magyarázat képaláírásban  
+    \caption{Projection of the LiDAR scans to the OGM, based on the pose of the robot.
+    The rotating LiDAR emits a certain amount of laser rays,
+    here pictured by dashed lines for the first ray and the $i$-th ray
+    (others are omitted for the sake of readability).
+    The received measurement for the $i$-th ray is the length of the ray $r_i$,
+    and the ray angle $\varphi_i$, measured relative from the heading of the robot,
+    indicated by a thick black line.
+    The ray endpoint then projected onto the map, resulting $\mathbf{x}_{\text{o}i}$ for the $i$-th ray.}
     \label{fig:ogm-laser-projection}
 \end{figure}
 
@@ -116,6 +123,22 @@ Based on a set of measurements (for a whole revolution of the LiDAR), a vector c
 where $n$ is the number of valid LiDAR readings for a whole revolution
 (a valid reading occurs when the laser ray actually collided with an object within range, and this was
 detected by the sensor).
+
+By mapping the ray endpoints to the map, the resulting point lies
+on a continuous space.
+However, the distance transform of the OGM is obtained by
+the distance function, which is only defined for discrete positions
+on the map (the cell midpoints), not for continuous coordinates.
+Instead of the quantization of the ray endpoint coordinates, a cubic spline
+interpolation is applied on the distance field,
+enabling the evaluation of the DF for continuous coordinates as well.
+This approach also eliminates the problem of calculating the
+partial derivative of the DF with respect to $x$ or $y$,
+which is not defined at $x = \hat{x}, y = \hat{y}$, where
+$(\hat{x}\;\; \hat{y})^{\top}$ is the coordinates of an occupied cell.
+Instead, use the corresponding partial derivatives of the interpolated spline.
+
+
 To obtain a single scalar value, which indicates the disparity between the projected measurements,
 and the map, the Chamfer distance (CD) is formulated. For a set of measurements,
 \begin{equation}
@@ -140,7 +163,7 @@ The covariance is calculated as
     \boldsymbol\Sigma_{\text{CD}} = \mathbf{J}_{\text{CD}}\mathbf{R}\mathbf{J}_{\text{CD}}^{\top},
 \end{equation}
 where $\mathbf{R}$ is the measurement covariance matrix, and $\mathbf{J}_{CD}$ is the Jacobian of the
-Chamfer distance with respect to $\mathbf{z}_i = (\varphi_i\;\;r_i)^{\top}$,
+Chamfer distance with respect to $\mathbf{z}_i = (\varphi_i\;\;r_i)$,
 evaluated at $\mathbf{x}$. However, according to the assumption, that the measurement only has error
 in $r_i$, the differentiation with regarding to $\varphi_i$ is omitted.
 
@@ -151,3 +174,47 @@ the measurement equation has the closed form of
 \end{equation}
 forming an implicit equation for $\mathbf{x}_t$ and $\mathbf{z}_t$, which is
 applicable for Kalman filters.
+
+For further usages, the Jacobians of $\psi$ have to be formulated.
+The Jacobian with respect to $\mathbf{x}$:
+\begin{equation}
+    \nabla\psi_x(\mathbf{x}',\mathbf{z}') =: \frac{\partial\psi(\mathbf{x}',\mathbf{z}')}{\partial \mathbf{x}} =
+    \frac{1}{n}
+    \begin{bmatrix}
+        \cfrac{1}{n}\displaystyle\sum\limits_{i=1}^{n}\left(\cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}}{\partial x}\right) \\
+        \cfrac{1}{n}\displaystyle\sum\limits_{i=1}^{n}\left(\cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}}{\partial y}\right) \\
+        \cfrac{1}{n}\displaystyle\sum\limits_{i=1}^{n}\left(\cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial \theta}
+        + \cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial \theta}\right)                   \\
+    \end{bmatrix}^{\top}.
+\end{equation}
+Here, the partial derivatives of the DF are obtained via the interpolated spline, therefore the analytical
+derivation is not required.
+The partial derivatives of $x_o$ and $y_o$ are trivial according to on \eqref{eq:ray-projection}.
+
+The Jacobian with respect to $\mathbf{z} = (\mathbf{z}_1\;\;\mathbf{z}_2\;\; \dots \;\; \mathbf{z}_n)^{\top}$ is simplified due to the fact that the noise effecting the
+angle measurements $\varphi_i$ is neglected, therefore only the partial derivatives with respect to $r_i$ have to
+be calculated:
+\begin{align}
+    \nabla\psi_z(\mathbf{x}',\mathbf{z}') := \frac{\partial \psi(\mathbf{x}',\mathbf{z}')}{\partial \mathbf{z}}
+     & =
+    \begin{bmatrix}
+        \cfrac{1}{n}\displaystyle\sum\limits_{i=1}^{n}\left(\cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial r_1}
+        + \cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial r_1}\right) \\
+        \cfrac{1}{n}\displaystyle\sum\limits_{i=1}^{n}\left(\cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial r_2}
+        + \cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial r_2}\right) \\
+        \vdots                                                                                                                                            \\
+        \cfrac{1}{n}\displaystyle\sum\limits_{i=1}^{n}\left(\cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial r_n}
+        + \cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial r_n}\right) \\
+    \end{bmatrix} \nonumber \\
+     & =
+    \frac{1}{n}
+    \begin{bmatrix}
+        \cfrac{\partial DF(\mathbf{x}_{\text{o}1})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x}',\mathbf{z}'_1)}{\partial r_1}
+        + \cfrac{\partial DF(\mathbf{x}_{\text{o}1})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x}',\mathbf{z}'_1)}{\partial r_1} \\
+        \cfrac{\partial DF(\mathbf{x}_{\text{o}2})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x}',\mathbf{z}'_2)}{\partial r_2}
+        + \cfrac{\partial DF(\mathbf{x}_{\text{o}2})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x}',\mathbf{z}'_2)}{\partial r_2} \\
+        \vdots                                                                                                                                     \\
+        \cfrac{\partial DF(\mathbf{x}_{\text{o}n})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x}',\mathbf{z}'_n)}{\partial r_n}
+        + \cfrac{\partial DF(\mathbf{x}_{\text{o}n})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x}',\mathbf{z}'_n)}{\partial r_n} \\
+    \end{bmatrix}.
+\end{align}

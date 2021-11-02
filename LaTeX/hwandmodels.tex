@@ -136,7 +136,7 @@ and the odometry motion model. Here, only the latter is detailed.
 If the odometry of the robot is available (i.e. by integrating wheel encoder measurements),
 they can be treated as a control input:
 \begin{equation}
-    \mathbf{u}_t = (\overline{\mathbf{x}}_t\;\;\overline{\mathbf{x}}_{t-1})^\top =
+    \hat{\mathbf{u}}_t = (\overline{\mathbf{x}}_t\;\;\overline{\mathbf{x}}_{t-1})^\top =
     \left(\overline{x}_t\;\;\overline{y}_t\;\;\overline{\theta}_t\;\;\overline{x}_{t-1}\;\;\overline{y}_{t-1}\;\;\overline{\theta}_{t-1}\right)^\top.
 \end{equation}
 The key is the fact that the relative difference between
@@ -156,31 +156,64 @@ It's important to mention that this separation to rotational and translational c
     \label{fig:odom-mot-model}
 \end{figure}
 
-The control input $\mathbf{u}_t$
+The odometry control input $\hat{\mathbf{u}}_t$
 then transformed to the three transition components as:
 \begin{align}
-    \delta_{\mathrm{rot} 1} & =\arctan\!2\left(\overline{y}_{t}-\overline{y}_{t-1}, \overline{x}_{t}-\overline{x}_{t-1}\right)-\overline{\theta}_{t-1}, \\
-    \delta_{\text {trans }} & =\sqrt{\left(\overline{x}_{t-1}-\overline{x}_{t}\right)^{2}+\left(\overline{y}_{t-1}-\overline{y}_{t}\right)^{2}},        \\
-    \delta_{\mathrm{rot} 2} & =\overline{\theta}_{t}-\overline{\theta}_{t-1}-\delta_{\mathrm{rot} 1}.
+    \delta_{\mathrm{rot1,t}} & =\arctan\!2\left(\overline{y}_{t}-\overline{y}_{t-1}, \overline{x}_{t}-\overline{x}_{t-1}\right)-\overline{\theta}_{t-1}, \\
+    \delta_{\text {trans,t}} & =\sqrt{\left(\overline{x}_{t-1}-\overline{x}_{t}\right)^{2}+\left(\overline{y}_{t-1}-\overline{y}_{t}\right)^{2}},        \\
+    \delta_{\mathrm{rot2,t}} & =\overline{\theta}_{t}-\overline{\theta}_{t-1}-\delta_{\mathrm{rot} 1},                                                   \\
+    \mathbf{u}_t             & = (\delta_{\text{rot1,t}}\;\;\delta_{\text{trans,t}}\;\;\delta_{\text{rot2,t}})^{\top}.
 \end{align}
 To model odometry noise, the inputs are treated as random variables, formulated by
 \begin{align}
-    \hat{\delta}_{\mathrm{rot} 1} & = \delta_{\mathrm{rot} 1} + \xi_{\mathrm{rot1}},
-    \quad                         & \xi_{\mathrm{rot1}} \sim \mathcal{N}(0,\alpha_1\delta_{\mathrm{rot1}}^2+\alpha_2\delta_{\mathrm{trans}}^2),                             \\
-    \hat{\delta}_{\text {trans }} & = \delta_{\mathrm{trans}} + \xi_{\mathrm{trans}},
-    \quad                         & \xi_{\mathrm{trans}} \sim \mathcal{N}(0,\alpha_3\delta_{\mathrm{trans}}^2+\alpha_4(\delta_{\mathrm{rot1}}^2+\delta_{\mathrm{rot2}}^2)), \\
-    \hat{\delta}_{\mathrm{rot} 2} & = \delta_{\mathrm{rot} 2} + \xi_{\mathrm{rot2}},
-    \quad                         & \xi_{\mathrm{rot2}} \sim \mathcal{N}(0,\alpha_1\delta_{\mathrm{rot2}}^2+\alpha_2\delta_{\mathrm{trans}}^2),
+    \hat{\delta}_{\mathrm{rot1,t}} & = \delta_{\mathrm{rot1,t}} + \xi_{\mathrm{rot1,t}},
+    \quad                          & \xi_{\mathrm{rot1,t}} \sim \mathcal{N}(0,\alpha_1\delta_{\mathrm{rot1,t}}^2+\alpha_2\delta_{\mathrm{trans,t}}^2), \label{eq:odom-control-1}                               \\
+    \hat{\delta}_{\text {trans,t}} & = \delta_{\mathrm{trans,t}} + \xi_{\mathrm{trans,t}},
+    \quad                          & \xi_{\mathrm{trans,t}} \sim \mathcal{N}(0,\alpha_3\delta_{\mathrm{trans,t}}^2+\alpha_4(\delta_{\mathrm{rot1,t}}^2+\delta_{\mathrm{rot2,t}}^2)), \label{eq:odom-control-2} \\
+    \hat{\delta}_{\mathrm{rot2,t}} & = \delta_{\mathrm{rot2,t}} + \xi_{\mathrm{rot2,t}},
+    \quad                          & \xi_{\mathrm{rot2,t}} \sim \mathcal{N}(0,\alpha_1\delta_{\mathrm{rot2,t}}^2+\alpha_2\delta_{\mathrm{trans,t}}^2), \label{eq:odom-control-3}
 \end{align}
 where $\alpha_1,\alpha_2,\alpha_3,\alpha_4$ are error parameters.
 
 Then, using the control inputs and the previous state, samples from $p(\mathbf{x}_t | \mathbf{x}_{t-1},\mathbf{u}_t)$
 are obtained by,
 \begin{align}
-    x_t          & = x_{t-1} + \hat{\delta}_{\mathrm{trans}}\cos(\theta + \hat{\delta}_{\mathrm{rot1}}), \\
-    y_t          & = y_{t-1} + \hat{\delta}_{\mathrm{trans}}\sin(\theta + \hat{\delta}_{\mathrm{rot1}}), \\
-    \theta_t     & = \theta_{t-1} + \hat{\delta}_{\mathrm{rot1}} + \hat{\delta}_{\mathrm{rot2}},         \\
-    \mathbf{x}_t & = \left(x_t\;\;y_t\;\;\theta_t\right)^\top.
+    x_t      & = x_{t-1} + \hat{\delta}_{\mathrm{trans,t}}\cos(\theta_{t-1} + \hat{\delta}_{\mathrm{rot1,t}}), \\
+    y_t      & = y_{t-1} + \hat{\delta}_{\mathrm{trans,t}}\sin(\theta_{t-1} + \hat{\delta}_{\mathrm{rot1,t}}), \\
+    \theta_t & = \theta_{t-1} + \hat{\delta}_{\mathrm{rot1,t}} + \hat{\delta}_{\mathrm{rot2,t}}.
 \end{align}
-
-
+This can be written in the form of
+\begin{equation}
+    \mathbf{x}_t = \phi(\mathbf{x}_{t-1},\mathbf{u}_t,\mathbf{v}_t),
+\end{equation}
+where
+\begin{align}
+    \mathbf{x}_t & = (x_t\;\;y_t\;\;\theta_t)^{\top},                                            \\
+    \mathbf{v}_t & = (\xi_{\text{rot1,t}}\;\;\xi_{\text{tans,t}}\;\;\xi_{\text{rot2,t}})^{\top}.
+\end{align}
+Based on \eqref{eq:odom-control-1}-\eqref{eq:odom-control-3}, the covariance matrix of the noise
+vector $\mathbf{v}_t$ is
+\begin{align}
+    \text{cov}(\mathbf{v}_t,\mathbf{v}_t) = &
+    \begin{bmatrix}
+        \alpha_1\delta_{\mathrm{rot1,t}}^2+\alpha_2\delta_{\mathrm{trans,t}}^2 & 0                                                                                                   & 0                                                                      \\
+        0                                                                      & \alpha_3\delta_{\mathrm{trans,t}}^2+\alpha_4(\delta_{\mathrm{rot1,t}}^2+\delta_{\mathrm{rot2,t}}^2) & 0                                                                      \\
+        0                                                                      & 0                                                                                                   & \alpha_1\delta_{\mathrm{rot2,t}}^2+\alpha_2\delta_{\mathrm{trans,t}}^2
+    \end{bmatrix}                                       \nonumber \\
+    :=                                      & \mathbf{Q}_t
+\end{align}
+For further usages, the Jacobians of $\phi$ are calculated as
+\begin{align}
+    \nabla\phi_x =: \frac{\partial\phi}{\partial \mathbf{x}_{t-1}} =
+     & \begin{bmatrix}
+        1 & 0 & -\delta_{\text{trans,t}}\sin(\theta_{t-1} + \delta_{\text{rot1,t}}) \\
+        0 & 1 & \delta_{\text{trans,t}}\cos(\theta_{t-1} + \delta_{\text{rot1,t}})  \\
+        0 & 0 & 0
+    \end{bmatrix}, \\
+    \nabla\phi_u =: \frac{\partial\phi}{\partial \mathbf{u}_{t}} =
+     & \begin{bmatrix}
+        -\delta_{\text{trans,t}}\sin(\theta_{t-1} + \delta_{\text{rot1,t}}) & \cos(\theta_{t-1} + \delta_{\text{rot1,t}}) & 0 \\
+        \delta_{\text{trans,t}}\cos(\theta_{t-1} + \delta_{\text{rot1,t}})  & \sin(\theta_{t-1} + \delta_{\text{rot1,t}}) & 0 \\
+        1                                                                   & 0                                           & 1
+    \end{bmatrix}.
+\end{align}
