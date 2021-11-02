@@ -205,7 +205,7 @@ be calculated:
         \vdots                                                                                                                                            \\
         \cfrac{1}{n}\displaystyle\sum\limits_{i=1}^{n}\left(\cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial r_n}
         + \cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial r_n}\right) \\
-    \end{bmatrix} \nonumber \\
+    \end{bmatrix}^{\top} \nonumber \\
      & =
     \frac{1}{n}
     \begin{bmatrix}
@@ -216,5 +216,5 @@ be calculated:
         \vdots                                                                                                                                     \\
         \cfrac{\partial DF(\mathbf{x}_{\text{o}n})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x}',\mathbf{z}'_n)}{\partial r_n}
         + \cfrac{\partial DF(\mathbf{x}_{\text{o}n})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x}',\mathbf{z}'_n)}{\partial r_n} \\
-    \end{bmatrix}.
+    \end{bmatrix}^{\top}.
 \end{align}
