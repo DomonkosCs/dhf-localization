@@ -159,32 +159,46 @@ Using the CD, the measurement model is formulated as
 \end{equation}
 where $\mathcal{F}$ denotes the folded Gaussian distribution (this comes from the fact that the DT is nonnegative).
 The covariance is calculated as
-\begin{equation}
+\begin{equation}\label{eq:cd-covariance}
     \boldsymbol\Sigma_{\text{CD}} = \mathbf{J}_{\text{CD}}\mathbf{R}\mathbf{J}_{\text{CD}}^{\top},
 \end{equation}
 where $\mathbf{R}$ is the measurement covariance matrix, and $\mathbf{J}_{CD}$ is the Jacobian of the
 Chamfer distance with respect to $\mathbf{z}_i = (\varphi_i\;\;r_i)$,
-evaluated at $\mathbf{x}$. However, according to the assumption, that the measurement only has error
-in $r_i$, the differentiation with regarding to $\varphi_i$ is omitted.
-
-Due to the fact, that the expected CD is zero at the true pose,
-the measurement equation has the closed form of
-\begin{equation}\label{eq:implicit-meas-eq}
-    d_{CD} :=\psi(\mathbf{x}_t,\mathbf{z}_t) = 0,
+evaluated at $\mathbf{x}$.
+For a LiDAR, the uncertainty of the angle measurements $\varphi_i$ is often not considered,
+therefore $\mathbf{R}$ can be formulated as,
+\begin{equation}\label{eq:lidar-meas-covar}
+    \mathbf{R} = \sigma_r^{2}\mathbf{I}_{n\times n},
 \end{equation}
-forming an implicit equation for $\mathbf{x}_t$ and $\mathbf{z}_t$, which is
-applicable for Kalman filters.
+where $\sigma_r$ is the standard derivation of $r_i$ (same for every ray),
+and $\mathbf{I}_{n\times n}$ is the identity matrix with size $n\times n$,
+if $n$ is the number of valid readings for a whole revolution of the LiDAR.
+Using this simplification, the Jacobian in \eqref{eq:cd-covariance}
+is only calculated with regarding to $r_i$.
+
+The observation function $\psi$ is defined as:
+\begin{equation}\label{eq:observation-function}
+    \psi(\mathbf{x},\mathbf{z}) = d_{\text{CD}} = \frac{1}{n}\sum_{i=1}^{n}DF(\mathbf{x}_{\text{o}i}).
+\end{equation}
+If the measurement $\mathbf{z}$ is not corrupted by noise, and the state $\mathbf{x}$
+is at the true state (where the measurement was actually recorded), the observation
+function has the value of
+\begin{equation}\label{eq:impl-meas-eq}
+    \psi(\mathbf{x},\mathbf{z}) = 0,
+\end{equation}
+forming an implicit measurement equation.
+
 
 For further usages, the Jacobians of $\psi$ have to be formulated.
 The Jacobian with respect to $\mathbf{x}$:
-\begin{equation}
-    \nabla\psi_x(\mathbf{x}',\mathbf{z}') =: \frac{\partial\psi(\mathbf{x}',\mathbf{z}')}{\partial \mathbf{x}} =
+\begin{equation}\label{eq:measmodel-jacobi-x}
+    \nabla\psi_x(\mathbf{x},\mathbf{z}) := \left.\frac{\partial\psi}{\partial \mathbf{x}}\right\vert_{\mathbf{x},\mathbf{z}} =
     \frac{1}{n}
     \begin{bmatrix}
         \cfrac{1}{n}\displaystyle\sum\limits_{i=1}^{n}\left(\cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}}{\partial x}\right) \\
         \cfrac{1}{n}\displaystyle\sum\limits_{i=1}^{n}\left(\cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}}{\partial y}\right) \\
-        \cfrac{1}{n}\displaystyle\sum\limits_{i=1}^{n}\left(\cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial \theta}
-        + \cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial \theta}\right)                   \\
+        \cfrac{1}{n}\displaystyle\sum\limits_{i=1}^{n}\left(\cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x},\mathbf{z}_i)}{\partial \theta}
+        + \cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x},\mathbf{z}_i)}{\partial \theta}\right)                     \\
     \end{bmatrix}^{\top}.
 \end{equation}
 Here, the partial derivatives of the DF are obtained via the interpolated spline, therefore the analytical
@@ -194,27 +208,27 @@ The partial derivatives of $x_o$ and $y_o$ are trivial according to on \eqref{eq
 The Jacobian with respect to $\mathbf{z} = (\mathbf{z}_1\;\;\mathbf{z}_2\;\; \dots \;\; \mathbf{z}_n)^{\top}$ is simplified due to the fact that the noise effecting the
 angle measurements $\varphi_i$ is neglected, therefore only the partial derivatives with respect to $r_i$ have to
 be calculated:
-\begin{align}
-    \nabla\psi_z(\mathbf{x}',\mathbf{z}') := \frac{\partial \psi(\mathbf{x}',\mathbf{z}')}{\partial \mathbf{z}}
+\begin{align}\label{eq:measmodel-jacobi-z}
+    \nabla\psi_z(\mathbf{x},\mathbf{z}) := \left.\frac{\partial\psi}{\partial \mathbf{z}}\right\vert_{\mathbf{x},\mathbf{z}}
      & =
     \begin{bmatrix}
-        \cfrac{1}{n}\displaystyle\sum\limits_{i=1}^{n}\left(\cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial r_1}
-        + \cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial r_1}\right) \\
-        \cfrac{1}{n}\displaystyle\sum\limits_{i=1}^{n}\left(\cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial r_2}
-        + \cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial r_2}\right) \\
-        \vdots                                                                                                                                            \\
-        \cfrac{1}{n}\displaystyle\sum\limits_{i=1}^{n}\left(\cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial r_n}
-        + \cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x}',\mathbf{z}'_i)}{\partial r_n}\right) \\
+        \cfrac{1}{n}\displaystyle\sum\limits_{i=1}^{n}\left(\cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x},\mathbf{z}_i)}{\partial r_1}
+        + \cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x},\mathbf{z}_i)}{\partial r_1}\right) \\
+        \cfrac{1}{n}\displaystyle\sum\limits_{i=1}^{n}\left(\cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x},\mathbf{z}_i)}{\partial r_2}
+        + \cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x},\mathbf{z}_i)}{\partial r_2}\right) \\
+        \vdots                                                                                                                                          \\
+        \cfrac{1}{n}\displaystyle\sum\limits_{i=1}^{n}\left(\cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x},\mathbf{z}_i)}{\partial r_n}
+        + \cfrac{\partial DF(\mathbf{x}_{\text{o}i})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x},\mathbf{z}_i)}{\partial r_n}\right) \\
     \end{bmatrix}^{\top} \nonumber \\
      & =
     \frac{1}{n}
     \begin{bmatrix}
-        \cfrac{\partial DF(\mathbf{x}_{\text{o}1})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x}',\mathbf{z}'_1)}{\partial r_1}
-        + \cfrac{\partial DF(\mathbf{x}_{\text{o}1})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x}',\mathbf{z}'_1)}{\partial r_1} \\
-        \cfrac{\partial DF(\mathbf{x}_{\text{o}2})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x}',\mathbf{z}'_2)}{\partial r_2}
-        + \cfrac{\partial DF(\mathbf{x}_{\text{o}2})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x}',\mathbf{z}'_2)}{\partial r_2} \\
-        \vdots                                                                                                                                     \\
-        \cfrac{\partial DF(\mathbf{x}_{\text{o}n})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x}',\mathbf{z}'_n)}{\partial r_n}
-        + \cfrac{\partial DF(\mathbf{x}_{\text{o}n})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x}',\mathbf{z}'_n)}{\partial r_n} \\
+        \cfrac{\partial DF(\mathbf{x}_{\text{o}1})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x},\mathbf{z}_1)}{\partial r_1}
+        + \cfrac{\partial DF(\mathbf{x}_{\text{o}1})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x},\mathbf{z}_1)}{\partial r_1} \\
+        \cfrac{\partial DF(\mathbf{x}_{\text{o}2})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x},\mathbf{z}_2)}{\partial r_2}
+        + \cfrac{\partial DF(\mathbf{x}_{\text{o}2})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x},\mathbf{z}_2)}{\partial r_2} \\
+        \vdots                                                                                                                                   \\
+        \cfrac{\partial DF(\mathbf{x}_{\text{o}n})}{\partial x_{\text{o}}}\cfrac{\partial x_{\text{o}}(\mathbf{x},\mathbf{z}_n)}{\partial r_n}
+        + \cfrac{\partial DF(\mathbf{x}_{\text{o}n})}{\partial y_{\text{o}}}\cfrac{\partial y_{\text{o}}(\mathbf{x},\mathbf{z}_n)}{\partial r_n} \\
     \end{bmatrix}^{\top}.
 \end{align}

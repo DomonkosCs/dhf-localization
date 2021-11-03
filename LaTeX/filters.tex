@@ -9,8 +9,8 @@ In this context only the discrete-time KF is going to be discussed.
 
 Consider the discrete-time (linear) state space model of a controlled system:
 \begin{align}
-    \mathbf{x}_t  & = \mathbf{A}_t\mathbf{x}_{t-1} + \mathbf{B}_t\mathbf{u}_t + \mathbf{B}_t\mathbf{v}_t, \\
-    \mathbf{z}'_t & = \mathbf{C}_t\mathbf{x}_t + \mathbf{w}_t, \label{eq:lin-meas-model}
+    \mathbf{x}_t & = \mathbf{A}_t\mathbf{x}_{t-1} + \mathbf{B}_t\mathbf{u}_t + \mathbf{B}_t\mathbf{v}_t, \\
+    \mathbf{z}_t & = \mathbf{C}_t\mathbf{x}_t + \mathbf{w}_t, \label{eq:lin-meas-model}
 \end{align}
 % ! TODO v és w kicserél
 where $\mathbf{A}_t$ is the state transition matrix, $\mathbf{B}_t$ is the input gain, and $\mathbf{C}_t$ is the measurement matrix. To incorporate uncertainties and inaccuracies into the system,
@@ -49,10 +49,10 @@ However, assuming a linear state space model is a rather strong assumption. For 
     \mathbf{x}_t & = \phi(\mathbf{x}_{t-1},\mathbf{u}_t,\mathbf{v}_t) \label{eq:explicit-mot-eq} \\
     \mathbf{z}_t & = \psi(\mathbf{x}_t,\mathbf{w}_t).  \label{eq:explicit-meas-eq}
 \end{align}
-The state propagation function $\phi(.)$ can be locally linearized about $\mathbf{x}_{t-1} = \boldsymbol{\mu}_{t-1}, \mathbf{u}_t = \mathbf{u}'_t$ with respect to $\mathbf{x}_{t-1}$ and $\mathbf{u}_t$, resulting in $\nabla \phi _x(\boldsymbol{\mu}_{t-1},\mathbf{u}'_t)$ and $\nabla \phi_u(\boldsymbol{\mu}_{t-1},\mathbf{u}'_t)$.
-The measurement function $\psi(.)$ is linearized about the current predicted state $\overline{\boldsymbol{\mu}}_t$,
+The state propagation function $\phi$ can be locally linearized about $\mathbf{x}_{t-1} = \boldsymbol{\mu}_{t-1}, \mathbf{u}_t = \mathbf{u}'_t$ with respect to $\mathbf{x}_{t-1}$ and $\mathbf{u}_t$, resulting in $\nabla \phi _x(\boldsymbol{\mu}_{t-1},\mathbf{u}'_t)$ and $\nabla \phi_u(\boldsymbol{\mu}_{t-1},\mathbf{u}'_t)$.
+The measurement function $\psi$ is linearized about the current predicted state $\overline{\boldsymbol{\mu}}_t$,
 resulting in $\nabla \psi_x(\overline{\boldsymbol{\mu}}_t)$.
-From now on, the arguments of the Jacobians are omitted.
+In Algorithm \ref{alg:ekf}., the arguments of these Jacobians are omitted.
 
 As a summarization, the EKF algorithm (see in Algorithm \ref{alg:ekf}.) is the extension of the KF by handling nonlinear state equations through their Jacobians.
 
@@ -60,7 +60,7 @@ As a summarization, the EKF algorithm (see in Algorithm \ref{alg:ekf}.) is the e
     \caption{Extended Kalman filter($\boldsymbol{\mu}_{t-1},\mathbf{\Sigma}_{t-1},\mathbf{u}'_t,\mathbf{z}'_t$)}\label{alg:ekf}
     \begin{algorithmic}[1]
         \BState \emph{prediction}:
-        \State\indent$\overline{\boldsymbol{\mu}}_t = \phi(\mathbf{u}'_t,\boldsymbol{\mu}_{t-1},0)$
+        \State\indent$\overline{\boldsymbol{\mu}}_t = \phi(\boldsymbol{\mu}_{t-1},\mathbf{u}'_t,0)$
         \State\indent $\overline{\mathbf{\Sigma}}_t = \nabla \phi_x\mathbf{\Sigma}_{t-1}\nabla \phi_x^{\top} +
             \nabla \phi _u\mathbf{Q}_t \nabla \phi_u^{\top}$
         \BState \emph{update/correction}:
@@ -75,16 +75,16 @@ As a summarization, the EKF algorithm (see in Algorithm \ref{alg:ekf}.) is the e
 
 The standard KF and EKF assume an explicit measurement equation in the form of \eqref{eq:explicit-meas-eq}.
 However, as stated in Subsection \ref{subsec:dt-meas-model}, the measurement equation for the inspected
-localization problem has an implicit form of \eqref{eq:implicit-meas-eq}.
+localization problem has an implicit form of \eqref{eq:impl-meas-eq}.
 To suit this condition, Algorithm \ref{alg:ekf}. has to be modified, based on \cite{Steffen2013,Zhang2012}.
 Line \ref{alg:line:kalman-gain}. is changed to
 \begin{equation}
     \mathbf{K}_t = \overline{\mathbf{\Sigma}}_t\nabla \psi_x^\top\left(\nabla \psi_x\overline{\mathbf{\Sigma}}_t\nabla \psi_z^\top+
     \nabla \psi_z\mathbf{R}_t\nabla \psi^{\top}_z\right)^{-1},
 \end{equation}
-where $\nabla \psi_z$ is the Jacobian of $\psi(.)$ with respect to $\mathbf{z}_t$, evaluated at
+where $\nabla \psi_z$ is the Jacobian of $\psi$ with respect to $\mathbf{z}_t$, evaluated at
 $\mathbf{x}_t = \overline{\boldsymbol{\mu}}_t, \mathbf{z}_t = \mathbf{z}'_t$.
-Furthermore, because the expected output of the measurement equation is 0 (see \eqref{eq:implicit-meas-eq}), Line \ref{alg:line:state-update}. has the modified form
+Furthermore, because the expected output of the observation function is 0, Line \ref{alg:line:state-update}. has the modified form
 \begin{equation}
     \boldsymbol{\mu}_t = \overline{\boldsymbol{\mu}}_t + \mathbf{K}_t\left(0-\psi(\overline{\boldsymbol{\mu}}_t,\mathbf{z}'_t)\right).
 \end{equation}
@@ -184,46 +184,65 @@ In particle filters, the problem lies where the Bayes' law is performed to obtai
 \end{equation}
 where $g(.)$ is the prior, $h(.)$ is the likelihood, $K(.)$ is a normalization constant, and $\lambda$ is the parameter of the homotopy: $\lambda \in [0,1]$. As $\lambda$ changes continuously form 0 to 1, $p(.)$ changes from being the prior $g(.)$, to becoming the posterior, as $\lambda = 1$ (this gives back the standard Bayes' rule). This is essentially the time evolution (in this case $\lambda$ is \emph{pseudotime}) of $p(.)$. Meanwhile the particles that represent the probability distribution also have to move: this movement is described by a stochastic law of motion, with $\lambda$ as the time variable. The question is that how to move these particles according to the also evolving probability distribution, from which they were sampled.
 
-The evolution of a probability density under a governing SDE is described by the Fokker--Planck equation, if $\mathbf{x} \in \mathbb{R}^d$:
+It is assumed that the particles are moving according to the following (It\^{o}) stochastic  differential equation:
+\begin{equation}\label{eq:dhf-sde}
+    \mathrm{d} \mathbf{x}=\mathbf{f}(\mathbf{x}, \lambda) \mathrm{d} \lambda+\boldsymbol{\sigma}(\mathbf{x}, \lambda) \mathrm{d} \mathbf{W}_{\lambda},
+\end{equation}
+where $\mathbf{f}(\mathbf{x},\lambda)$ is the drift coefficient,
+$\boldsymbol\sigma(\mathbf{x},\lambda)$ is the diffusion coefficient,
+and $\mathbf{W}_\lambda$ denotes the standard Brownian motion (Wiener process) in
+pseudotime $\lambda$.
+
+The evolution of a probability density under the governing SDE \eqref{eq:dhf-sde} is described by the Fokker--Planck equation, if $\mathbf{x} \in \mathbb{R}^d$:
+
 \begin{equation}\label{eq:fpe}
-    \frac{\partial p(\mathbf{x},\lambda)}{\partial \lambda} = -\sum_{i = 1}^{d}\frac{\partial}{\partial x_i}\left[a_i(\mathbf{x},\lambda)p(\mathbf{x},\lambda)\right] + \frac{1}{2}\sum_{i = 1}^{d}\sum_{j = 1}^{d}\frac{\partial^2}{\partial x_i \partial x_j}\left[B_{i,j}(\mathbf{x},\lambda)p(\mathbf{x},\lambda)\right],
+    \frac{\partial p(\mathbf{x},\lambda)}{\partial \lambda} = -\sum_{i = 1}^{d}\frac{\partial}{\partial x_i}\left[f_i(\mathbf{x},\lambda)p(\mathbf{x},\lambda)\right] + \frac{1}{2}\sum_{i = 1}^{d}\sum_{j = 1}^{d}\frac{\partial^2}{\partial x_i \partial x_j}\left[B_{i,j}(\mathbf{x},\lambda)p(\mathbf{x},\lambda)\right],
 \end{equation}
 where
 \begin{equation}\label{key}
-    \mathbf{B} = \frac{1}{2}\mathbf{b}\mathbf{b}^\top.
+    \mathbf{B} = \frac{1}{2}\boldsymbol\sigma\boldsymbol\sigma^\top.
 \end{equation}
 Now if \eqref{eq:bayes-loghom} is partially derivated according to $\lambda$, it can be substituted into the left hand side of \eqref{eq:fpe}. After some simplification, the flow equation in its final form:
 \begin{align}\label{eq:dhf-eq}
-    \log h(\mathbf{x}) - \frac{\partial \log K(\lambda)}{\partial \lambda} & = -\mathbf{a}^\top(\mathbf{x},\lambda)\cdot\nabla\log p(\mathbf{x},\lambda) - \nabla\cdot \mathbf{a}(\mathbf{x},\lambda)       \\
+    \log h(\mathbf{x}) - \frac{\partial \log K(\lambda)}{\partial \lambda} & = -\mathbf{f}^\top(\mathbf{x},\lambda)\cdot\nabla\log p(\mathbf{x},\lambda) - \nabla\cdot \mathbf{f}(\mathbf{x},\lambda)       \\
                                                                            & + \frac{1}{2p(\mathbf{x},\lambda)}\left(\nabla^\top\mathbf{B}(\mathbf{x},\lambda)p(\mathbf{x},\lambda)\nabla\right). \nonumber
 \end{align}
 
-The main difference between different DHF realizations is the method to solve \eqref{eq:dhf-eq} for $\mathbf{a}(.)$. This is still open question, and holds many room for innovation even to this day.  Here, only the exact flow simplification \cite{Daum2010} is discussed, where the diffusion term ($\mathbf{B}$) is neglected.
+The main difference between different DHF realizations is the method to solve \eqref{eq:dhf-eq} for $\mathbf{f}(.)$. This is still open question, and holds many room for innovation even to this day.  Here, only the exact flow simplification \cite{Daum2010} is discussed, where the diffusion term ($\boldsymbol\sigma$) is neglected.
 
 \subsection{The Exact Flow Daum--Huang Filter}
 
 Under the criteria, that $g(\mathbf{x})$ and $h(\mathbf{x})$ (the prior and the likelihood, essentially the motion model and the measurement model respectively) are Gaussian,
 they can be expressed as:
 \begin{align}
-    \log g(\mathbf{x}) & =-\frac{1}{2}(\mathbf{x}-\phi(\mathbf{x},\mathbf{u},0))^{\top} \mathbf{Q}^{-1}(\mathbf{x}-\phi(\mathbf{x},\mathbf{u},0)),              \\
-    \log h(\mathbf{x}) & =-\frac{1}{2}(\mathbf{z}-\psi(\mathbf{x},0))^{\top} \mathbf{R}^{-1}(\mathbf{z}-\psi(\mathbf{x},0)). \label{eq:explicit-log-likelihood}
+    \log g(\mathbf{x}) & =-\frac{1}{2}(\mathbf{x}-\phi(\mathbf{x}',\mathbf{u}',0))^{\top} \mathbf{Q}^{-1}(\mathbf{x}-\phi(\mathbf{x}',\mathbf{u}',0)),            \\
+    \log h(\mathbf{x}) & =-\frac{1}{2}(\mathbf{z}'-\psi(\mathbf{x},0))^{\top} \mathbf{R}^{-1}(\mathbf{z}'-\psi(\mathbf{x},0)). \label{eq:explicit-log-likelihood}
 \end{align}
-% For the notations, refer back to \eqref{eq:explicit-mot-eq}, \eqref{eq:explicit-meas-eq}.
 Then the solution of \eqref{eq:dhf-eq} has the form of
-\begin{equation}
-    \mathbf{a}(\mathbf{x},\lambda) = \mathbf{C}(\lambda)\mathbf{x} + \mathbf{c}(\lambda),
+\begin{equation}\label{eq:edh-flow-vector}
+    \mathbf{f}(\mathbf{x},\lambda) = \mathbf{C}(\lambda)\mathbf{x} + \mathbf{c}(\lambda),
 \end{equation}
+% ! TODO mi az az a!
 where
 \begin{align}
-     & \mathbf{C}(\lambda) = -\frac{1}{2}\mathbf{\mathbf{\overline\Sigma}}\nabla \psi_x^\top\left(\lambda \nabla \psi_x\mathbf{\overline\Sigma}\nabla \psi_x^\top + \mathbf{R}\right)^{-1}\nabla \psi_x,\label{eq:edh-C}                                     \\
-     & \mathbf{c}(\lambda) = \left(\mathbf{I}+2\lambda\mathbf{C}\right)\left[\left(\mathbf{I}+\lambda\mathbf{C}\right)\mathbf{\overline\Sigma}\nabla \psi_x^\top\mathbf{R}^{-1}\mathbf{z} + \mathbf{C}\overline{\mathbf{x}}_\lambda\right]. \label{eq:edh-c}
+     & \mathbf{C}(\lambda) = -\frac{1}{2}\mathbf{\mathbf{\overline\Sigma}}\nabla \psi_x^\top\left(\lambda \nabla \psi_x\mathbf{\overline\Sigma}\nabla \psi_x^\top + \mathbf{R}\right)^{-1}\nabla \psi_x,\label{eq:edh-C}                                      \\
+     & \mathbf{c}(\lambda) = \left(\mathbf{I}+2\lambda\mathbf{C}\right)\left[\left(\mathbf{I}+\lambda\mathbf{C}\right)\mathbf{\overline\Sigma}\nabla \psi_x^\top\mathbf{R}^{-1}\mathbf{z}' + \mathbf{C}\overline{\mathbf{x}}_\lambda\right]. \label{eq:edh-c}
 \end{align}
 Here, $\overline{\mathbf{x}}_\lambda$ denotes the state average at the given $\lambda$ across all the particles. $\nabla \psi_x$ is the Jacobian of the measurement function, performed around $\overline{\mathbf{x}}_\lambda$.
+
+By solving for $\mathbf{f}(\mathbf{x},\lambda)$,
+the state flow vector is obtained according to \eqref{eq:dhf-sde}.
+Recall that for the exact flow simplification, the diffusion term $\boldsymbol\sigma$ is
+neglected, resulting
+\begin{equation}
+    \frac{\mathrm{d}\mathbf{x}}{\mathrm{d}\lambda} = \mathbf{f}(\mathbf{x},\lambda).
+\end{equation}
+Now the motion of the particles is easily described in pseudotime $\lambda$.
 
 The EDH algorithm is summarized as follows.
 In one timestep, first the particles are propagated just like in the case of the PF, then $\overline{\mathbf{\Sigma}}$ is calculated using the prediction part of an EKF/UKF.  After this, the homotopy is discretized: $\lambda$ is equally divided into a certain amount of steps, e.g. 10. For each \emph{pseudotime} step, $\nabla \psi_x$ is calculated  by linearization around the current state average of the particles, then using the predicted covariance $\overline{\mathbf{\Sigma}}_t$, the measurement $\mathbf{z}'_t$, the measurement noise covariance $\mathbf{R}_t$, and the state average $\overline{\mathbf{x}}_\lambda$, $\mathbf{C}(\lambda)$ and $\mathbf{c}(\lambda)$ is calculated. By this, the drift function $\mathbf{a}(.)$ is obtained. Now, a simple Euler step yields the new state of the particles. Lastly, $\overline{\mathbf{x}}_\lambda$ is re-evaluated. This is repeated for all $\lambda$. It is important to mention that during the homotopy, the time does not change, only the pseudotime $\lambda$. When $\lambda$ has reached 1, the particles are in the position where they estimate the posterior distribution. Now, the state estimation at $t$ can be calculated by taking the average of the particles. Finally, the EKF/UKF update is performed. This was one time step (and along with it, 10 pseudotime step) of the EDH filter.
 
-Figure \ref{fig:dhf-ill}. illustrates the particle flow of the DHF. The time is fixed, and the homotopy is performed from $\lambda = 0$ to $\lambda = 1$. At $\lambda = 1$, the particles moved from the predicted belief (prior, in this context) to their position where they represent the posterior. The true state is indicated by a red square, while the orange dot is the average of the particles. The red arrows show the value of the drift vector $\mathbf{a}(\mathbf{x},\lambda)$. As $\lambda$ evolves, the particle average gets closer and closer to the (unknown) true position.
+Figure \ref{fig:dhf-ill}. illustrates the particle flow of the DHF. The time is fixed, and the homotopy is performed from $\lambda = 0$ to $\lambda = 1$. At $\lambda = 1$, the particles moved from the predicted belief (prior, in this context) to their position where they represent the posterior. The true state is indicated by a red square, while the orange dot is the average of the particles. The red arrows show the value of the drift coefficient $\mathbf{f}(\mathbf{x},\lambda)$. As $\lambda$ evolves, the particle average gets closer and closer to the (unknown) true position.
 
 \begin{figure}
     \centering
@@ -240,7 +259,7 @@ Such method is yet not to be found in the literature, therefore lies within the 
 of this report. In \cite{Zhang2012}, the formula for the implicit EKF is derived,
 which serves as a foundation for the implicit EDH.
 
-Take the implicit measurement equation of \eqref{eq:implicit-meas-eq},
+Take the observation function of \eqref{eq:observation-function},
 and expand it into a Taylor series about the predicted state, and the measurement at time $t$ $\left(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t\right)$:
 \begin{align}
     \psi(\mathbf{x}_t,\mathbf{z}_t) = \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t)
@@ -252,10 +271,12 @@ and expand it into a Taylor series about the predicted state, and the measuremen
 
 By omitting the higher order terms, rearranging the equation, and also using that \linebreak
 $\psi(\mathbf{x}_t,\mathbf{z}_t) = 0$:
-\begin{equation}
-    \underbrace{\frac{\partial \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t)}{\partial \mathbf{x}_t}\overline{\boldsymbol\mu}_t
-        - \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t)}_{\mathbf{y}_t} = \underbrace{\frac{\partial \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t)}{\partial \mathbf{x}_t}}_{\nabla \psi_x}\mathbf{x}_t + \underbrace{\frac{\partial \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t)}{\partial \mathbf{z}_t}}_{\nabla \psi_z}\underbrace{(\mathbf{z}_t-\mathbf{z}'_t)}_{\mathbf{w}_t}.
-\end{equation}
+\begin{align}
+     & \frac{\partial \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t)}{\partial \mathbf{x}_t}\overline{\boldsymbol\mu}_t
+    - \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t) = \underbrace{\frac{\partial \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t)}{\partial \mathbf{x}_t}}_{\nabla \psi_x}\mathbf{x}_t + \underbrace{\frac{\partial \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t)}{\partial \mathbf{z}_t}}_{\nabla \psi_z}\underbrace{(\mathbf{z}_t-\mathbf{z}'_t)}_{\mathbf{w}_t}, \\
+     & \mathbf{y}_t :=  \frac{\partial \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t)}{\partial \mathbf{x}_t}\overline{\boldsymbol\mu}_t
+    - \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t) = \nabla\psi_x(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t)\overline{\boldsymbol\mu}_t-\psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t) \label{eq:edh-implicit-y}
+\end{align}
 As a result, a linear measurement equation is obtained, similarly to \eqref{eq:lin-meas-model}:
 \begin{equation}
     \mathbf{y}_t = \nabla \psi_x \mathbf{x}_t + \nabla \psi_z\mathbf{w}_t,\quad\quad \mathbf{w}_t \sim \mathcal{N}(0,\mathbf{R}).
@@ -270,19 +291,69 @@ Now carrying on with the derivation in \cite{Khan2018} with this modified log-li
 the altered form of \eqref{eq:edh-C} and \eqref{eq:edh-c} for an implicit measurement
 equation is:
 \begin{align}
-     & \mathbf{C}(\lambda) = -\frac{1}{2}\mathbf{\mathbf{\overline\Sigma}}\nabla \psi_x^\top\left(\lambda \nabla \psi_x\mathbf{\overline\Sigma}\nabla \psi_x^\top + \nabla \psi_z\mathbf{R}\nabla \psi_z^{\top}\right)^{-1}\nabla \psi_x,                              \\
-     & \mathbf{c}(\lambda) = \left(\mathbf{I}+2\lambda\mathbf{C}\right)\left[\left(\mathbf{I}+\lambda\mathbf{C}\right)\mathbf{\overline\Sigma}\nabla \psi_x^\top(\nabla \psi_z\mathbf{R}\nabla \psi_z^{\top})^{-1}\mathbf{y} + \mathbf{C}\overline{\mathbf{x}}\right].
+     & \mathbf{C}(\lambda) = -\frac{1}{2}\mathbf{\mathbf{\overline\Sigma}}\nabla \psi_x^\top\left(\lambda \nabla \psi_x\mathbf{\overline\Sigma}\nabla \psi_x^\top + \nabla \psi_z\mathbf{R}\nabla \psi_z^{\top}\right)^{-1}\nabla \psi_x,  \label{eq:edh-C-impl}                                     \\
+     & \mathbf{c}(\lambda) = \left(\mathbf{I}+2\lambda\mathbf{C}\right)\left[\left(\mathbf{I}+\lambda\mathbf{C}\right)\mathbf{\overline\Sigma}\nabla \psi_x^\top(\nabla \psi_z\mathbf{R}\nabla \psi_z^{\top})^{-1}\mathbf{y} + \mathbf{C}\overline{\mathbf{x}}_\lambda\right]. \label{eq:edh-c-impl}
 \end{align}
 \subsection{Realization of the EDH for the Inspected Localization Problem}
 
-Now, that the implicit EDH is introduced, along with the motion and measurement models
-of the localization problem in scope, the full algorithm for the EDH can be formulated.
-First, the EDH algorithm is given in Algorithm XX, followed by the interpretation of
-the required values, given the
+The original EDH algorithm for implicit measurement equation is described
+in \cite{Ding2012}.
+Now, that the implicit EDH is introduced along with the motion and measurement models
+for the localization problem in scope, the full algorithm for the EDH can be formulated.
+Algorithm \ref{alg:edh-loc}. contains one step of the filter.
+For each computation, the relevant equations are indicated at the end of the line.
+The resulting estimated state is $\overline{\mathbf{x}}_t$, which is then used to evaluate the performance of the proposed method in the next section.
+\begin{algorithm}
+    \caption{Exact Flow Daum--Huang Filter for Localization($\boldsymbol{\mu}_{t-1},\mathbf{\Sigma}_{t-1},\hat{\mathbf{u}}_t,\mathbf{z}'_t,\{\mathbf{x}_t^i\}_{i=1}^{N}$)}\label{alg:edh-loc}
+    \begin{algorithmic}[1]
+        \If{t is 0} \Comment{initialization step}
+        \State Draw $N$ particles from a prior distribution: $\{\mathbf{x}_0^i\}_{i=1}^{N}$;
+        \State Calc. the mean $\boldsymbol\mu_0$ and covar. $\boldsymbol\Sigma_0$ of the particle set, assign $\overline{\mathbf{x}}_0 = \boldsymbol{\mathbf{\mu}}_0$;
+        \State\Return $\boldsymbol{\mu}_0,\boldsymbol{\Sigma}_0,\{\mathbf{x}_0^i\}_{i=1}^{N},\overline{\mathbf{x}}_0$
+        \EndIf
+        \State Calculate $\mathbf{u}_t$, using $\hat{\mathbf{u}}_t$; \Comment{\eqref{eq:odom-raw-input}-\eqref{eq:odom-delta-input}}
+        \State Calculate $\mathbf{Q}_t$ using $\mathbf{u}_t$ \Comment{\eqref{eq:control-covar}};
+        \State Propagate particles: $\mathbf{x}_t^{i} = \phi(\mathbf{x}_{t-1}^{i},\mathbf{u}_t,\mathbf{v}_t)$
+        \Comment{\eqref{eq:prop-x}-\eqref{eq:prop-theta}}
+        \State Calculate the average of the particle set $\{\mathbf{x}_t^i\}_{i=1}^{N}$: $\overline{\mathbf{x}}_t$
+        \State EKF prediction:
+        \State\indent Evaluate the Jacobians at $(\boldsymbol{\mu}_{t-1},\mathbf{u}_t)$:
+        \Comment{\eqref{eq:motmodel-jacobi-x}-\eqref{eq:motmodel-jacobi-u}}
+        \State\indent\indent $\nabla\phi_x := \nabla\phi_x(\boldsymbol{\mu}_{t-1},\mathbf{u}_t),\quad \nabla\phi_u := \nabla\phi_x(\boldsymbol{\mu}_{t-1},\mathbf{u}_t)$
+        \State\indent$\overline{\boldsymbol{\mu}}_t = \phi(\boldsymbol{\mu}_{t-1},\mathbf{u}_t,\mathbf{v}_t = 0)$
+        \State\indent
+        $\overline{\mathbf{\Sigma}}_t = \nabla \phi_x\mathbf{\Sigma}_{t-1}\nabla \phi_x^{\top}
+            +\nabla \phi _u\mathbf{Q}_t \nabla \phi_u^{\top}$
+        \For{$j = 1\dots N_{\lambda}$} \Comment{$N_{\lambda}:$ number of $\lambda$ steps}
+        \State $\lambda = j\Delta\lambda$ \Comment{$\Delta\lambda$: step size}
+        \State Evaluate $\nabla\psi_x(\overline{\mathbf{x}}_t,\mathbf{z}'_t),\nabla\psi_z(\overline{\mathbf{x}}_t,\mathbf{z}'_t)$ \Comment{\eqref{eq:measmodel-jacobi-x}-\eqref{eq:measmodel-jacobi-z}}
+        \State Calculate $\mathbf{y}_t$, using $\overline{\mathbf{x}}_t,\mathbf{z}'_t$,$\nabla\psi(\overline{\mathbf{x}}_t,\mathbf{z}'_t)$  \Comment{\eqref{eq:edh-implicit-y},\eqref{eq:observation-function}}
+        \State Calculate $\mathbf{C}$ and $\mathbf{c}$, using
+        $\lambda,\overline{\boldsymbol\Sigma}_t, \overline{\mathbf{x}}_t$,
+        $\nabla\psi_x(\overline{\mathbf{x}}_t,\mathbf{z}'_t),\nabla\psi_z(\overline{\mathbf{x}}_t,\mathbf{z}'_t), \mathbf{y}_t$
+        \Comment{\eqref{eq:edh-C-impl}-\eqref{eq:edh-c-impl}}
+        \State Evaluate $\mathbf{f}(\mathbf{x},\lambda)$ for every particle $\mathbf{x}_t^{i}$, resulting $\frac{\mathrm{d}\mathbf{x}_t^i}{\mathrm{d}\lambda}$
+        \Comment{\eqref{eq:edh-flow-vector}}
+        \State Update the pose of each particle by an Euler-step:
+        \State\indent $\mathbf{x}_t^{i} = \mathbf{x}_t^{i} + \Delta\lambda\frac{\mathrm{d}\mathbf{x}_t^i}{\mathrm{d}\lambda}$
+        \State Re-evaluate $\overline{\mathbf{x}}_t$ with the updated particle poses;
+        \EndFor
+        \State EKF update:
+        \State\indent Evaluate the Jacobians at $(\overline{\boldsymbol{\mu}}_t,\mathbf{z}'_t)$:
+        \Comment{\eqref{eq:motmodel-jacobi-x}-\eqref{eq:motmodel-jacobi-u}}
+        \State\indent\indent $\nabla\psi_x := \nabla\psi_x(\overline{\boldsymbol{\mu}}_t,\mathbf{z}'_t), \quad \nabla\psi_u := \nabla\psi_x(\overline{\boldsymbol{\mu}}_t,\mathbf{z}'_t)$
+        \State\indent $\mathbf{K}_t = \overline{\mathbf{\Sigma}}_t\nabla \psi_x^\top\left(\nabla \psi_x\overline{\mathbf{\Sigma}}_t\nabla \psi_z^\top+
+            \nabla \psi_z\mathbf{R}\nabla \psi^{\top}_z\right)^{-1}$
+        \State\indent $\boldsymbol{\mu}_t = \overline{\boldsymbol{\mu}}_t + \mathbf{K}_t\left(0-\psi(\overline{\boldsymbol{\mu}}_t,\mathbf{z}'_t)\right)$
+        \Comment{\eqref{eq:observation-function}}
+        \State\indent $\mathbf{\Sigma}_t = \left(\mathbf{I}-\mathbf{K}_t\nabla \psi_x\right)\overline{\mathbf{\Sigma}}_t$
+        \State\Return $\boldsymbol{\mu}_t,\boldsymbol{\Sigma}_t,\{\mathbf{x}_t^i\}_{i=1}^{N},\overline{\mathbf{x}}_t$
+    \end{algorithmic}
+\end{algorithm}
 \subsection{Other Daum--Huang Filter Variants}
 
-Solving \eqref{eq:dhf-eq} requires various simplifications. Assuming exact flow, where the diffusion part is neglected (only deterministic flow is considered), the measurement model is linear (or linearized), and the noise acting on the system is a Gaussian random variable (or from the exponential family) is only one variation of the Daum--Huang filter. When the linearization of the measurement function is performed around the location of \emph{each} particle instead of their average, the local exact flow Daum--Huang filter is constructed \cite{EDH-Coates}. Particle weighting can be developed for Daum--Huang filters as well, proposed in \cite{pfpf_coates}.
+Solving \eqref{eq:dhf-eq} requires various simplifications. Assuming exact flow, where the diffusion part is neglected (only deterministic flow is considered), the measurement model is linear (or linearized), and the noise acting on the system is a Gaussian random variable (or from the exponential family) is only one variation of the Daum--Huang filter. When the linearization of the measurement function is performed around the location of \emph{each} particle instead of their average, the local exact flow Daum--Huang filter is constructed \cite{Ding2012}. Particle weighting can be developed for Daum--Huang filters as well, proposed in \cite{Li2016}.
 
-Another simplification is the assumption of incompressible flow \cite{dhf_first}  (this was the first type of the Daum--Huang filter), the assumption of geodesic flow \cite{geodesic}, and the latest results are from the consideration of stochastic particle flow (the diffusion term is no longer neglected), using Gromov's method \cite{gromov}.
+Another simplification is the assumption of incompressible flow \cite{Daum2007}  (this was the first type of the Daum--Huang filter), the assumption of geodesic flow \cite{Daum2013}, and the latest results are from the consideration of stochastic particle flow (the diffusion term is no longer neglected), using Gromov's method \cite{Daum2018,Dai2021}.
 
-It is difficult to summarize the performance of Daum--Huang filters, so is the case with particle filters. Many realizations exist, each with they own advantages and disadvantages. The main problem is with computational capacity: a method with much more advanced and/or more precise calculations can yield better results at a cost of computational time. The main challenge is to develop algorithms and variations that does not require significantly more computation, yet result in a more stable and precise estimation of the state.
+It is difficult to summarize the performance of Daum--Huang filters, so is the case with particle filters. Many realizations exist, each with they own advantages and disadvantages. The main problem is with computational capacity: a method with much more advanced and/or more precise calculations can yield better results at a cost of computational time. The main challenge is to develop algorithms and variations that does not require significantly more computation, yet result in a more robust and more precise estimation of the state.

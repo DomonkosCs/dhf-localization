@@ -228,5 +228,109 @@
   url       = {https://bonndoc.ulb.uni-bonn.de/xmlui/handle/20.500.11811/7648},
   year      = {2018}
 }
+@article{Ding2012,
+  abstract = {Several versions of the Daum-Huang (DH) filter have been introduced recently to address the task of discrete-time nonlinear filtering. The filters propagate a particle set over time to track the system state, but, in contrast to conventional particle filters, there is no proposal density or importance sampling involved. Particles are smoothly migrated using a particle flow derived from a log-homotopy relating the prior and the posterior. Impressive performance has been demonstrated for a wide range of systems, but the implemented algorithms rely on an extended/unscented Kalman filter (EKF/UKF) that is executed in parallel. We illustrate through simulation that the performance of the exact flow DH filter can be compromised when the UKF and EKF fail. By introducing simple but important modifications to the exact flow DH filter implementation, the performance can be improved dramatically. © 2012 IEEE.},
+  author   = {Tao Ding and Mark J. Coates},
+  doi      = {10.1109/SSP.2012.6319675},
+  journal  = {2012 IEEE Statistical Signal Processing Workshop, SSP 2012},
+  keywords = {Daum-Huang filter,exact flow,log-homotopy,particle filter,particle flow},
+  pages    = {257-260},
+  title    = {Implementation of the Daum-Huang exact-flow particle filter},
+  year     = {2012}
+}
+@article{Li2016,
+  abstract  = {A key challenge when designing particle filters in high-dimensional state
+               spaces is the construction of a proposal distribution that is close to the
+               posterior distribution. Recent advances in particle flow filters provide a
+               promising avenue to avoid weight degeneracy; particles drawn from the prior
+               distribution are migrated in the state-space to the posterior distribution by
+               solving partial differential equations. Numerous particle flow filters have
+               been proposed based on different assumptions concerning the flow dynamics.
+               Approximations are needed in the implementation of all of these filters; as a
+               result the articles do not exactly match a sample drawn from the desired
+               posterior distribution. Past efforts to correct the discrepancies involve
+               expensive calculations of importance weights. In this paper, we present new
+               filters which incorporate deterministic particle flows into an encompassing
+               particle filter framework. The valuable theoretical guarantees concerning
+               particle filter performance still apply, but we can exploit the attractive
+               performance of the particle flow methods. The filters we describe involve a
+               computationally efficient weight update step, arising because the embedded
+               particle flows we design possess an invertible mapping property. We evaluate
+               the proposed particle flow particle filters' performance through numerical
+               simulations of a challenging multi-target multi-sensor tracking scenario and
+               complex high-dimensional filtering examples.},
+  author    = {Yunpeng Li and Mark Coates},
+  doi       = {10.1109/tsp.2017.2703684},
+  issue     = {15},
+  journal   = {IEEE Transactions on Signal Processing},
+  keywords  = {Sequential Monte Carlo,high-dimensional filtering,optimal proposal distribution,particle flow},
+  month     = {7},
+  pages     = {4102-4116},
+  publisher = {Institute of Electrical and Electronics Engineers Inc.},
+  title     = {Particle Filtering with Invertible Particle Flow},
+  volume    = {65},
+  url       = {https://arxiv.org/abs/1607.08799v5},
+  year      = {2016}
+}
+@article{Daum2013,
+  abstract  = {We derive a new algorithm for computing Bayes’
+               rule using particle flow that has zero curvature. The flow is
+               computed by solving a vector Riccati equation exactly in
+               closed form rather than solving a PDE, with a significant
+               reduction in computational complexity. Our theory is valid
+               for any smooth nowhere vanishing probability densities,
+               including highly multimodal non-Gaussian densities. We
+               show that this new flow is similar to the extended Kalman
+               filter in the special case of nonlinear measurements with
+               Gaussian noise. We also outline more general particle flows,
+               including: constant curvature, geodesic flow, non-constant
+               curvature, piece-wise constant curvature, etc.},
+  author    = {Fred Daum and Jim Huang},
+  doi       = {10.1117/12.2009364},
+  journal   = {https://doi.org/10.1117/12.2009364},
+  keywords  = {Algorithm development,Calculus,Diffusion,Filtering (signal processing),Nonlinear filtering,Numerical integration,Particle filters,Particles,Physics,Probability theory},
+  month     = {5},
+  pages     = {239-247},
+  publisher = {SPIE},
+  title     = {Zero curvature particle flow for nonlinear filters},
+  volume    = {8745},
+  url       = {https://www.spiedigitallibrary.org/conference-proceedings-of-spie/8745/87450Q/Zero-curvature-particle-flow-for-nonlinear-filters/10.1117/12.2009364.full https://www.spiedigitallibrary.org/conference-proceedings-of-spie/8745/87450Q/Zero-curvature-particle-flow-for-nonlinear-filters/10.1117/12.2009364.short},
+  year      = {2013}
+}
+@article{Daum2018,
+  abstract  = {We derive a new exact stochastic particle flow for Bayes' rule using a theorem of Gromov. We also show numerical experiments for high dimensional problems up to d=100. The accuracy of our new filter is many orders of magnitude better than standard particle filters, and our filter beats the EKF by orders of magnitude for difficult nonlinear problems. The new theoretical result is valid for arbitrary smooth nowhere vanishing densities, whereas our previous theory was derived for the special case of Gaussian densities with linear measurements. It is crucial to mitigate stiffness of the flow in order to achieve good numerical results.},
+  author    = {Fred Daum and Jim Huang and Arjang Noushin},
+  doi       = {10.23919/ICIF.2018.8455287},
+  journal   = {2018 21st International Conference on Information Fusion, FUSION 2018},
+  month     = {9},
+  pages     = {108-115},
+  publisher = {Institute of Electrical and Electronics Engineers Inc.},
+  title     = {New Theory and Numerical Results for Gromov's Method for Stochastic Particle Flow Filters},
+  year      = {2018}
+}
+@article{Dai2021,
+  abstract = {In this paper, we are interested in obtaining answers to the following
+              questions for particle flow filters: Can we provide a theoretical guarantee
+              that particle flow filters give correct results such as unbiased estimates? Are
+              particle flows stable and under what conditions? Can we have one particle flow
+              filter, rather than multiple seemingly different ones? To answer these
+              questions, we first derive a parameterized family of stochastic particle flow
+              filters, in which particle flows are driven by a linear combination of prior
+              knowledge and measurement likelihood information. We then show that several
+              particle flows existing in the literature are special cases of this family. We
+              prove that the particle flows are unbiased under the assumption of linear
+              measurement and Gaussian distributions, and that estimates constructed from the
+              stochastic flows are consistent. We further establish several finite time
+              stability concepts for this new family of stochastic particle flows. The
+              results reported in this paper represent a significant development toward
+              establishing a theoretical foundation for particle flow filters.},
+  author   = {Liyi Dai and Fred Daum},
+  keywords = {Bayesian inference,consistency,finite time stability,nonlinear filtering,particle flow filters,unbiased},
+  month    = {3},
+  title    = {A New Parameterized Family of Stochastic Particle Flow Filters},
+  url      = {https://arxiv.org/abs/2103.09676v3},
+  year     = {2021}
+}
+
 
 
