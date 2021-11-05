@@ -58,6 +58,8 @@
 \newpage
 \section*{Acknowledgement}
 This work has been supported by the Hungarian Government and co-financed by the European Social Fund. (Contract Identifier: EFOP-3.6.3-VEKOP-16-2017-00001. Talent management in autonomous vehicle control technologies.) Their support is gratefully acknowledged.
+I would also like to thank Dániel Doba for his help with ROS, and his much appreciated insights.
+I am most grateful to my consultant, Olivér Törő, who was always available for valuable discussions.
 % TODO thanks to Olivér and Dani (ROS)
 \clearpage
 \tableofcontents
@@ -66,11 +68,14 @@ This work has been supported by the Hungarian Government and co-financed by the 
 \pagestyle{fancy}
 \section{Introduction}
 \input{intro.tex}
+\pagebreak
 \section{Hardware and Corresponding Models for Localization}
 \input{hwandmodels.tex}
+\pagebreak
 \section{The Measurement Model}
 \input{measmodel.tex}
-\section{State Estimators for Localization}
+\pagebreak
+\section{State Estimators for Localization}\label{sec:state-estimators}
 \input{filters.tex}
 \pagebreak
 \bibliography{library}
