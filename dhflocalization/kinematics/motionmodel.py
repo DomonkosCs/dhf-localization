@@ -84,36 +84,36 @@ class OdometryMotionModel(MotionModel):
         # noise model to be applied below.  The standard model seems to assume
         # forward motion.
         # From https://github.com/ros-planning/navigation/blob/noetic-devel/amcl/src/amcl/sensors/amcl_odom.cpp
-        delta_rot_1_corr = min(abs(self.calc_angle_diff(delta_rot_1, 0)), abs(
+        delta_rot_1 = min(abs(self.calc_angle_diff(delta_rot_1, 0)), abs(
             self.calc_angle_diff(delta_rot_1, np.pi)))
-        delta_rot_2_corr = min(abs(self.calc_angle_diff(delta_rot_2, 0)), abs(
+        delta_rot_2 = min(abs(self.calc_angle_diff(delta_rot_2, 0)), abs(
             self.calc_angle_diff(delta_rot_2, np.pi)))
 
         control_covar = self.calcControlNoiseCovar(
-            delta_rot_1_corr, delta_rot_2_corr, delta_trans)
+            delta_rot_1, delta_rot_2, delta_trans)
 
         if noise:
-            delta_rot_1 = self.calc_angle_diff(
+            delta_hat_rot_1 = self.calc_angle_diff(
                 delta_rot_1, np.sqrt(control_covar[0, 0]) * np.random.randn())
-            delta_trans = self.calc_angle_diff(
+            delta_hat_trans = self.calc_angle_diff(
                 delta_trans, np.sqrt(control_covar[1, 1]) * np.random.randn())
-            delta_rot_2 = self.calc_angle_diff(
+            delta_hat_rot_2 = self.calc_angle_diff(
                 delta_rot_2, np.sqrt(control_covar[2, 2]) * np.random.randn())
+        else:
+            delta_hat_rot_1 = delta_rot_1
+            delta_hat_trans = delta_trans
+            delta_hat_rot_2 = delta_rot_2
 
-        prop_pose = state.pose + np.array([[delta_trans*np.cos(fi + delta_rot_1),
-                                          delta_trans *
-                                          np.sin(fi + delta_rot_1),
-                                          delta_rot_1 + delta_rot_2]]).T
-        # if prop_pose[2] > np.pi:
-        #     prop_pose[2] -= 2*np.pi
-        # elif prop_pose[2] < -np.pi:
-        #     prop_pose[2] += 2*np.pi
+        prop_pose = state.pose + np.array([[delta_hat_trans*np.cos(fi + delta_hat_rot_1),
+                                          delta_hat_trans *
+                                          np.sin(fi + delta_hat_rot_1),
+                                          delta_hat_rot_1 + delta_hat_rot_2]]).T
 
         if len(state.covar):
             jacobi_state, jacobi_input = self.calcJacobians(
                 delta_rot_1, delta_trans, fi)
-            prop_covar = jacobi_state @ state.covar @ jacobi_state.T
-            + jacobi_input @ control_covar @ jacobi_input.T
+            prop_covar = (jacobi_state @ state.covar @ jacobi_state.T
+                          + jacobi_input @ control_covar @ jacobi_input.T)
         else:
             prop_covar = None
 
@@ -151,14 +151,14 @@ class OdometryMotionModel(MotionModel):
 
     def calcControlNoiseCovar(self, delta_rot_1, delta_rot_2, delta_trans):
 
-        control_covar_11 = self.alfa_1 * \
+        control_std_11 = self.alfa_1 * \
             delta_rot_1**2 + self.alfa_2 * delta_trans**2
-        control_covar_22 = self.alfa_3 * delta_trans**2 + \
+        control_std_22 = self.alfa_3 * delta_trans**2 + \
             self.alfa_4*(abs(delta_rot_1)**2 + abs(delta_rot_2)**2)
-        control_covar_33 = self.alfa_1 * \
+        control_std_33 = self.alfa_1 * \
             abs(delta_rot_2)**2 + self.alfa_2 * delta_trans**2
 
-        return np.diag([control_covar_11, control_covar_22, control_covar_33])
+        return np.diag([control_std_11, control_std_22, control_std_33])
 
     def normalize_angle(self, angle):
         return np.arctan2(np.sin(angle), np.cos(angle))
