@@ -26,8 +26,9 @@ class EDH:
             np.eye(num_of_rays)
 
         particle_poses = state.particles
+        particle_poses_mean = np.mean(particle_poses, axis=0)
+        particle_poses_mean_0 = particle_poses_mean
         for l in self.lambdas:
-            particle_poses_mean = np.mean(particle_poses, axis=0)
             cd, grad_cd_x, grad_cd_z, _ = self.measurement_model.processDetection(
                 StateHypothesis(particle_poses_mean), measurement)
 
@@ -39,10 +40,10 @@ class EDH:
 
             b = (np.eye(3) + 2*l*B) @ \
                 ((np.eye(3) + l*B) @ ekf_covar @ grad_cd_x /
-                 (grad_cd_z.T @ measurement_covar @ grad_cd_z) * y + B @ np.array([particle_poses_mean]).T)
+                 (grad_cd_z.T @ measurement_covar @ grad_cd_z) * y + B @ np.array([particle_poses_mean_0]).T)
 
             particle_poses = particle_poses + self.d_lambda * (np.array(
                 [B @ particle_state for particle_state in particle_poses]) + b.T)
-            # particle_poses[particle_poses[:, 2] > np.pi, 2] -= 2*np.pi
-            # particle_poses[particle_poses[:, 2] < -np.pi, 2] += 2*np.pi
+            particle_poses_mean = np.mean(particle_poses, axis=0)
+
         return StateHypothesis.init_from_particle_poses(particle_poses)
