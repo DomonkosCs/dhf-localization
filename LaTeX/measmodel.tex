@@ -10,6 +10,8 @@ First, the basic principles are introduced for topological (feature based) maps,
 then the beam range finder model for an OGM is further detailed.
 However, these are not suitable for localization on an OGM with LiDAR measurements,
 using a Kalman filter-based state estimation algorithm.
+This is either due to the lack of a closed-form measurement equation (beam range finder model),
+or the inability to process direct angle-range measurements.
 As a solution, a Distance Function based measurement model  (\cite{Dantanarayana2013})
 is applied. This model is described in the second half of the section.
 
@@ -20,7 +22,7 @@ like the OGMs do, as they assign an occupancy value for every location on the ma
 
 For a topological map, the probability distribution of $p(\mathbf{\mathbf{z}}_t | \mathbf{x}_t)$,
 enhanced with the known map $\mathbf{m}$ (resulting in $p(\mathbf{\mathbf{z}}_t | \mathbf{x}_t,\mathbf{m})$)
-is described a Gaussian distribution:
+is described by a Gaussian distribution:
 \begin{align}
     \psi(\mathbf{x}_t,\mathbf{m}) = \mathbf{z}^*_t + \xi, \quad \xi \sim \mathcal{N}(0,\mathbf{R}), \\
     \Rightarrow p(\mathbf{\mathbf{z}}_t | \mathbf{x}_t,\mathbf{m}) \sim \mathcal{N}(\mathbf{z}_t^*,\mathbf{R}),
@@ -43,7 +45,7 @@ which together with the angle of the beam, serves as $\mathbf{z}_t^*$.
 
 The resulting distribution combines different measurement error possibilities:
 random measurements (uniform distribution), local measurement noise (Gaussian distr.),
-failures (``very narrow'' uniform distribution, modelling a Dirac delta) and unexpected
+failures (``narrow'' uniform distribution, modelled by a Dirac delta) and unexpected
 objects (exponential distribution).
 \begin{figure}[htbp]
     \centering
@@ -108,7 +110,7 @@ where the variables are according to Figure \ref{fig:ogm-laser-projection}. (the
     \centering
     \includegraphics[width=0.8\linewidth]{dt_mapping_lidar}
     \caption{Projection of the LiDAR scans to the OGM, based on the pose of the robot.
-    The rotating LiDAR emits a certain amount of laser rays,
+    The rotating LiDAR emits a certain number of laser rays,
     here pictured by dashed lines for the first ray and the $i$-th ray
     (others are omitted for the sake of readability).
     The received measurement for the $i$-th ray is the length of the ray $r_i$,
@@ -159,7 +161,7 @@ Although, it is important to mention that this assumption does not hold in every
 scenario. Consider an extreme case: for a whole revolution, the LiDAR only records
 one measurement (one ray), and the OGM contains many occupied cells.
 Then the CD (effectively the DT) would equal to zero at a plethora of robot poses, thus not indicating the sought true pose.
-For a detailed map and sufficiently many LiDAR reading per revolution, this deficiency is minimized.
+For a detailed map and sufficiently many LiDAR readings per revolution, this deficiency is minimized.
 
 Using the CD, the measurement model is formulated as
 \begin{equation}
@@ -182,7 +184,7 @@ where $\sigma_r$ is the standard derivation of $r_i$ (same for every ray),
 and $\mathbf{I}_{n\times n}$ is the identity matrix with size $n\times n$,
 if $n$ is the number of valid readings for a whole revolution of the LiDAR.
 Using this simplification, the Jacobian in \eqref{eq:cd-covariance}
-is only calculated with regarding to $r_i$.
+is only calculated with respect to $r_i$.
 
 The observation function $\psi$ is defined as:
 \begin{equation}\label{eq:observation-function}
@@ -198,7 +200,7 @@ forming an implicit measurement equation.
 
 
 For further usages, the Jacobians of $\psi$ have to be formulated.
-The Jacobian with respect to $\mathbf{x}$:
+The Jacobian with respect to $\mathbf{x}$ is
 \begin{equation}\label{eq:measmodel-jacobi-x}
     \nabla\psi_x(\mathbf{x},\mathbf{z}) := \left.\frac{\partial\psi}{\partial \mathbf{x}}\right\vert_{\mathbf{x},\mathbf{z}} =
     \frac{1}{n}
