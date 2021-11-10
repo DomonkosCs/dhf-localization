@@ -10,10 +10,12 @@
 \renewcommand{\tableshortname}{Table}
 \makeatletter
 \def\BState{\State\hskip-\ALG@thistlm}
+\renewcommand{\fnum@figure}{Figure \thefigure}
 \makeatother
 
 \VerbatimFootnotes
 \bibliographystyle{IEEEtranN}
+
 \begin{document}
 
 \pagenumbering{Roman} % Roman numbering
@@ -67,16 +69,22 @@ I am most grateful to my consultant, Olivér Törő, who was always available fo
 \pagenumbering{arabic}
 \pagestyle{fancy}
 \section{Introduction}
-\input{intro.tex}
+\input{sec1-intro.tex}
 \pagebreak
 \section{Hardware and Corresponding Models for Localization}
-\input{hwandmodels.tex}
+\input{sec2-hwandmodels.tex}
 \pagebreak
 \section{The Measurement Model}
-\input{measmodel.tex}
+\input{sec3-measmodel.tex}
 \pagebreak
 \section{State Estimators for Localization}\label{sec:state-estimators}
-\input{filters.tex}
+\input{sec4-stateestimators.tex}
+\pagebreak
+\section{Evaluation of the Proposed EDH Localization Algorithm}
+\input{sec5-eval.tex}
+\pagebreak
+\section{Summary}
+\input{sec6-summary.tex}
 \pagebreak
 \bibliography{library}
 

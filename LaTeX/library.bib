@@ -53,14 +53,13 @@
   refid       = {58451645},
   timestamp   = {2015-10-22T23:05:09.000+0200},
   title       = {Probabilistic robotics},
-  url         = {http://www.amazon.de/gp/product/0262201623/102-8479661-9831324?v=glance&n=283155&n=507846&s=books&v=glance},
   year        = 2005
 }
 @article{Eliazar2004,
   abstract = {Machine learning methods are often applied to the problem of learning a map from a robot's sensor data, but they are rarely applied to the problem of learning a robot's motion model. The motion model, which can be influenced by robot idiosyncrasies and terrain properties, is a crucial aspect of current algorithms for Simultaneous Localization and Mapping (SLAM). In this paper we concentrate on generating the correct motion model for a robot by applying EM methods in conjunction with a current SLAM algorithm. In contrast to previous calibration approaches, we not only estimate the mean of the motion, but also the interdependencies between motion terms, and the variances in these terms. This can be used to provide a more focused proposal distribution to a particle filter used in a SLAM algorithm, which can reduce the resources needed for localization while decreasing the chance of losing track of the robot's position. We validate this approach by recovering a good motion model despite initialization with a poor one. Further experiments validate the generality of the learned model in similar circumstances.},
   author   = {Austin I. Eliazar and Ronald Parr},
   doi      = {10.1145/1015330.1015413},
-  journal  = {Proceedings, Twenty-First International Conference on Machine Learning, ICML 2004},
+  journal  = {Twenty-First International Conference on Machine Learning, ICML 2004},
   pages    = {249-256},
   title    = {Learning probabilistic motion models for mobile robots},
   year     = {2004}
@@ -76,7 +75,7 @@
   volume   = {7},
   year     = {1991}
 }
-@inproceedings{Dantanarayana2013,
+@article{Dantanarayana2013,
   abstract = {In this paper, the problem of localising a robot within a known two-dimensional environment is formulated as one of minimising the Chamfer Distance between the corresponding occupancy grid map and information gathered from a sensor such as a laser range finder. It is shown that this nonlinear optimisation problem can be solved efficiently and that the resulting localisation algorithm has a number of attractive characteristics when compared with the conventional particle filter based solution for robot localisation in occupancy grids. The proposed algorithm is able to perform well even when robot odometry is unavailable, insensitive to noise models and does not critically depend on any tuning parameters. Experimental results based on a number of public domain datasets as well as data collected by the authors are used to demonstrate the effectiveness of the proposed algorithm. © 2013 IEEE.},
   author   = {Lakshitha Dantanarayana and Ravindra Ranasinghe and Gamini Dissanayake},
   doi      = {10.1109/IROS.2013.6696379},
@@ -87,22 +86,24 @@
   title    = {C-LOG: A Chamfer Distance based method for localisation in occupancy grid-maps},
   year     = {2013}
 }
-@inproceedings{Dantanarayana2016,
+@article{Dantanarayana2016,
   abstract  = {The main contribution of this paper is an extended Kalman filter (EKF) based framework for mobile robot localisation in occupancy grid maps (OGMs), when the initial location is approximately known. We propose that the observation equation be formulated using the unsigned distance transform based Chamfer Distance (CD) that corresponds to a laser scan placed within the OGM, as a constraint. This formulation provides an alternative to the ray-casting model, which generally limited localisation in OGMs to Particle Filter (PF) based frameworks that can efficiently deal with observation models that are not analytic. Usage of an EKF is attractive due to its computational efficiency, especially as it can be applied to modern day field robots with limited on-board computing power. Furthermore, well-developed tools for dealing with potential outliers in the observations or changes to the motion model, exists in the EKF framework. The effectiveness of the proposed algorithm is demonstrated using a number of simulation and real life examples, including one in a dynamic environment populated with people.},
   author    = {Lakshitha Dantanarayana and Gamini Dissanayake and Ravindra Ranasinghe and Tomonari Furukawa},
   doi       = {10.1109/ICIINFS.2015.7399048},
   isbn      = {9781479918768},
-  journal   = {2015 IEEE 10th International Conference on Industrial and Information Systems, ICIIS 2015 - Conference Proceedings},
+  journal   = {2015 IEEE 10th International Conference on Industrial and Information Systems},
   month     = {2},
   pages     = {419-424},
   publisher = {Institute of Electrical and Electronics Engineers Inc.},
   title     = {An extended Kalman filter for localisation in occupancy grid maps},
   year      = {2016}
 }
-@report{Dantanarayana2016b,
+@phdthesis{Dantanarayana2016b,
   author   = {Lakshitha Dantanarayana},
   keywords = {Control,Localisation,Mapping,Robot Navigation},
   title    = {Navigation and Control for Assistive Robotics},
+  school   = {University of Technology},
+  address  = {Sydney, Australia},
   year     = {2016}
 }
 @article{Steffen2013,
@@ -119,12 +120,21 @@
   volume   = {2013},
   year     = {2013}
 }
-@report{Zhang2012,
-  author   = {Zhengyou Zhang},
-  keywords = {A Tutorial with Application to Conic Fitting,Parameter Estimation Techniques},
-  title    = {Parameter Estimation Techniques: A Tutorial with Application to Conic Fitting},
-  url      = {https://hal.inria.fr/inria-00074015}
+@techreport{Zhang2012,
+  title       = {{Parameter Estimation Techniques: A Tutorial with Application to Conic Fitting}},
+  author      = {Zhang, Zhengyou},
+  url         = {https://hal.inria.fr/inria-00074015},
+  type        = {Research Report},
+  number      = {RR-2676},
+  institution = {{INRIA}},
+  year        = {1995},
+  month       = Oct,
+  keywords    = {KALMAN FILTERING ; BIAS CORRECTION ; ROBUST REGRESSION ; PARAMETER ESTIMATION ; LEAST-SQUARES},
+  pdf         = {https://hal.inria.fr/inria-00074015/file/RR-2676.pdf},
+  hal_id      = {inria-00074015},
+  hal_version = {v1}
 }
+
 @article{Gordon1993,
   abstract = {An algorithm, the bootstrap filter, is proposed for implementing recursive Bayesian filters. The required density of the state vector is represented as a set of random samples, which are updated and propagated by the algorithm. The method is not restricted by assumptions of linearity or Gaussian noise: it may be applied to any state transition or measurement model. A simulation example of the bearings only tracking problem is presented. This simulation includes schemes for improving the efficiency of the basic algorithm. For this example, the performance of the bootstrap filter is greatly superior to the standard extended Kalman filter.},
   author   = {N. J. Gordon and D. J. Salmond and A. F.M. Smith},
@@ -136,16 +146,20 @@
   volume   = {140},
   year     = {1993}
 }
-@article{Liu2004,
-  abstract  = {To generate random variables that follow a general probability distribution function 1r, we need first to generate random variables uniformly distributed in [0,1]. These random variables are often called random numbers for simplicity. However, this "simple-sounding" task is not easily achievable on a computer. But even if it were possible, it might not be desirable to use authentic random numbers because of the need to debug computer programs. In debugging a program, we often have to repeat the same computation many times; this require us to reproduce the same sequence of random numbers repeatedly. What becomes an accepted alternative in the community of scientific computing is to generate pseudo-random numbers. More formally, we can define a uniform pseudo-random number generator as an algorithm which, starting from an initial value u0 (i.e., the seed), produces a sequence (u;) = (Di(u0)) of values in [0,1]. For all n, the values (u1 , ... , un) should reproduce the behavior of an i.i.d. sample (V1 , ... , Vn) of uniform random variables. A few very good pseudo-random number generators are available; we refer the reader to Marsaglia and Zaman (1993) and Knuth (1997) for further reference. Consequently, we assume from now on that uniform random variables can be satisfactorily produced on the computer. The following simple lemma enables us to produce nonuniform random variables. Its proof is left as an exercise for the reader.},
-  author    = {Jun S. Liu},
-  doi       = {10.1007/978-0-387-76371-2_2},
-  pages     = {23-52},
-  publisher = {Springer, New York, NY},
+@inbook{Liu2004,
+  author    = {Liu, Jun S.},
   title     = {Basic Principles: Rejection, Weighting, and Others},
-  url       = {https://link.springer.com/chapter/10.1007/978-0-387-76371-2_2},
-  year      = {2004}
+  booktitle = {Monte Carlo Strategies in Scientific Computing},
+  year      = {2004},
+  publisher = {Springer New York},
+  address   = {New York, NY},
+  pages     = {23--52},
+  abstract  = {To generate random variables that follow a general probability distribution function $\pi$, we need first to generate random variables uniformly distributed in [0,1]. These random variables are often called random numbers for simplicity. However, this ``simple-sounding'' task is not easily achievable on a computer. But even if it were possible, it might not be desirable to use authentic random numbers because of the need to debug computer programs. In debugging a program, we often have to repeat the same computation many times; this require us to reproduce the same sequence of random numbers repeatedly. What becomes an accepted alternative in the community of scientific computing is to generate pseudo-random numbers.},
+  isbn      = {978-0-387-76371-2},
+  doi       = {10.1007/978-0-387-76371-2_2}
 }
+
+
 @article{Li2015,
   abstract  = {Two decades ago, with the publication of [1], we witnessed the rebirth of particle filtering (PF) as a methodology for sequential signal processing. Since then, PF has become very popular because of its ability to process observations represented by nonlinear state-space models where the noises of the model can be non-Gaussian. This methodology has been adopted in various fields, including finance, geophysical systems, wireless communications, control, navigation and tracking, and robotics [2]. The popularity of PF has also spurred the publication of several review articles [2]-[6].},
   author    = {Tiancheng Li and Miodrag Bolić and Petar M. Djurić},
@@ -191,7 +205,6 @@
   publisher = {SPIE},
   title     = {Discussion and application of the homotopy filter},
   volume    = {8050},
-  url       = {https://ui.adsabs.harvard.edu/abs/2011SPIE.8050E..21C/abstract},
   year      = {2011}
 }
 @article{Daum2010,
@@ -219,14 +232,14 @@
   url       = {https://www.spiedigitallibrary.org/conference-proceedings-of-spie/7697/769704/Exact-particle-flow-for-nonlinear-filters/10.1117/12.839590.full https://www.spiedigitallibrary.org/conference-proceedings-of-spie/7697/769704/Exact-particle-flow-for-nonlinear-filters/10.1117/12.839590.short},
   year      = {2010}
 }
-@article{Khan2018,
-  author    = {Muhammad Altamash Ahmed Khan},
-  keywords  = {Alternating least squares,Alternierende kleinste Quadrate,Confidence sampling,Fokker,Fokker Planck equation,Gaussian mixture flow equation,Gaussian mixture models,Gauß'sche Gemischflussgleichung,Gaußsche Mischungsmodelle,Gleichung,Homotopy,Kette Monte Carlo,Log,Log homotopy based particle flow filter,Massive Sensordaten,Massive sensor data,Planck,Sequential Markov chain Monte Carlo,Sequenzielle Markov,Subsampling,Tensor decomposition,Tensorzersetzung,Vertrauensstichproben,basierter Partikelflussfilter,ddc:004},
-  month     = {10},
-  publisher = {Universitäts- und Landesbibliothek Bonn},
-  title     = {Nonlinear Filtering based on Log-homotopy Particle Flow},
-  url       = {https://bonndoc.ulb.uni-bonn.de/xmlui/handle/20.500.11811/7648},
-  year      = {2018}
+@phdthesis{Khan2018,
+  author   = {Muhammad Altamash Ahmed Khan},
+  keywords = {Alternating least squares,Alternierende kleinste Quadrate,Confidence sampling,Fokker,Fokker Planck equation,Gaussian mixture flow equation,Gaussian mixture models,Gauß'sche Gemischflussgleichung,Gaußsche Mischungsmodelle,Gleichung,Homotopy,Kette Monte Carlo,Log,Log homotopy based particle flow filter,Massive Sensordaten,Massive sensor data,Planck,Sequential Markov chain Monte Carlo,Sequenzielle Markov,Subsampling,Tensor decomposition,Tensorzersetzung,Vertrauensstichproben,basierter Partikelflussfilter,ddc:004},
+  month    = {10},
+  school   = {Universitäts- und Landesbibliothek Bonn},
+  address  = {Bonn, Germany},
+  title    = {Nonlinear Filtering based on Log-homotopy Particle Flow},
+  year     = {2018}
 }
 @article{Ding2012,
   abstract = {Several versions of the Daum-Huang (DH) filter have been introduced recently to address the task of discrete-time nonlinear filtering. The filters propagate a particle set over time to track the system state, but, in contrast to conventional particle filters, there is no proposal density or importance sampling involved. Particles are smoothly migrated using a particle flow derived from a log-homotopy relating the prior and the posterior. Impressive performance has been demonstrated for a wide range of systems, but the implemented algorithms rely on an extended/unscented Kalman filter (EKF/UKF) that is executed in parallel. We illustrate through simulation that the performance of the exact flow DH filter can be compromised when the UKF and EKF fail. By introducing simple but important modifications to the exact flow DH filter implementation, the performance can be improved dramatically. © 2012 IEEE.},
@@ -269,34 +282,22 @@
   publisher = {Institute of Electrical and Electronics Engineers Inc.},
   title     = {Particle Filtering with Invertible Particle Flow},
   volume    = {65},
-  url       = {https://arxiv.org/abs/1607.08799v5},
   year      = {2016}
 }
-@article{Daum2013,
-  abstract  = {We derive a new algorithm for computing Bayes’
-               rule using particle flow that has zero curvature. The flow is
-               computed by solving a vector Riccati equation exactly in
-               closed form rather than solving a PDE, with a significant
-               reduction in computational complexity. Our theory is valid
-               for any smooth nowhere vanishing probability densities,
-               including highly multimodal non-Gaussian densities. We
-               show that this new flow is similar to the extended Kalman
-               filter in the special case of nonlinear measurements with
-               Gaussian noise. We also outline more general particle flows,
-               including: constant curvature, geodesic flow, non-constant
-               curvature, piece-wise constant curvature, etc.},
-  author    = {Fred Daum and Jim Huang},
-  doi       = {10.1117/12.2009364},
-  journal   = {https://doi.org/10.1117/12.2009364},
-  keywords  = {Algorithm development,Calculus,Diffusion,Filtering (signal processing),Nonlinear filtering,Numerical integration,Particle filters,Particles,Physics,Probability theory},
-  month     = {5},
-  pages     = {239-247},
-  publisher = {SPIE},
-  title     = {Zero curvature particle flow for nonlinear filters},
-  volume    = {8745},
-  url       = {https://www.spiedigitallibrary.org/conference-proceedings-of-spie/8745/87450Q/Zero-curvature-particle-flow-for-nonlinear-filters/10.1117/12.2009364.full https://www.spiedigitallibrary.org/conference-proceedings-of-spie/8745/87450Q/Zero-curvature-particle-flow-for-nonlinear-filters/10.1117/12.2009364.short},
-  year      = {2013}
+@inproceedings{Daum2013,
+  author       = {Fred Daum and Jim Huang},
+  title        = {{Zero curvature particle flow for nonlinear filters}},
+  volume       = {8745},
+  booktitle    = {Signal Processing, Sensor Fusion, and Target Recognition XXII},
+  editor       = {Ivan Kadar},
+  organization = {International Society for Optics and Photonics},
+  publisher    = {SPIE},
+  pages        = {239 -- 247},
+  keywords     = {particle filter, particle flow, Kalman filter, nonlinear filter, particle degeneracy, curse of dimensionality, optimal trasnsport, Monge-Kantorovich},
+  year         = {2013},
+  doi          = {10.1117/12.2009364}
 }
+
 @article{Daum2018,
   abstract  = {We derive a new exact stochastic particle flow for Bayes' rule using a theorem of Gromov. We also show numerical experiments for high dimensional problems up to d=100. The accuracy of our new filter is many orders of magnitude better than standard particle filters, and our filter beats the EKF by orders of magnitude for difficult nonlinear problems. The new theoretical result is valid for arbitrary smooth nowhere vanishing densities, whereas our previous theory was derived for the special case of Gaussian densities with linear measurements. It is crucial to mitigate stiffness of the flow in order to achieve good numerical results.},
   author    = {Fred Daum and Jim Huang and Arjang Noushin},
@@ -334,7 +335,7 @@
 @book{Siegwart2011,
   author    = {Roland Siegwart and Illah R. Nourbaksh and Davide Scaramuzza},
   city      = {Cambridge, Massachusetts},
-  edition   = {second edition},
+  edition   = {2},
   editor    = {Ronald C. Arkin},
   publisher = {The MIT Press},
   title     = {Introduction to Autonomous Mobile Robots},
@@ -352,7 +353,6 @@
   publisher = {Springer, Cham},
   title     = {Range Sensing},
   volume    = {31},
-  url       = {https://link.springer.com/chapter/10.1007/978-3-319-32552-1_31},
   year      = {2016}
 }
 @article{Julier2004,
@@ -370,21 +370,34 @@
   year     = {2004}
 }
 @article{Evensen2003,
-   abstract = {The purpose of this paper is to provide a comprehensive presentation and interpretation of the Ensemble Kalman Filter (EnKF) and its numerical implementation. The EnKF has a large user group, and numerous publications have discussed applications and theoretical aspects of it. This paper reviews the important results from these studies and also presents new ideas and alternative interpretations which further explain the success of the EnKF. In addition to providing the theoretical framework needed for using the EnKF, there is also a focus on the algorithmic formulation and optimal numerical implementation. A program listing is given for some of the key subroutines. The paper also touches upon specific issues such as the use of nonlinear measurements, in situ profiles of temperature and salinity, and data which are available with high frequency in time. An ensemble based optimal interpolation (EnOI) scheme is presented as a cost-effective approach which may serve as an alternative to the EnKF in some applications. A fairly extensive discussion is devoted to the use of time correlated model errors and the estimation of model bias.},
-   author = {Geir Evensen},
-   doi = {10.1007/S10236-003-0036-9},
-   issn = {1616-7228},
-   issue = {4},
-   journal = {Ocean Dynamics 2003 53:4},
-   keywords = {Atmospheric Sciences,Fluid,Geophysics/Geodesy,Monitoring/Environmental Analysis,Oceanography,and Aerodynamics},
-   pages = {343-367},
-   publisher = {Springer},
-   title = {The Ensemble Kalman Filter: theoretical formulation and practical implementation},
-   volume = {53},
-   url = {https://link.springer.com/article/10.1007/s10236-003-0036-9},
-   year = {2003},
+  abstract  = {The purpose of this paper is to provide a comprehensive presentation and interpretation of the Ensemble Kalman Filter (EnKF) and its numerical implementation. The EnKF has a large user group, and numerous publications have discussed applications and theoretical aspects of it. This paper reviews the important results from these studies and also presents new ideas and alternative interpretations which further explain the success of the EnKF. In addition to providing the theoretical framework needed for using the EnKF, there is also a focus on the algorithmic formulation and optimal numerical implementation. A program listing is given for some of the key subroutines. The paper also touches upon specific issues such as the use of nonlinear measurements, in situ profiles of temperature and salinity, and data which are available with high frequency in time. An ensemble based optimal interpolation (EnOI) scheme is presented as a cost-effective approach which may serve as an alternative to the EnKF in some applications. A fairly extensive discussion is devoted to the use of time correlated model errors and the estimation of model bias.},
+  author    = {Geir Evensen},
+  doi       = {10.1007/S10236-003-0036-9},
+  issn      = {1616-7228},
+  issue     = {4},
+  journal   = {Ocean Dynamics 2003 53:4},
+  keywords  = {Atmospheric Sciences,Fluid,Geophysics/Geodesy,Monitoring/Environmental Analysis,Oceanography,and Aerodynamics},
+  pages     = {343-367},
+  publisher = {Springer},
+  title     = {The Ensemble Kalman Filter: theoretical formulation and practical implementation},
+  volume    = {53},
+  year      = {2003}
 }
-
+@inproceedings{Fox2002,
+  author    = {Dieter Fox},
+  editor    = {T Dietterich and S Becker and Z Ghahramani},
+  booktitle = {Advances in Neural Information Processing Systems},
+  publisher = {MIT Press},
+  title     = {KLD-Sampling: Adaptive Particle Filters},
+  volume    = {14},
+  year      = {2002}
+}
+@misc{AMCLROS2002,
+  author       = {Brian P. Gerkey},
+  title        = {Adaptive Monte-Carlo Localization package for the Robot Operating System},
+  howpublished = {\url{http://wiki.ros.org/amcl}},
+  note         = {Accessed: 2021-11-07}
+}
 
 
 
