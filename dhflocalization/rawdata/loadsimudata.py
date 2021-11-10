@@ -12,8 +12,7 @@ class RawDataLoader:
         data = json.load(json_file)
         data = data['data']
 
-        x_odom = [entry['pose']
-                  for entry in data if ([] not in entry.values())]
+        x_odom = [entry['pose'] for entry in data if ([] not in entry.values())]
         x_true = [entry['truth']
                   for entry in data if ([] not in entry.values())]
         x_amcl = [entry['amcl']
