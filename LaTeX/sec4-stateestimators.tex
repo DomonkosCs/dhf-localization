@@ -315,7 +315,7 @@ By neglecting the higher order terms, rearranging the equation, and also using t
 $\psi(\mathbf{x}_t,\mathbf{z}_t) = 0$:
 \begin{align}
    & \frac{\partial \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t)}{\partial \mathbf{x}_t}\overline{\boldsymbol\mu}_t
-  - \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t) = \underbrace{\frac{\partial \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t)}{\partial \mathbf{x}_t}}_{\nabla \psi_x}\mathbf{x}_t + \underbrace{\frac{\partial \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t)}{\partial \mathbf{z}_t}}_{\nabla \psi_z}\underbrace{(\mathbf{z}_t-\mathbf{z}'_t)}_{\mathbf{w}_t}, \\
+  - \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t) = \underbrace{\frac{\partial \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t)}{\partial \mathbf{x}_t}}_{\nabla \psi_x}\mathbf{x}_t + \underbrace{\frac{\partial \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t)}{\partial \mathbf{z}_t}}_{\nabla \psi_z}\underbrace{(\mathbf{z}_t-\mathbf{z}'_t)}_{-\mathbf{w}_t}, \\
    & \mathbf{y}_t :=  \frac{\partial \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t)}{\partial \mathbf{x}_t}\overline{\boldsymbol\mu}_t
   - \psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t) = \nabla\psi_x(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t)\overline{\boldsymbol\mu}_t-\psi(\overline{\boldsymbol\mu}_t,\mathbf{z}'_t) \label{eq:edh-implicit-y}.
 \end{align}
