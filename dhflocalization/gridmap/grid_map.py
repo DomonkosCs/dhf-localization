@@ -240,8 +240,8 @@ class GridMap:
         grid_data = np.reshape(np.array(self.data), (self.height, self.width))
         if not ax:
             fig, ax = plt.subplots()
-        heat_map = ax.pcolor(grid_data, cmap="Greys",
-                             vmin=0.0, vmax=1.0, zorder=zorder)
+        heat_map = ax.imshow(grid_data, cmap="Greys",
+                             vmin=0.0, vmax=1.0, zorder=zorder, origin="lower")
         plt.axis("equal")
         plt.grid()
         return heat_map
