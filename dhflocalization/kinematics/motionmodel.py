@@ -60,7 +60,7 @@ class OdometryMotionModel(MotionModel):
         self.alfa_4 = alfas[3]
         pass
 
-    def propagate(self, state: StateHypothesis, control_input, noise=False) -> StateHypothesis:
+    def propagate(self, state: StateHypothesis, control_input, noise=False, particles=False) -> StateHypothesis:
 
         state_odom_prev = control_input[0]
         state_odom_now = control_input[1]
@@ -109,7 +109,7 @@ class OdometryMotionModel(MotionModel):
                                           np.sin(fi + delta_hat_rot_1),
                                           delta_hat_rot_1 + delta_hat_rot_2]]).T
 
-        if len(state.covar):
+        if not particles:
             jacobi_state, jacobi_input = self.calcJacobians(
                 delta_rot_1, delta_trans, fi)
             prop_covar = (jacobi_state @ state.covar @ jacobi_state.T
@@ -124,11 +124,12 @@ class OdometryMotionModel(MotionModel):
 
     def propagate_particles(self, particle_poses, control_input):
         def propagate(pose):
-            return self.propagate(StateHypothesis(pose), control_input, noise=True).pose
+            return self.propagate(StateHypothesis(pose), control_input, noise=True, particles=True).pose
 
         particle_poses_next = np.array(
-            list(map(propagate, particle_poses))).squeeze()
+            list(map(propagate, particle_poses)))
 
+        particle_poses_next = particle_poses_next.squeeze(axis=2)
         return particle_poses_next
 
     def calcJacobians(self, delta_rot_1, delta_trans, fi):

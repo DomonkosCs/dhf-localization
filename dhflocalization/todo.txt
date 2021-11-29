@@ -1,0 +1,9 @@
+✅ 1. reduce the size of the pgm export as svg.
+✅ 2. create serialized data exports of the simulational runs
+3. adjust the odometry model of the AMCL method
+4. cell number to meters in plot
+5. initialize RNG seed for reproducibility
+✅ 6. write own plotter, or adapt the plotter of stonesoup
+✅ 7. plotting particles
+8. Option to reduce data frequency in plotting for readability
+9. Export AMCL particles
