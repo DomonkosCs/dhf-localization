@@ -1,3 +1,5 @@
+# From Stone Soup: https://github.com/dstl/Stone-Soup
+
 import warnings
 from itertools import chain
 
@@ -40,7 +42,7 @@ class Plotter:
         self.handles_list = []
         self.labels_list = []
 
-    def plot_ground_truths(self, truth, mapping, truths_label="Ground Truth", **kwargs):
+    def plot_ground_truths(self, truths, mapping, truths_label="Ground Truth", **kwargs):
         """Plots ground truth(s)
 
         Plots each ground truth path passed in to :attr:`truths` and generates a legend
@@ -63,23 +65,26 @@ class Plotter:
 
         truths_kwargs = dict(linestyle="--")
         truths_kwargs.update(kwargs)
-        # if not isinstance(truths, set):
-        #     truths = {truths}  # Make a set of length 1
+        if not isinstance(truths, set):
+            truths = {tuple(truths)}  # Make a set of length 1
 
         if self.background_map is not None:
             self.background_map.plot_grid_map(ax=self.ax)
-            x_coords = [(state.pose[mapping[0], 0] - self.background_map.left_lower_x) /
-                        self.background_map.resolution for state in truth]
-            y_coords = [(state.pose[mapping[1], 0] - self.background_map.left_lower_y)/self.background_map.resolution
-                        for state in truth]
+            for truth in truths:
+                x_coords = [(state.pose[mapping[0], 0] - self.background_map.left_lower_x) /
+                            self.background_map.resolution for state in truth]
+                y_coords = [(state.pose[mapping[1], 0] - self.background_map.left_lower_y)/self.background_map.resolution
+                            for state in truth]
+                self.ax.plot(x_coords,
+                             y_coords,
+                             **truths_kwargs, zorder=2)
         else:
-            x_coords = [state.pose[mapping[0], 0] for state in truth]
-            y_coords = [state.pose[mapping[1], 0] for state in truth]
-        # for truth in truths:
-
-        self.ax.plot(x_coords,
-                     y_coords,
-                     **truths_kwargs, zorder=2)
+            for truth in truths:
+                x_coords = [state.pose[mapping[0], 0] for state in truth]
+                y_coords = [state.pose[mapping[1], 0] for state in truth]
+                self.ax.plot(x_coords,
+                             y_coords,
+                             **truths_kwargs, zorder=2)
 
         # Generate legend items
         truths_handle = Line2D(
@@ -90,103 +95,7 @@ class Plotter:
         # Generate legend
         self.ax.legend(handles=self.handles_list, labels=self.labels_list)
 
-    def plot_measurements(self, measurements, mapping, measurement_model=None,
-                          measurements_label="Measurements", **kwargs):
-        """Plots measurements
-
-        Plots detections and clutter, generating a legend automatically. Detections are plotted as
-        blue circles by default unless the detection type is clutter.
-        If the detection type is :class:`~.Clutter` it is plotted as a yellow 'tri-up' marker.
-
-        Users can change the color and marker of detections using keyword arguments but not for
-        clutter detections.
-
-        Parameters
-        ----------
-        measurements : list of :class:`~.Detection`
-            Detections which will be plotted. If measurements is a set of lists it is flattened.
-        mapping: list
-            List of 2 items specifying the mapping of the x and y components of the state space.
-        measurement_model : :class:`~.Model`, optional
-            User-defined measurement model to be used in finding measurement state inverses if
-            they cannot be found from the measurements themselves.
-        \\*\\*kwargs: dict
-            Additional arguments to be passed to plot function for detections. Defaults are
-            ``marker='o'`` and ``color='b'``.
-        """
-
-        measurement_kwargs = dict(marker='o', color='b')
-        measurement_kwargs.update(kwargs)
-
-        if any(isinstance(item, set) for item in measurements):
-            measurements_set = chain.from_iterable(
-                measurements)  # Flatten into one set
-        else:
-            measurements_set = measurements
-
-        plot_detections = []
-        plot_clutter = []
-
-        for state in measurements_set:
-            meas_model = state.measurement_model  # measurement_model from detections
-            if meas_model is None:
-                meas_model = measurement_model  # measurement_model from input
-
-            if isinstance(meas_model, LinearModel):
-                model_matrix = meas_model.matrix()
-                inv_model_matrix = np.linalg.pinv(model_matrix)
-                state_vec = inv_model_matrix @ state.state_vector
-
-            elif isinstance(meas_model, NonLinearModel):
-                try:
-                    state_vec = meas_model.inverse_function(state)
-                except (NotImplementedError, AttributeError):
-                    warnings.warn('Nonlinear measurement model used with no inverse '
-                                  'function available')
-                    continue
-            else:
-                warnings.warn(
-                    'Measurement model type not specified for all detections')
-                continue
-
-            if isinstance(state, detection.Clutter):
-                # Plot clutter
-                plot_clutter.append((*state_vec[mapping], ))
-
-            elif isinstance(state, detection.Detection):
-                # Plot detections
-                plot_detections.append((*state_vec[mapping], ))
-            else:
-                warnings.warn(f'Unknown type {type(state)}')
-                continue
-
-        if plot_detections:
-            detection_array = np.array(plot_detections)
-            self.ax.scatter(
-                detection_array[:, 0], detection_array[:, 1], **measurement_kwargs)
-            measurements_handle = Line2D(
-                [], [], linestyle='', **measurement_kwargs)
-
-            # Generate legend items for measurements
-            self.handles_list.append(measurements_handle)
-            self.labels_list.append(measurements_label)
-
-        if plot_clutter:
-            clutter_array = np.array(plot_clutter)
-            self.ax.scatter(
-                clutter_array[:, 0], clutter_array[:, 1], color='y', marker='2')
-            clutter_handle = Line2D(
-                [], [], linestyle='', marker='2', color='y')
-            clutter_label = "Clutter"
-
-            # Generate legend items for clutter
-            self.handles_list.append(clutter_handle)
-            self.labels_list.append(clutter_label)
-
-        # Generate legend
-        self.ax.legend(handles=self.handles_list, labels=self.labels_list)
-
-    def plot_tracks(self, track, mapping, uncertainty=False, particle=False, track_label="Track",
+    def plot_tracks(self, tracks, mapping, uncertainty=False, particle=False, track_label="Track",
                     **kwargs):
         """Plots track(s)
 
@@ -219,14 +128,18 @@ class Plotter:
         tracks_kwargs = dict(linestyle='-', marker=".", color=None)
         tracks_kwargs.update(kwargs)
 
-        # Plot tracks
+        if not isinstance(tracks, set):
+            tracks = {tuple(tracks)}  # Make a set of length 1
 
-        line = self.ax.plot([(state.pose[mapping[0], 0] - self.background_map.left_lower_x) /
-                             self.background_map.resolution for state in track],
-                            [(state.pose[mapping[1], 0] - self.background_map.left_lower_y)/self.background_map.resolution
-                             for state in track],
-                            **tracks_kwargs)
-        track_color = plt.getp(line[0], 'color')
+        # Plot tracks
+        track_colors = {}
+        for track in tracks:
+            line = self.ax.plot([(state.pose[mapping[0], 0] - self.background_map.left_lower_x) /
+                                self.background_map.resolution for state in track],
+                                [(state.pose[mapping[1], 0] - self.background_map.left_lower_y)/self.background_map.resolution
+                                for state in track],
+                                **tracks_kwargs)
+            track_colors[track] = plt.getp(line[0], 'color')
 
         # Assuming a single track or all plotted as the same colour then the following will work.
         # Otherwise will just render the final track colour.
@@ -242,15 +155,21 @@ class Plotter:
             # Plot uncertainty ellipses
             for track in tracks:
                 # Get position mapping matrix
-                HH = np.eye(track.ndim)[mapping, :]
+                HH = np.eye(len(track[0].pose))[mapping, :]
                 for state in track:
                     w, v = np.linalg.eig(HH @ state.covar @ HH.T)
                     max_ind = np.argmax(w)
                     min_ind = np.argmin(w)
                     orient = np.arctan2(v[1, max_ind], v[0, max_ind])
-                    ellipse = Ellipse(xy=state.state_vector[mapping[:2], 0],
-                                      width=2 * np.sqrt(w[max_ind]),
-                                      height=2 * np.sqrt(w[min_ind]),
+                    coords = ((state.pose[mapping[0], 0] - self.background_map.left_lower_x) /
+                              self.background_map.resolution, (state.pose[mapping[1], 0] - self.background_map.left_lower_y)/self.background_map.resolution)
+                    ellipse = Ellipse(xy=coords,
+                                      width=2 *
+                                      np.sqrt(w[max_ind]) /
+                                      self.background_map.resolution,
+                                      height=2 *
+                                      np.sqrt(w[min_ind]) /
+                                      self.background_map.resolution,
                                       angle=np.rad2deg(orient), alpha=0.2,
                                       color=track_colors[track])
                     self.ax.add_artist(ellipse)
@@ -269,14 +188,15 @@ class Plotter:
 
         elif particle:
             # Plot particles
-            for state in track:
-                data = state.particles[:, mapping[:2]]
-                self.ax.plot(
-                    (data[0] - self.background_map.left_lower_x) /
-                    self.background_map.resolution,
-                    (data[1] - self.background_map.left_lower_y) /
-                    self.background_map.resolution,
-                    linestyle='', marker=".", markersize=1, alpha=0.5)
+            for track in tracks:
+                for state in track:
+                    data = state.particles[:, mapping[:2]]
+                    self.ax.plot(
+                        (data[:, 0] - self.background_map.left_lower_x) /
+                        self.background_map.resolution,
+                        (data[:, 1] - self.background_map.left_lower_y) /
+                        self.background_map.resolution,
+                        linestyle='', marker=".", markersize=1, alpha=0.5)
 
             # Generate legend items for particles
             particle_handle = Line2D(
