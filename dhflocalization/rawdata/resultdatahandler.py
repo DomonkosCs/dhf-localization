@@ -8,7 +8,7 @@ class resultExporter():
         pass
 
     @classmethod
-    def save(cls, *datas):
+    def save(cls, *datas, prefix=''):
         data_list = []
         for data in datas:
             data_list.append(data)
@@ -16,7 +16,9 @@ class resultExporter():
         path = 'resources/results/'
         file_name = time.strftime('%m-%d-%H_%M')
         extension = '.p'
-        pickle.dump(data_list, open(path+file_name+extension, "wb"))
+        if prefix is not '':
+            prefix += '-'
+        pickle.dump(data_list, open(path+prefix+file_name+extension, "wb"))
 
 
 class resultLoader():
