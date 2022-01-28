@@ -22,11 +22,13 @@ import re """
 
 matplotlib.rcParams['text.usetex'] = True
 %matplotlib widget
+
 # %%
 
 
+np.random.seed(2021)
 map_fn = '/Users/domonkoscsuzdi/Desktop/Research/Localization/code/dhflocalization/resources/tb3_house_true.pgm'
-simu_data_fn = '/Users/domonkoscsuzdi/Desktop/Research/Localization/code/dhflocalization/resources/5hz_000001.json'
+simu_data_fn = '/Users/domonkoscsuzdi/Desktop/Research/Localization/code/dhflocalization/resources/5hz_005.json'
 
 ogm = GridMap.load_grid_map_from_array(
     PgmProcesser.read_pgm(map_fn), 0.05, 10, 10.05)
@@ -79,7 +81,7 @@ reference_states = {"odom": odom_states, "true": true_states}
 resultExporter().save(filtered_states, reference_states)
 # %%
 
-results = resultLoader().load('11-29-17_05')
+results = resultLoader().load('01-28-11_40')
 
 
 def calcPoseFromStateArray(filtered_states, reference_states):
@@ -157,7 +159,7 @@ ogm = GridMap.load_grid_map_from_array(
 plotter = Plotter()
 plotter.background_map = ogm
 
-plotter.plot_tracks(filtered_states['edh'], [0, 1], particle=True)
+plotter.plot_tracks(filtered_states['edh'], [0, 1], particle=False)
 
 # %%
 
@@ -165,9 +167,10 @@ plotter.plot_tracks(filtered_states['edh'], [0, 1], particle=True)
 # ['ekf','edh']
 
 
-def plotTracks(filtered_names, reference_names):
+def plotTracks(reference_names, filtered_names):
 
-    map_fn = '/Users/domonkoscsuzdi/Desktop/Research/Localization/code/dhflocalization/resources/tb3_house_true.pgm'
+    map_fn = \
+        '/Users/domonkoscsuzdi/Desktop/Research/Localization/code/dhflocalization/resources/tb3_house_true.pgm'
 
     ogm = GridMap.load_grid_map_from_array(
         PgmProcesser.read_pgm(map_fn), 0.05, 10, 10.05)
@@ -186,11 +189,10 @@ def plotTracks(filtered_names, reference_names):
             filtered_states[name], [0, 1], marker=None, linestyle='--', track_label=name)
 
 
-plotTracks(['true'], ['ekf', 'edh', 'amcl'])
+plotTracks(['true'], ['edh', 'ekf'])
 # %%
 
-
-time = np.linspace(0, 569.987-6.821, true_poses[:, 0].shape[0])
+time = np.linspace(0, 569.987-6.821, reference_poses['true'][:, 0].shape[0])
 bottom_lim = -0.25
 top_lim = 0.25
 plt.figure(figsize=(10, 5))
@@ -200,7 +202,7 @@ ax = plt.gca()
 ax.grid(1)
 ax.set_ylim(bottom_lim, top_lim)
 ax.set_ylabel(r'$\Delta x\,(\mathrm{m})$')
-plt.plot(time, true_poses[:, 0]-ekf_poses[:, 0],
+plt.plot(time, reference_poses['true'][:, 0]-filtered_poses['ekf'][:, 0],
          label="EKF", color="black", linewidth=0.6)
 plt.legend()
 plt.subplot(312)
@@ -208,12 +210,12 @@ ax = plt.gca()
 ax.grid(1)
 ax.set_ylim(bottom_lim, top_lim)
 ax.set_ylabel(r'$\Delta x\,(\mathrm{m})$')
-plt.plot(time, true_poses[:, 0]-amcl_poses[:, 0],
+plt.plot(time, reference_poses['true'][:, 0]-filtered_poses['amcl'][:, 0],
          label="AMCL", color="black", linewidth=0.6)
 plt.legend()
 
 plt.subplot(313)
-plt.plot(time, true_poses[:, 0]-edh_poses[:, 0],
+plt.plot(time, reference_poses['true'][:, 0]-filtered_poses['edh'][:, 0],
          label="EDH", color="black", linewidth=0.6)
 ax = plt.gca()
 plt.legend()
@@ -232,7 +234,7 @@ ax = plt.gca()
 ax.grid(1)
 ax.set_ylim(bottom_lim, top_lim)
 ax.set_ylabel(r'$\Delta y\,(\mathrm{m})$')
-plt.plot(time, true_poses[:, 1]-ekf_poses[:, 1],
+plt.plot(time, reference_poses['true'][:, 1]-filtered_poses['ekf'][:, 1],
          label="EKF", color="black", linewidth=0.6)
 plt.legend()
 plt.subplot(312)
@@ -240,12 +242,12 @@ ax = plt.gca()
 ax.grid(1)
 ax.set_ylim(bottom_lim, top_lim)
 ax.set_ylabel(r'$\Delta y\,(\mathrm{m})$')
-plt.plot(time, true_poses[:, 1]-amcl_poses[:, 1],
+plt.plot(time, reference_poses['true'][:, 1]-filtered_poses['amcl'][:, 1],
          label="AMCL", color="black", linewidth=0.6)
 plt.legend()
 
 plt.subplot(313)
-plt.plot(time, true_poses[:, 1]-edh_poses[:, 1],
+plt.plot(time, reference_poses['true'][:, 1]-filtered_poses['edh'][:, 1],
          label="EDH", color="black", linewidth=0.6)
 ax = plt.gca()
 plt.legend()
@@ -255,6 +257,29 @@ ax.set_ylim(bottom_lim, top_lim)
 ax.set_xlabel(r'$t\,(\mathrm{s})$')
 ax.set_ylabel(r'$\Delta y\,(\mathrm{m})$')
 # %%
+
+
+def angle_set_diff(set_1, set_2):
+    return [calc_angle_diff(a, b) for a, b in zip(set_1, set_2)]
+
+
+def normalize_angle(angle):
+    return np.arctan2(np.sin(angle), np.cos(angle))
+
+
+def calc_angle_diff(a, b):
+    a = normalize_angle(a)
+    b = normalize_angle(b)
+    d1 = a-b
+    d2 = 2*np.pi - abs(d1)
+    if(d1 > 0):
+        d2 *= -1.0
+    if(abs(d1) < abs(d2)):
+        return d1
+    else:
+        return d2
+
+
 bottom_lim = -0.15
 top_lim = 0.15
 plt.figure(figsize=(10, 5))
@@ -264,7 +289,7 @@ ax = plt.gca()
 ax.grid(1)
 ax.set_ylim(bottom_lim, top_lim)
 ax.set_ylabel(r'$\Delta \theta\,(\mathrm{rad})$')
-plt.plot(time, angle_set_diff(true_poses[:, 2], ekf_poses[:, 2]),
+plt.plot(time, angle_set_diff(reference_poses['true'][:, 2], filtered_poses['ekf'][:, 2]),
          label="EKF", color="black", linewidth=0.6)
 plt.legend()
 plt.subplot(312)
@@ -272,12 +297,12 @@ ax = plt.gca()
 ax.grid(1)
 ax.set_ylim(bottom_lim, top_lim)
 ax.set_ylabel(r'$\Delta \theta\,(\mathrm{rad})$')
-plt.plot(time, angle_set_diff(true_poses[:, 2], amcl_poses[:, 2]),
+plt.plot(time, angle_set_diff(reference_poses['true'][:, 2], filtered_poses['amcl'][:, 2]),
          label="AMCL", color="black", linewidth=0.6)
 plt.legend()
 
 plt.subplot(313)
-plt.plot(time, angle_set_diff(true_poses[:, 2], edh_poses[:, 2]),
+plt.plot(time, angle_set_diff(reference_poses['true'][:, 2], filtered_poses['edh'][:, 2]),
          label="EDH", color="black", linewidth=0.6)
 ax = plt.gca()
 plt.legend()
