@@ -141,3 +141,5 @@ cython_debug/
 # Apple drive
 
 *.icloud
+LaTeX/main.pdf
+Presentation/presentation.pdf
