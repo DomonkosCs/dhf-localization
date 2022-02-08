@@ -1,6 +1,5 @@
-from os import path
 import pickle
-from datetime import date, datetime
+from datetime import datetime
 
 
 class resultExporter():
@@ -16,7 +15,7 @@ class resultExporter():
         path = 'resources/results/'
         file_name = time.strftime('%m-%d-%H_%M')
         extension = '.p'
-        if prefix is not '':
+        if prefix != '':
             prefix += '-'
         pickle.dump(data_list, open(path+prefix+file_name+extension, "wb"))
 

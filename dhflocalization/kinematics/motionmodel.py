@@ -1,7 +1,7 @@
 
 from abc import ABC, abstractmethod
 import numpy as np
-from state.state import StateHypothesis
+from state import StateHypothesis
 
 
 class MotionModel(ABC):

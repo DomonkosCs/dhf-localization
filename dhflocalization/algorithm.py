@@ -2,16 +2,16 @@
 
 # %%
 import matplotlib
-from visualization.plotter import Plotter
-from filters.edh import EDH
-from gridmap.processpgm import PgmProcesser
-from kinematics.motionmodel import OdometryMotionModel
-from measurement.measurement import Measurement
-from rawdata.loadsimudata import RawDataLoader
-from state.state import StateHypothesis
-from rawdata.resultdatahandler import resultExporter, resultLoader
-from filters.ekf import EKF
-from gridmap.grid_map import GridMap
+from visualization import Plotter
+from filters import EDH
+from gridmap import PgmProcesser
+from kinematics import OdometryMotionModel
+from measurement import Measurement
+from rawdata import RawDataLoader
+from state import StateHypothesis
+from rawdata import resultExporter, resultLoader
+from filters import EKF
+from gridmap import GridMap
 import numpy as np
 import matplotlib.pyplot as plt
 """ import cProfile
@@ -27,8 +27,8 @@ matplotlib.rcParams['text.usetex'] = True
 
 
 np.random.seed(2021)
-map_fn = '/Users/domonkoscsuzdi/Desktop/Research/Localization/code/dhflocalization/resources/tb3_house_true.pgm'
-simu_data_fn = '/Users/domonkoscsuzdi/Desktop/Research/Localization/code/dhflocalization/resources/5hz_005.json'
+map_fn = '/Users/domonkoscsuzdi/dhf_loc/dhflocalization/resources/tb3_house_lessnoisy.pgm'
+simu_data_fn = '/Users/domonkoscsuzdi/dhf_loc/dhflocalization/resources/5hz_005.json'
 
 ogm = GridMap.load_grid_map_from_array(
     PgmProcesser.read_pgm(map_fn), 0.05, 10, 10.05)
@@ -81,7 +81,7 @@ reference_states = {"odom": odom_states, "true": true_states}
 resultExporter().save(filtered_states, reference_states)
 # %%
 
-results = resultLoader().load('01-28-11_40')
+results = resultLoader().load('02-08-10_11')
 
 
 def calcPoseFromStateArray(filtered_states, reference_states):

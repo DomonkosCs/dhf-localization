@@ -1,8 +1,7 @@
 
 
-from gridmap.grid_map import GridMap
-from measurement.sensor import Detection
-from state.state import StateHypothesis
+from gridmap import GridMap
+from state import StateHypothesis
 import numpy as np
 
 

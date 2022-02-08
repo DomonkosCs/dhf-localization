@@ -1,5 +1,5 @@
-from kinematics.motionmodel import MotionModel
-from measurement.measurement import Measurement
+from kinematics import MotionModel
+from measurement import Measurement
 from state.state import StateHypothesis
 import numpy as np
 
