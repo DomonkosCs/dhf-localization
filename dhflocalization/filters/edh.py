@@ -34,7 +34,7 @@ class EDH:
             cd, grad_cd_x, grad_cd_z, _ = self.measurement_model.processDetection(
                 StateHypothesis(particle_poses_mean), measurement)
 
-        y = - cd + grad_cd_x.T @ particle_poses_mean_0
+        y = - cd + grad_cd_x.T @ particle_poses_mean
         B = -0.5*ekf_covar @ grad_cd_x / \
             (l*grad_cd_x.T @ ekf_covar @ grad_cd_x +
              grad_cd_z.T @ measurement_covar @ grad_cd_z) @ grad_cd_x.T
