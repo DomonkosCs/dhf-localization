@@ -2,32 +2,32 @@ import pickle
 from datetime import datetime
 
 
-class resultExporter():
+class resultExporter:
     def __init__(self) -> None:
         pass
 
     @classmethod
-    def save(cls, *datas, prefix=''):
+    def save(cls, *datas, prefix=""):
         data_list = []
         for data in datas:
             data_list.append(data)
         time = datetime.now()
-        path = 'resources/results/'
-        file_name = time.strftime('%m-%d-%H_%M')
-        extension = '.p'
-        if prefix != '':
-            prefix += '-'
-        pickle.dump(data_list, open(path+prefix+file_name+extension, "wb"))
+        path = "/Users/domonkoscsuzdi/dhf_loc/dhflocalization/resources/results/"
+        file_name = time.strftime("%m-%d-%H_%M")
+        extension = ".p"
+        if prefix != "":
+            prefix += "-"
+        pickle.dump(data_list, open(path + prefix + file_name + extension, "wb"))
 
 
-class resultLoader():
+class resultLoader:
     def __init__(self) -> None:
         pass
 
     @classmethod
     def load(cls, file_name, path=None):
-        extension = '.p'
+        extension = ".p"
         if path is None:
-            path = 'resources/results/'
-        loaded_data = pickle.load(open(path+file_name+extension, "rb"))
+            path = "resources/results/"
+        loaded_data = pickle.load(open(path + file_name + extension, "rb"))
         return loaded_data

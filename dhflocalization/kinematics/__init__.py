@@ -1,1 +1,1 @@
-from .motionmodel import VelocityMotionModel, OdometryMotionModel, MotionModel
+from .motionmodel import OdometryMotionModel, MotionModel
