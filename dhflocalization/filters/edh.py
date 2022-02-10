@@ -7,11 +7,15 @@ from customtypes import StateHypothesis
 
 class EDH:
     def __init__(
-        self, motion_model: MotionModel, measurement_model: Measurement, particle_num
+        self,
+        motion_model: MotionModel,
+        measurement_model: Measurement,
+        particle_num,
+        lambda_num,
     ) -> None:
         self.motion_model = motion_model
         self.measurement_model = measurement_model
-        self.lambda_num = 10
+        self.lambda_num = lambda_num
         self.particle_num = particle_num
         lambdas, self.d_lambda = np.linspace(
             0, 1, self.lambda_num, endpoint=False, retstep=True
