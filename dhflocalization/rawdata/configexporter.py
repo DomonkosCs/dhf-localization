@@ -8,7 +8,9 @@ class ConfigExporter:
     def add(self, key: str, value):
         self.data[key] = value
 
-    def export(self, filename):
+    def export(self, payload, filename):
+        self.data = self.__extract_variables(payload)
+
         path = r"/Users/domonkoscsuzdi/dhf_loc/dhflocalization/resources/results/{}.yaml".format(
             filename
         )
@@ -17,3 +19,6 @@ class ConfigExporter:
             "w",
         ) as file:
             yaml.dump(self.data, file)
+
+    def __extract_variables(self, payload):
+        return {key: payload[key] for key in payload.keys() if key.startswith("cfg_")}
