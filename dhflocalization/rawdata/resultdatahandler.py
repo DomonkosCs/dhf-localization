@@ -7,7 +7,7 @@ class resultExporter:
         pass
 
     @classmethod
-    def save(cls, *datas, prefix=""):
+    def save(cls, *datas, prefix="") -> str:
         data_list = []
         for data in datas:
             data_list.append(data)
@@ -18,6 +18,7 @@ class resultExporter:
         if prefix != "":
             prefix += "-"
         pickle.dump(data_list, open(path + prefix + file_name + extension, "wb"))
+        return file_name
 
 
 class resultLoader:
