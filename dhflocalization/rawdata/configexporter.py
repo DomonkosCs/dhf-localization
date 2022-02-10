@@ -5,9 +5,6 @@ class ConfigExporter:
     def __init__(self) -> None:
         self.data = {}
 
-    def add(self, key: str, value):
-        self.data[key] = value
-
     def export(self, payload, filename):
         self.data = self.__extract_variables(payload)
 
