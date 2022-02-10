@@ -2,7 +2,9 @@ import numpy as np
 
 
 class StateHypothesis:
-    def __init__(self, pose=[], covar=[], particles=None):
+    def __init__(self, pose=None, covar=None, particles=None):
+        pose = pose if pose else []
+        covar = covar if covar else []
         self.pose = np.array([pose]).T
         self.covar = np.array(covar)
         self.particles = particles
