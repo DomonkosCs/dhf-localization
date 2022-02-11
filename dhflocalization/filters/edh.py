@@ -1,5 +1,6 @@
 from kinematics import MotionModel
 from measurement import Measurement
+from typing import Optional
 import numpy as np
 
 from customtypes import StateHypothesis
@@ -13,18 +14,20 @@ class EDH:
         particle_num,
         lambda_num,
     ) -> None:
-        self.motion_model = motion_model
-        self.measurement_model = measurement_model
+        self.motion_model: MotionModel = motion_model
+        self.measurement_model: Measurement = measurement_model
         self.lambda_num = lambda_num
         self.particle_num = particle_num
         lambdas, self.d_lambda = np.linspace(
             0, 1, self.lambda_num, endpoint=False, retstep=True
         )
         self.lambdas = lambdas + self.d_lambda
-        self.filtered_states = []
-        self.propagated_state = None
+        self.filtered_states: list[StateHypothesis] = []
+        self.propagated_state: Optional[StateHypothesis] = None
 
-    def init_particles_from_gaussian(self, init_mean, init_covar, return_state=False):
+    def init_particles_from_gaussian(
+        self, init_mean: np.ndarray, init_covar: np.ndarray, return_state=False
+    ) -> StateHypothesis:
         init_state = StateHypothesis.init_particles_from_gaussian(
             self.particle_num, init_mean, init_covar
         )
@@ -38,7 +41,7 @@ class EDH:
         )
         self.propagated_state = StateHypothesis.create_from_particles(particle_poses)
 
-    def update(self, ekf_covar, measurement):
+    def update(self, ekf_covar: np.ndarray, measurement) -> None:
 
         num_of_rays = len(measurement)
         measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(

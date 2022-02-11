@@ -9,7 +9,6 @@ class Measurement:
         self.range_noise_std = range_noise_std
 
     def processDetection(self, state: StateHypothesis, measurement):
-        # measurement = [(fi_0,r_0),...,(fi_i,r_i)]
 
         ranges = [ray[1] for ray in measurement]
         angles = [ray[0] for ray in measurement]

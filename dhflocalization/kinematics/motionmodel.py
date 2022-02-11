@@ -101,12 +101,12 @@ class OdometryMotionModel(MotionModel):
         else:
             prop_covar = None
 
-        prop_state = StateHypothesis()
-        prop_state.pose = prop_pose
-        prop_state.covar = prop_covar
+        prop_state = StateHypothesis(pose=prop_pose, covar=prop_covar)
         return prop_state
 
-    def propagate_particles(self, particle_poses, control_input):
+    def propagate_particles(
+        self, particle_poses: np.ndarray, control_input
+    ) -> np.ndarray:
         def propagate(pose):
             return self.propagate(
                 StateHypothesis(pose), control_input, noise=True, particles=True

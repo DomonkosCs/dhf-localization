@@ -11,7 +11,7 @@ class EKF:
         self.filtered_states = []
         self.propagated_state = None
 
-    def init_state(self, mean, covar):
+    def init_state(self, mean: np.ndarray, covar: np.ndarray) -> None:
         state = StateHypothesis(pose=mean, covar=covar)
         self.filtered_states.append(state)
 
@@ -47,8 +47,8 @@ class EKF:
             )
         )
 
-        updated_state = StateHypothesis()
-        updated_state.pose = state.pose - K * cd
-        updated_state.covar = (np.eye(3) - K @ grad_cd_x.T) @ state.covar
+        updated_pose = state.pose - K * cd
+        updated_covar = (np.eye(3) - K @ grad_cd_x.T) @ state.covar
+        updated_state = StateHypothesis(pose=updated_pose, covar=updated_covar)
 
         self.filtered_states.append(updated_state)

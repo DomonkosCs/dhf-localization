@@ -1,12 +1,19 @@
+from selectors import PollSelector
+from importlib_metadata import NullFinder
 import numpy as np
 
 
 class StateHypothesis:
-    def __init__(self, pose=None, covar=None, particles=None):
-        pose = pose if pose else []
-        covar = covar if covar else []
-        self.pose = np.array([pose]).T
-        self.covar = np.array(covar)
+    def __init__(self, pose: np.ndarray, covar: np.ndarray = None, particles=None):
+
+        if pose.shape == (3, 1):
+            self.pose = pose
+        elif pose.ndim == 1:
+            self.pose = np.array([pose]).T
+        else:
+            self.pose = pose.T
+
+        self.covar = np.array(covar) if covar is not None else None
         self.particles = particles
 
     @classmethod

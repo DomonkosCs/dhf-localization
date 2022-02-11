@@ -6,7 +6,7 @@ from filters import EDH
 from gridmap import PgmProcesser
 from kinematics import OdometryMotionModel
 from measurement import Measurement
-from rawdata import RawDataLoader
+from rawdata import RawDataLoader, ConfigExporter
 
 from customtypes import StateHypothesis
 
@@ -17,69 +17,66 @@ import numpy as np
 
 # import matplotlib.pyplot as plt
 
-# """ import cProfile
-# import pstats
-# import re """
-# %load_ext autoreload
-# %autoreload 2
-
-# matplotlib.rcParams['text.usetex'] = True
-# %matplotlib widget
-# %%
 if __name__ == "__main__":
 
     print("Starting state estimation...")
 
-    map_filename = "tb3_house_lessnoisy"
-    simu_data_filename = "5hz_005"
+    # Exports every variable starting with cfg_ to a config YAML file.
+    config_exporter = ConfigExporter()
 
-    print(
-        'loading data from "{}" as map, "{}" as simulation data,'.format(
-            map_filename, simu_data_filename
-        )
-    )
+    cfg_random_seed = 2021
+    np.random.seed(cfg_random_seed)
 
-    simulation_data = RawDataLoader.loadFromJson(simu_data_filename)
+    cfg_map_filename = "tb3_house_lessnoisy"
+    cfg_simu_data_filename = "5hz_005"
+
+    simulation_data = RawDataLoader.loadFromJson(cfg_simu_data_filename)
     ogm = GridMap.load_grid_map_from_array(
-        PgmProcesser.read_pgm(map_filename),
+        PgmProcesser.read_pgm(cfg_map_filename),
         resolution=0.05,
         center_x=10,
         center_y=10.05,
     )
 
-    random_seed = 2021
-    np.random.seed(2021)
-
-    odometry_alpha_1 = 0.1
-    odometry_alpha_2 = 0.1
-    odometry_alpha_3 = 0.1
-    odometry_alpha_4 = 0.1
+    cfg_odometry_alpha_1 = 0.1
+    cfg_odometry_alpha_2 = 0.1
+    cfg_odometry_alpha_3 = 0.1
+    cfg_odometry_alpha_4 = 0.1
 
     motion_model = OdometryMotionModel(
-        [odometry_alpha_1, odometry_alpha_2, odometry_alpha_3, odometry_alpha_4]
+        [
+            cfg_odometry_alpha_1,
+            cfg_odometry_alpha_2,
+            cfg_odometry_alpha_3,
+            cfg_odometry_alpha_4,
+        ]
     )
 
-    measurement_range_noise_std = 0.01
+    cfg_measurement_range_noise_std = 0.01
 
-    measurement_model = Measurement(ogm, measurement_range_noise_std)
+    measurement_model = Measurement(ogm, cfg_measurement_range_noise_std)
 
-    edh_particle_number = 1
-    init_gaussian_mean = [-3.0, 1.0, 0]
-    init_gaussian_covar = [[0.1**2, 0, 0], [0, 0.1**2, 0], [0, 0, 0.05**2]]
+    cfg_edh_particle_number = 1
+    cfg_edh_lambda_number = 10
+    cfg_init_gaussian_mean = np.array([-3.0, 1.0, 0])
+    cfg_init_gaussian_covar = np.array(
+        [[0.1**2, 0, 0], [0, 0.1**2, 0], [0, 0, 0.05**2]]
+    )
 
     ekf = EKF(motion_model, measurement_model)
     edh = EDH(
         motion_model=motion_model,
         measurement_model=measurement_model,
-        particle_num=edh_particle_number,
+        particle_num=cfg_edh_particle_number,
+        lambda_num=cfg_edh_lambda_number,
     )
     edh.init_particles_from_gaussian(
-        init_gaussian_mean, init_gaussian_covar, return_state=False
+        cfg_init_gaussian_mean, cfg_init_gaussian_covar, return_state=False
     )
 
     # Another option is to set the return_state flag on edh.init_particles_from_gaussian,
     # and use returned state to initialize ekf.
-    ekf.init_state(mean=init_gaussian_mean, covar=init_gaussian_covar)
+    ekf.init_state(mean=cfg_init_gaussian_mean, covar=cfg_init_gaussian_covar)
 
     for i in range(1, simulation_data.simulation_steps, 1):
         control_input = [simulation_data.x_odom[i - 1], simulation_data.x_odom[i]]
@@ -92,32 +89,34 @@ if __name__ == "__main__":
         ekf.update(measurement)
 
     amcl_filtered_states = [
-        StateHypothesis(amcl_pose) for amcl_pose in np.array(simulation_data.x_amcl)
+        StateHypothesis(amcl_pose) for amcl_pose in simulation_data.x_amcl
     ]
 
     odom_states = [
-        StateHypothesis(np.array(odom_pose) + np.array([-3, 1, 0]))
+        StateHypothesis(odom_pose + np.array([-3, 1, 0]))
         for odom_pose in simulation_data.x_odom
     ]
 
     true_states = [StateHypothesis(true_pose) for true_pose in simulation_data.x_true]
 
     filtered_states = {
-        "edh": edh.filtered_states,
+        # "edh": edh.filtered_states,
         "ekf": ekf.filtered_states,
         "amcl": amcl_filtered_states,
     }
     reference_states = {"odom": odom_states, "true": true_states}
 
     print("Calcuations completed, saving results...")
-    resultExporter().save(filtered_states, reference_states)
+    cfg_result_filename = resultExporter().save(filtered_states, reference_states)
+    config_exporter.export(locals(), cfg_result_filename)
+
 # #%%
 
 
 # # %%
 # from rawdata import resultExporter, resultLoader
 
-# results = resultLoader().load("02-09-13_52")
+# results = resultLoader().load("02-11-12_02")
 
 
 # def calcPoseFromStateArray(filtered_states, reference_states):
