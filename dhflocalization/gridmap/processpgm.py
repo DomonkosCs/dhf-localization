@@ -1,6 +1,7 @@
 import re
-
 import numpy as np
+from pathlib import Path
+
 
 # Stole this function from
 # http://stackoverflow.com/questions/7368739/numpy-and-16-bit-pgm/7369986#7369986
@@ -11,14 +12,15 @@ class PgmProcesser:
         pass
 
     @classmethod
-    def read_pgm(cls, filename, byteorder=">"):
+    def read_pgm(cls, file_name, byteorder=">"):
         """Return image data from a raw PGM file as numpy array.
         Format specification: http://netpbm.sourceforge.net/doc/pgm.html
         """
 
-        file_path = "/Users/domonkoscsuzdi/dhf_loc/dhflocalization/resources/maps/{}.pgm".format(
-            filename
-        )
+        base_path = Path(__file__).parent
+        relative_path = "../resources/maps/" + file_name + ".pgm"
+        file_path = (base_path / relative_path).resolve()
+
         with open(file_path, "rb") as f:
             buffer_ = f.read()
         try:
@@ -30,7 +32,7 @@ class PgmProcesser:
                 buffer_,
             ).groups()
         except AttributeError:
-            raise ValueError("Not a raw PGM file: '%s'" % filename)
+            raise ValueError("Not a raw PGM file: '%s'" % file_name)
         raw_array = np.frombuffer(
             buffer_,
             dtype="u1" if int(maxval) < 256 else byteorder + "u2",

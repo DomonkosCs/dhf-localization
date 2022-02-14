@@ -1,5 +1,6 @@
 import pickle
 from datetime import datetime
+from pathlib import Path
 
 
 class resultExporter:
@@ -12,12 +13,15 @@ class resultExporter:
         for data in datas:
             data_list.append(data)
         time = datetime.now()
-        path = "/Users/domonkoscsuzdi/dhf_loc/dhflocalization/resources/results/"
-        file_name = time.strftime("%m-%d-%H_%M")
-        extension = ".p"
+
+        file_name = time.strftime("%y-%m-%dT%H%M%S%z")
+        base_path = Path(__file__).parent
+        relative_path = "../resources/results/" + file_name + ".p"
+        file_path = (base_path / relative_path).resolve()
+
         if prefix != "":
             prefix += "-"
-        pickle.dump(data_list, open(path + prefix + file_name + extension, "wb"))
+        pickle.dump(data_list, open(file_path, "wb"))
         return file_name
 
 
@@ -26,9 +30,10 @@ class resultLoader:
         pass
 
     @classmethod
-    def load(cls, file_name, path=None):
-        extension = ".p"
-        if path is None:
-            path = "resources/results/"
-        loaded_data = pickle.load(open(path + file_name + extension, "rb"))
+    def load(cls, file_name):
+        base_path = Path(__file__).parent
+        relative_path = "../resources/results/" + file_name + ".p"
+        file_path = (base_path / relative_path).resolve()
+
+        loaded_data = pickle.load(open(file_path, "rb"))
         return loaded_data
