@@ -1,5 +1,3 @@
-from selectors import PollSelector
-from importlib_metadata import NullFinder
 import numpy as np
 
 
