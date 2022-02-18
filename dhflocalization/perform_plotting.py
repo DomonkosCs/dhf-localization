@@ -3,11 +3,10 @@ import numpy as np
 from gridmap import GridMap
 from gridmap import PgmProcesser
 from visualization import TrackPlotter
-import matplotlib.pyplot as plt
 
 
 def main(results_filename):
-    def calcPoseFromStateArray(filtered_states, reference_states):
+    def calc_pose_from_state_array(filtered_states, reference_states):
         filtered_poses = {}
         for key, value in filtered_states.items():
             filtered_poses[key] = np.array([state.pose for state in value])
@@ -17,7 +16,7 @@ def main(results_filename):
 
         return filtered_poses, reference_poses
 
-    def calcErrorMetrics(filtered_poses, reference_poses):
+    def calc_error_metrics(filtered_poses, reference_poses):
         def normalize_angle(angle):
             return np.arctan2(np.sin(angle), np.cos(angle))
 
@@ -77,15 +76,16 @@ def main(results_filename):
         return err_mean_sqare, err_mean_abs, std
 
     results = resultLoader.load(results_filename)
-    filtered_poses, reference_poses = calcPoseFromStateArray(results[0], results[1])
+    filtered_poses, reference_poses = calc_pose_from_state_array(results[0], results[1])
 
-    err_mean_sqare, err_mean_abs, std = calcErrorMetrics(
+    err_mean_sqare, err_mean_abs, std = calc_error_metrics(
         filtered_poses, reference_poses
     )
     print(err_mean_sqare)
     print(err_mean_abs)
     print(std)
 
+    # TODO load from yaml, or find another solution
     map_fn = "tb3_house_lessnoisy"
 
     ogm = GridMap.load_grid_map_from_array(
@@ -97,5 +97,5 @@ def main(results_filename):
 
 
 if __name__ == "__main__":
-    results_filename = "22-02-14T101103"
+    results_filename = "22-02-18T080249"
     main(results_filename)

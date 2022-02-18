@@ -32,7 +32,7 @@ class EKF:
             grad_cd_x,
             grad_cd_z,
             _,
-        ) = self.measurement_model.processDetection(state, measurement)
+        ) = self.measurement_model.process_detection(state, measurement)
 
         measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(
             grad_cd_z.shape[0]

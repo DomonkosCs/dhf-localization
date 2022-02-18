@@ -8,7 +8,7 @@ class RawDataLoader:
         pass
 
     @classmethod
-    def loadFromJson(cls, filename):
+    def load_from_json(cls, filename):
         file_path = "/Users/domonkoscsuzdi/dhf_loc/dhflocalization/resources/simulations/{}.json".format(
             filename
         )

@@ -8,7 +8,7 @@ class Measurement:
         self.ogm = ogm
         self.range_noise_std = range_noise_std
 
-    def processDetection(self, state: StateHypothesis, measurement):
+    def process_detection(self, state: StateHypothesis, measurement):
 
         ranges = [ray[1] for ray in measurement]
         angles = [ray[0] for ray in measurement]

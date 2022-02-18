@@ -52,7 +52,7 @@ class EDH:
         particle_poses_mean = np.mean(particle_poses, axis=0)
         particle_poses_mean_0 = particle_poses_mean
         for lamb in self.lambdas:
-            cd, grad_cd_x, grad_cd_z, _ = self.measurement_model.processDetection(
+            cd, grad_cd_x, grad_cd_z, _ = self.measurement_model.process_detection(
                 StateHypothesis(particle_poses_mean), measurement
             )
 

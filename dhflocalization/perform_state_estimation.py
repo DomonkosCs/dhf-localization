@@ -30,11 +30,11 @@ if __name__ == "__main__":
     np.random.seed(cfg_random_seed)
 
     cfg_map_filename = "tb3_house_lessnoisy"
-    cfg_simu_data_filename = "5hz_005"
+    cfg_simu_data_filename = "5hz_0001"
 
     do_plotting = True
 
-    simulation_data = RawDataLoader.loadFromJson(cfg_simu_data_filename)
+    simulation_data = RawDataLoader.load_from_json(cfg_simu_data_filename)
     ogm = GridMap.load_grid_map_from_array(
         PgmProcesser.read_pgm(cfg_map_filename),
         resolution=0.05,
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     measurement_model = Measurement(ogm, cfg_measurement_range_noise_std)
 
     cfg_edh_particle_number = 1
-    cfg_edh_lambda_number = 10
+    cfg_edh_lambda_number = 1
     cfg_init_gaussian_mean = np.array([-3.0, 1.0, 0])
     cfg_init_gaussian_covar = np.array(
         [[0.1**2, 0, 0], [0, 0.1**2, 0], [0, 0, 0.05**2]]

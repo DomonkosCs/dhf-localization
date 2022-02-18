@@ -58,7 +58,7 @@ class OdometryMotionModel(MotionModel):
             abs(self.calc_angle_diff(delta_rot_2, np.pi)),
         )
 
-        control_covar = self.calcControlNoiseCovar(
+        control_covar = self.calc_control_noise_covar(
             delta_rot_1, delta_rot_2, delta_trans
         )
 
@@ -91,7 +91,7 @@ class OdometryMotionModel(MotionModel):
         )
 
         if not particles:
-            jacobi_state, jacobi_input = self.calcJacobians(
+            jacobi_state, jacobi_input = self.calc_jacobians(
                 delta_rot_1, delta_trans, fi
             )
             prop_covar = (
@@ -117,7 +117,7 @@ class OdometryMotionModel(MotionModel):
         particle_poses_next = particle_poses_next.squeeze(axis=2)
         return particle_poses_next
 
-    def calcJacobians(self, delta_rot_1, delta_trans, fi):
+    def calc_jacobians(self, delta_rot_1, delta_trans, fi):
 
         J_state_13 = -delta_trans * np.sin(fi + delta_rot_1)
         J_state_23 = delta_trans * np.cos(fi + delta_rot_1)
@@ -134,7 +134,7 @@ class OdometryMotionModel(MotionModel):
 
         return [J_state, J_input]
 
-    def calcControlNoiseCovar(self, delta_rot_1, delta_rot_2, delta_trans):
+    def calc_control_noise_covar(self, delta_rot_1, delta_rot_2, delta_trans):
 
         control_var_11 = self.alfa_1 * delta_rot_1**2 + self.alfa_2 * delta_trans**2
         control_var_22 = self.alfa_3 * delta_trans**2 + self.alfa_4 * (
