@@ -15,7 +15,7 @@ from filters import EKF
 from gridmap import GridMap
 import numpy as np
 
-import perform_plotting as plotting
+import perform_evaluation as evaluate
 
 # import matplotlib.pyplot as plt
 
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     cfg_map_filename = "tb3_house_lessnoisy"
     cfg_simu_data_filename = "5hz_0001"
 
-    do_plotting = True
+    do_plotting = False
 
     simulation_data = RawDataLoader.load_from_json(cfg_simu_data_filename)
     ogm = GridMap.load_grid_map_from_array(
@@ -85,10 +85,10 @@ if __name__ == "__main__":
         control_input = [simulation_data.x_odom[i - 1], simulation_data.x_odom[i]]
         measurement = simulation_data.measurement[i]
 
-        edh.propagate(control_input)
+        # edh.propagate(control_input)
         ekf_propagated_state = ekf.propagate(control_input, return_state=True)
 
-        edh.update(ekf_propagated_state.covar, measurement)
+        # edh.update(ekf_propagated_state.covar, measurement)
         ekf.update(measurement)
 
     amcl_filtered_states = [
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     true_states = [StateHypothesis(true_pose) for true_pose in simulation_data.x_true]
 
     filtered_states = {
-        "edh": edh.filtered_states,
+        # "edh": edh.filtered_states,
         "ekf": ekf.filtered_states,
         "amcl": amcl_filtered_states,
     }
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     config_exporter.export(locals(), cfg_result_filename)
 
     if do_plotting:
-        plotting.main(cfg_result_filename)
+        evaluate.main(cfg_result_filename)
 
 # # %%
 
