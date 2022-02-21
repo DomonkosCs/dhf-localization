@@ -5,7 +5,7 @@
 from filters import EDH
 from gridmap import PgmProcesser
 from kinematics import OdometryMotionModel
-from measurement import Measurement
+from measurement import MeasurementModel
 from rawdata import RawDataLoader, ConfigExporter
 
 from customtypes import StateHypothesis
@@ -57,10 +57,9 @@ if __name__ == "__main__":
     )
 
     cfg_measurement_range_noise_std = 0.01
+    measurement_model = MeasurementModel(ogm, cfg_measurement_range_noise_std)
 
-    measurement_model = Measurement(ogm, cfg_measurement_range_noise_std)
-
-    cfg_edh_particle_number = 1
+    cfg_edh_particle_number = 10
     cfg_edh_lambda_number = 1
     cfg_init_gaussian_mean = np.array([-3.0, 1.0, 0])
     cfg_init_gaussian_covar = np.array(
@@ -86,10 +85,10 @@ if __name__ == "__main__":
         control_input = [simulation_data.x_odom[i - 1], simulation_data.x_odom[i]]
         measurement = simulation_data.measurement[i]
 
-        # edh.propagate(control_input)
+        edh.propagate(control_input)
         ekf_propagated_state = ekf.propagate(control_input, return_state=True)
 
-        # edh.update(ekf_propagated_state.covar, measurement)
+        edh.update(ekf_propagated_state.covar, measurement)
         ekf.update(measurement)
 
     amcl_filtered_states = [
@@ -104,7 +103,7 @@ if __name__ == "__main__":
     true_states = [StateHypothesis(true_pose) for true_pose in simulation_data.x_true]
 
     filtered_states = {
-        # "edh": edh.filtered_states,
+        "edh": edh.filtered_states,
         "ekf": ekf.filtered_states,
         "amcl": amcl_filtered_states,
     }

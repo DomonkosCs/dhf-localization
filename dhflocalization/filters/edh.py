@@ -1,5 +1,5 @@
 from kinematics import MotionModel
-from measurement import Measurement
+from measurement import MeasurementModel
 from typing import Optional
 import numpy as np
 
@@ -10,12 +10,12 @@ class EDH:
     def __init__(
         self,
         motion_model: MotionModel,
-        measurement_model: Measurement,
+        measurement_model: MeasurementModel,
         particle_num,
         lambda_num,
     ) -> None:
         self.motion_model: MotionModel = motion_model
-        self.measurement_model: Measurement = measurement_model
+        self.measurement_model: MeasurementModel = measurement_model
         self.lambda_num = lambda_num
         self.particle_num = particle_num
         lambdas, self.d_lambda = np.linspace(

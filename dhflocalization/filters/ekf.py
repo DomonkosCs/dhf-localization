@@ -1,11 +1,11 @@
 from kinematics import MotionModel
-from measurement import Measurement
+from measurement import MeasurementModel
 from customtypes import StateHypothesis
 import numpy as np
 
 
 class EKF:
-    def __init__(self, motion_model: MotionModel, measurement_model: Measurement):
+    def __init__(self, motion_model: MotionModel, measurement_model: MeasurementModel):
         self.motion_model = motion_model
         self.measurement_model = measurement_model
         self.filtered_states = []

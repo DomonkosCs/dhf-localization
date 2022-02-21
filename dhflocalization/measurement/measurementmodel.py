@@ -3,7 +3,7 @@ from customtypes import StateHypothesis
 import numpy as np
 
 
-class Measurement:
+class MeasurementModel:
     def __init__(self, ogm: GridMap, range_noise_std):
         self.ogm = ogm
         self.range_noise_std = range_noise_std
