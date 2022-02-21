@@ -1,17 +1,17 @@
 import json
 import numpy as np
 from customtypes import SimulationData
+from rawdata.filehandler import FileHandler
 
 
-class RawDataLoader:
+class RawDataLoader(FileHandler):
     def __init__(self):
         pass
 
     @classmethod
     def load_from_json(cls, filename):
-        file_path = "/Users/domonkoscsuzdi/dhf_loc/dhflocalization/resources/simulations/{}.json".format(
-            filename
-        )
+        relative_path = "../resources/simulations/" + filename + ".json"
+        file_path = super().convert_path_to_absolute(cls, relative_path)
         try:
             json_file = open(
                 file_path,

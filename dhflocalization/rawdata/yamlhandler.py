@@ -1,19 +1,21 @@
 import ruamel.yaml
 import numpy as np
 
+from rawdata.filehandler import FileHandler
 
-class ConfigExporter:
+
+class ConfigExporter(FileHandler):
     def __init__(self) -> None:
         pass
 
     def export(self, payload, filename):
         data = self.__extract_variables(payload)
 
-        path = r"/Users/domonkoscsuzdi/dhf_loc/dhflocalization/resources/results/{}.yaml".format(
-            filename
-        )
+        relative_path = "../resources/results/" + filename + ".yaml"
+        file_path = super().convert_path_to_absolute(relative_path)
+
         with open(
-            path,
+            file_path,
             "w",
         ) as file:
             ruamel.yaml.dump({"config": data, "results": ""}, file)
@@ -31,21 +33,22 @@ class ConfigExporter:
         return variables_dict
 
 
-class YamlWriter:
+class YamlWriter(FileHandler):
     def __init__(self) -> None:
         pass
 
     @classmethod
     def updateFile(cls, payload, filename):
-        path = r"/Users/domonkoscsuzdi/dhf_loc/dhflocalization/resources/results/{}.yaml".format(
-            filename
-        )
-        with open(path, "r") as yamlfile:
+
+        relative_path = "../resources/results/" + filename + ".yaml"
+        file_path = super().convert_path_to_absolute(cls, relative_path)
+
+        with open(file_path, "r") as yamlfile:
             cur_yaml = ruamel.yaml.safe_load(yamlfile)  # Note the safe_load
             cur_yaml["results"] = payload
 
         if cur_yaml:
-            with open(path, "w") as yamlfile:
+            with open(file_path, "w") as yamlfile:
                 yaml = ruamel.yaml.YAML()
                 yaml.indent(mapping=5, sequence=5, offset=3)
                 yaml.dump(cur_yaml, yamlfile)  # Also note the safe_dump
