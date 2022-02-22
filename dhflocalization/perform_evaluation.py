@@ -2,14 +2,12 @@ from rawdata import resultLoader
 from gridmap import GridMap
 from gridmap import PgmProcesser
 from visualization import TrackPlotter
-from evaluator import MetricEvaluator
+import evaluator.metrics as metrics
 
 
 def main(results_filename):
-
-    metric_evaluator = MetricEvaluator()
     results = resultLoader.load(results_filename)
-    (err_mean_sqare, err_mean_abs, std) = metric_evaluator.eval(
+    (err_mean_sqare, err_mean_abs, std) = metrics.eval(
         filtered_states=results[0],
         reference_states=results[1],
         export_filename=results_filename,
@@ -32,5 +30,5 @@ def main(results_filename):
 
 
 if __name__ == "__main__":
-    results_filename = "22-02-21T112650"
+    results_filename = "22-02-21T120226"
     main(results_filename)
