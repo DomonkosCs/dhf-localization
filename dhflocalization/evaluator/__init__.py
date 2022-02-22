@@ -1,1 +1,1 @@
-from .metrics import MetricEvaluator
+from .metrics import MetricEvaluator  # noqa: F401

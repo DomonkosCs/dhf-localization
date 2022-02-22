@@ -1,1 +1,1 @@
-from .motionmodel import OdometryMotionModel, MotionModel
+from .motionmodel import OdometryMotionModel, MotionModel  # noqa: F401

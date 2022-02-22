@@ -1,1 +1,1 @@
-from .measurementmodel import MeasurementModel
+from .measurementmodel import MeasurementModel  # noqa: F401

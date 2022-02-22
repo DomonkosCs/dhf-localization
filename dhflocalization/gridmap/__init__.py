@@ -1,2 +1,2 @@
-from .grid_map import GridMap
-from .processpgm import PgmProcesser
+from .grid_map import GridMap  # noqa: F401
+from .processpgm import PgmProcesser  # noqa: F401
