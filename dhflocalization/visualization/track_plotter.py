@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-class TrackPlotter(Plotter):
+class TrackPlotter(Plotter):  # TODO remove inheritance
     def __init__(self) -> None:
         Plotter.__init__(self)
         self.fig = plt.figure(figsize=(10, 6))
@@ -23,7 +23,7 @@ class TrackPlotter(Plotter):
         self.background_map: Optional[GridMap] = None
 
     # Based on Stone Soup: https://github.com/dstl/Stone-Soup
-    def __plot_ground_truths(
+    def _plot_ground_truths(
         self, truths, mapping, truths_label="Ground Truth", **kwargs
     ):
         """Plots ground truth(s)
@@ -82,7 +82,7 @@ class TrackPlotter(Plotter):
         self.ax.legend(handles=self.handles_list, labels=self.labels_list)
 
     # Based on Stone Soup: https://github.com/dstl/Stone-Soup
-    def __plot_filtered_tracks(
+    def _plot_filtered_tracks(
         self,
         tracks,
         mapping,
@@ -234,7 +234,7 @@ class TrackPlotter(Plotter):
 
     def plot_tracks(self, filtered_states, reference_states):
         for key in filtered_states:
-            self.__plot_filtered_tracks(
+            self._plot_filtered_tracks(
                 filtered_states[key],
                 [0, 1],
                 marker=None,
@@ -242,7 +242,7 @@ class TrackPlotter(Plotter):
                 track_label=key,
             )
         for key in reference_states:
-            self.__plot_ground_truths(
+            self._plot_ground_truths(
                 reference_states[key],
                 [0, 1],
                 truths_label=key,

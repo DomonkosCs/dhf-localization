@@ -17,7 +17,6 @@ def main(results_filename):
     print(err_mean_sqare)
     print(err_mean_abs)
     print(std)
-
     # TODO load from yaml, or find another solution
     map_fn = "tb3_house_lessnoisy"
 

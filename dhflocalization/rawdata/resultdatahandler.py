@@ -5,9 +5,6 @@ from rawdata.filehandler import FileHandler
 
 
 class resultExporter(FileHandler):
-    def __init__(self) -> None:
-        pass
-
     @classmethod
     def save(cls, *datas, prefix="") -> str:
         data_list = []
@@ -26,9 +23,6 @@ class resultExporter(FileHandler):
 
 
 class resultLoader(FileHandler):
-    def __init__(self) -> None:
-        pass
-
     @classmethod
     def load(cls, file_name):
         relative_path = "../resources/results/" + file_name + ".p"
