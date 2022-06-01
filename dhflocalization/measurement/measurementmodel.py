@@ -21,8 +21,9 @@ class MeasurementModel:
         x_o[:, 0] = r_cos + state.pose[0, 0]
         x_o[:, 1] = r_sin + state.pose[1, 0]
 
-        df = [ogm.calc_distance_transform_xy_pos(x, y) for x, y in x_o]
-        cd = np.asarray(df).mean()
+        df = ogm.calc_distance_transform_xy_pos(x_o)
+
+        cd = np.mean(df)
         df_d_x = ogm.calc_distance_function_derivate_interp(x_o[:, 0], x_o[:, 1], 1, 0)
         df_d_y = ogm.calc_distance_function_derivate_interp(x_o[:, 0], x_o[:, 1], 0, 1)
         cd_d_x = df_d_x.mean()

@@ -191,13 +191,14 @@ class GridMap:
         edt = self.distance_transform
         return edt[y_ind, x_ind]
 
-    def calc_distance_transform_xy_pos(self, x_pos, y_pos):
+    def calc_distance_transform_xy_pos(self, xy):
         edt_interp = self.distance_transform_interp
-
+        x = xy[:, 0]
+        y = xy[:, 1]
         # zero at the middle of the cell
         return edt_interp.ev(
-            y_pos - self.left_lower_y - self.resolution / 2.0,
-            x_pos - self.left_lower_x - self.resolution / 2.0,
+            y - self.left_lower_y - self.resolution / 2.0,
+            x - self.left_lower_x - self.resolution / 2.0,
         )
 
     def calc_distance_function_derivate_interp(self, x_pos, y_pos, dx, dy):
