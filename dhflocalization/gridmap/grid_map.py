@@ -118,6 +118,7 @@ class GridMap:
 
     def get_xy_index_from_xy_pos(self, x_pos, y_pos):
         """get_xy_index_from_xy_pos
+        returns the closest cell, if position is out of boundary
         :param x_pos: x position [m]
         :param y_pos: y position [m]
         """
@@ -175,12 +176,19 @@ class GridMap:
     def calc_grid_central_xy_position_from_index(self, index, lower_pos):
         return lower_pos + index * self.resolution + self.resolution / 2.0
 
-    def calc_xy_index_from_position(self, pos, lower_pos, max_index):
-        ind = int(np.floor((pos - lower_pos) / self.resolution))
-        if 0 <= ind <= max_index:
-            return ind
+    def calc_xy_index_from_position(self, pos, lower_pos, array_size):
+        # returns the closest cell, if pos is out of boundary
+
+        index = np.floor((pos - lower_pos) / self.resolution)
+        if type(pos) is np.ndarray:
+            # position is less than lower_pos
+            index[index < 0] = 0
+            index[index >= array_size] = array_size - 1
+            return index.astype(int)
         else:
-            return None
+            index = 0 if index < 0 else index
+            index = array_size - 1 if index >= array_size else index
+            return int(index)
 
     def calc_distance_transform(self):
         grid_data = np.reshape(np.array(self.data), (self.height, self.width))
