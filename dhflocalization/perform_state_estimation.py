@@ -19,8 +19,8 @@ import perform_evaluation as evaluate
 
 # import matplotlib.pyplot as plt
 
-if __name__ == "__main__":
 
+def main():
     print("Starting state estimation...")
 
     # Exports every variable starting with cfg_ to a config YAML file.
@@ -131,6 +131,5 @@ if __name__ == "__main__":
         evaluate.main(cfg_result_filename)
 
 
-%load_ext snakeviz
-%snakeviz - -new-tab foo()
-# %%
+if __name__ == "__main__":
+    main()
