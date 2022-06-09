@@ -8,8 +8,6 @@ import numpy as np
 from scipy import ndimage
 from scipy.interpolate.fitpack2 import RectBivariateSpline
 from matplotlib import cm
-import pkg_resources
-import os
 
 
 class GridMap:
@@ -44,39 +42,6 @@ class GridMap:
         self.distance_transform_interp = None
 
     @classmethod
-    def load_grid_map_from_csv(cls, csv_fn, resolution, center_x, center_y):
-        path = pkg_resources.resource_filename(
-            __name__, os.path.join(os.pardir, "resources", csv_fn)
-        )
-        map = np.genfromtxt(path, delimiter=";", dtype=np.float32)
-        if np.NaN in map:
-            return None
-        height = map.shape[0]
-        width = map.shape[1]
-        resolution = resolution
-        center_x = center_x
-        center_y = center_y
-
-        gm = cls(
-            height=height,
-            width=width,
-            resolution=resolution,
-            center_x=center_x,
-            center_y=center_y,
-        )
-
-        for idx, val in np.ndenumerate(map):
-            cls.set_value_from_xy_index(self=gm, x_ind=idx[0], y_ind=idx[1], val=val)
-
-        gm.distance_transform = cls.calc_distance_transform(gm)
-        gm.distance_transform_interp = RectBivariateSpline(
-            np.arange(width) * resolution,
-            np.arange(height) * resolution,
-            gm.distance_transform * resolution,
-        )
-        return gm
-
-    @classmethod
     def load_grid_map_from_array(cls, map, resolution, center_x, center_y):
         height = map.shape[0]
         width = map.shape[1]
@@ -101,14 +66,22 @@ class GridMap:
             gm.distance_transform * resolution,
         )
 
-        gm.stepnum = width * 10
-        gridx, stepsize = np.linspace(0, width * resolution, gm.stepnum, retstep=True)
-        gridy = np.linspace(0, height * resolution, gm.stepnum)
+        cls.discretize_dt_derivative(gm)
 
-        gm.stepsize = stepsize
-        gm.distance_transform_dx = gm.distance_transform_interp(gridy, gridx, 0, 1)
-        gm.distance_transform_dy = gm.distance_transform_interp(gridy, gridx, 1, 0)
         return gm
+
+    def discretize_dt_derivative(self):
+        n = 10  # how many times finer grid than default
+
+        stepnum = self.width * n
+        gridx, stepsize = np.linspace(
+            0, self.width * self.resolution, stepnum, retstep=True
+        )
+        gridy = np.linspace(0, self.height * self.resolution, stepnum)
+
+        self.dt_derivative_stepsize = stepsize
+        self.distance_transform_dx = self.distance_transform_interp(gridy, gridx, 0, 1)
+        self.distance_transform_dy = self.distance_transform_interp(gridy, gridx, 1, 0)
 
     def get_value_from_xy_index(self, x_ind, y_ind):
         """get_value_from_xy_index
@@ -230,7 +203,9 @@ class GridMap:
         x_transf = xy_pos[:, 0] - self.left_lower_x - self.resolution / 2.0
         y_transf = xy_pos[:, 1] - self.left_lower_y - self.resolution / 2.0
 
-        rounded = np.round((np.array([x_transf, y_transf]).T / self.stepsize))
+        rounded = np.round(
+            (np.array([x_transf, y_transf]).T / self.dt_derivative_stepsize)
+        )
         rounded_int = rounded.astype(int)
 
         df_d_x = self.distance_transform_dx[rounded_int[:, 1], rounded_int[:, 0]]
