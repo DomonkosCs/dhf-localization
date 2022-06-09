@@ -100,6 +100,14 @@ class GridMap:
             np.arange(height) * resolution,
             gm.distance_transform * resolution,
         )
+
+        gm.stepnum = width * 10
+        gridx, stepsize = np.linspace(0, width * resolution, gm.stepnum, retstep=True)
+        gridy = np.linspace(0, height * resolution, gm.stepnum)
+
+        gm.stepsize = stepsize
+        gm.distance_transform_dx = gm.distance_transform_interp(gridy, gridx, 0, 1)
+        gm.distance_transform_dy = gm.distance_transform_interp(gridy, gridx, 1, 0)
         return gm
 
     def get_value_from_xy_index(self, x_ind, y_ind):
@@ -209,14 +217,53 @@ class GridMap:
             x - self.left_lower_x - self.resolution / 2.0,
         )
 
-    def calc_distance_function_derivate_interp(self, x_pos, y_pos, dx, dy):
+    def calc_distance_function_derivate_interp(self, xy_pos):
+
+        """xy is in the coord system of the map
+        (shifted, so the origin is around the middle of the map).
+        However, the DT of the map has the origin in the bottom left corner.
+        So the transformation of xy is needed:
+        x: [-10,9.2) -> [0,19.2)
+        y: [-10.05,9.15) -> [0,19.2).
+        Also, the middle of the cell is considered, instead of the bottom left corner."""
+
+        x_transf = xy_pos[:, 0] - self.left_lower_x - self.resolution / 2.0
+        y_transf = xy_pos[:, 1] - self.left_lower_y - self.resolution / 2.0
+
+        rounded = np.round((np.array([x_transf, y_transf]).T / self.stepsize))
+        rounded_int = rounded.astype(int)
+
+        df_d_x = self.distance_transform_dx[rounded_int[:, 1], rounded_int[:, 0]]
+        df_d_y = self.distance_transform_dy[rounded_int[:, 1], rounded_int[:, 0]]
+        return df_d_x, df_d_y
+
+    def calc_distance_function_derivate_interp_old(self, xy_pos):
         edt_interp = self.distance_transform_interp
-        return edt_interp.ev(
-            y_pos - self.left_lower_y - self.resolution / 2.0,
-            x_pos - self.left_lower_x - self.resolution / 2.0,
-            dy,
-            dx,
+
+        """xy is in the coord system of the map
+        (shifted, so the origin is around the middle of the map).
+        However, the DT of the map has the origin in the bottom left corner.
+        So the transformation of xy is needed:
+        x: [-10,9.2) -> [0,19.2)
+        y: [-10.05,9.15) -> [0,19.2).
+        Also, the middle of the cell is considered, instead of the bottom left corner."""
+
+        x_transf = xy_pos[:, 0] - self.left_lower_x - self.resolution / 2.0
+        y_transf = xy_pos[:, 1] - self.left_lower_y - self.resolution / 2.0
+
+        df_d_x = edt_interp.ev(
+            y_transf,
+            x_transf,
+            0,
+            1,
         )
+        df_d_y = edt_interp.ev(
+            y_transf,
+            x_transf,
+            1,
+            0,
+        )
+        return df_d_x, df_d_y
 
     def check_occupied_from_xy_index(self, xind, yind, occupied_val=1.0):
 
