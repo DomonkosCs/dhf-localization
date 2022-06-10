@@ -29,4 +29,4 @@ class MeasurementProcessor:
         return measurement_copy
 
     def get_avg_ray_number(self):
-        return np.mean(self.number_of_rays)
+        return float(np.mean(self.number_of_rays))
