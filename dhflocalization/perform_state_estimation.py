@@ -5,7 +5,7 @@
 from filters import EDH
 from gridmap import PgmProcesser
 from kinematics import OdometryMotionModel
-from measurement import MeasurementModel
+from measurement import MeasurementModel, MeasurementProcessor
 from rawdata import RawDataLoader, ConfigExporter
 
 from customtypes import StateHypothesis
@@ -42,6 +42,7 @@ def main():
         center_y=10.05,
     )
 
+    cfg_max_ray_number = 500
     cfg_odometry_alpha_1 = 0.1
     cfg_odometry_alpha_2 = 0.1
     cfg_odometry_alpha_3 = 0.1
@@ -67,6 +68,7 @@ def main():
         [[0.1**2, 0, 0], [0, 0.1**2, 0], [0, 0, 0.05**2]]
     )
 
+    measurement_processer = MeasurementProcessor(max_ray_number=cfg_max_ray_number)
     ekf = EKF(motion_model, measurement_model)
     edh = EDH(
         motion_model=motion_model,
@@ -92,8 +94,9 @@ def main():
 
     for i in range(1, simulation_data.simulation_steps, 1):
         control_input = [simulation_data.x_odom[i - 1], simulation_data.x_odom[i]]
-        measurement = simulation_data.measurement[i]
-
+        measurement = measurement_processer.filter_measurements(
+            simulation_data.measurement[i]
+        )
         # cedh.propagate(control_input)
         edh.propagate(control_input)
         ekf_propagated_state = ekf.propagate(control_input, return_state=True)
