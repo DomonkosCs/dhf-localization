@@ -124,6 +124,8 @@ def main():
     }
     reference_states = {"odom": odom_states, "true": true_states}
 
+    # TODO move to results
+    cfg_avg_ray_number = measurement_processer.get_avg_ray_number()
     cfg_edh_runtime = edh.get_runtime()
     # cfg_cedh_runtime = cedh.get_runtime()
     print("Calcuations completed, saving results...")
