@@ -1,0 +1,58 @@
+config:
+     cfg_avg_ray_number: 270.26712827988337
+     cfg_cedh_particle_number: 50
+     cfg_edh_lambda_number: 10
+     cfg_edh_particle_number: 50
+     cfg_edh_runtime: 10.801080226898193
+     cfg_init_gaussian_covar:
+        -    - 0.010000000000000002
+             - 0.0
+             - 0.0
+        -    - 0.0
+             - 0.010000000000000002
+             - 0.0
+        -    - 0.0
+             - 0.0
+             - 0.0025000000000000005
+     cfg_init_gaussian_mean:
+        - -3.0
+        - 1.0
+        - 0.0
+     cfg_map_filename: tb3_house_lessnoisy
+     cfg_max_ray_number: 500
+     cfg_measurement_range_noise_std: 0.01
+     cfg_odometry_alpha_1: 0.1
+     cfg_odometry_alpha_2: 0.1
+     cfg_odometry_alpha_3: 0.1
+     cfg_odometry_alpha_4: 0.1
+     cfg_random_seed: 2021
+     cfg_result_filename: 22-06-13T142915
+     cfg_simu_data_filename: 5hz_0001
+results:
+     RMSE:
+          position:
+               edh: 0.04309589130001965
+               ekf: 0.04858748039431537
+               amcl: 0.08160181209816922
+          orientation:
+               edh: 0.021088309183045603
+               ekf: 0.018844983398312223
+               amcl: 0.07080225334628053
+     MAE:
+          position:
+               edh: 0.03775525132274623
+               ekf: 0.04197504283628496
+               amcl: 0.06725050834298742
+          orientation:
+               edh: 0.019290057395079933
+               ekf: 0.01601355574762359
+               amcl: 0.054714392199525556
+     STD:
+          position:
+               edh: 0.02077972195433276
+               ekf: 0.024471187751313225
+               amcl: 0.046219312687606
+          orientation:
+               edh: 0.008528922348362812
+               ekf: 0.011384749575446579
+               amcl: 0.07076691245675056
