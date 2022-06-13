@@ -82,8 +82,7 @@ class EDH:
             )
 
             particle_poses = particle_poses + self.d_lambda * (
-                np.array([B @ particle_state for particle_state in particle_poses])
-                + b.T
+                (B @ particle_poses.T).T + b.T
             )
             particle_poses_mean = np.mean(particle_poses, axis=0)
 
