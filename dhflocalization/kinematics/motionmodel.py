@@ -17,6 +17,79 @@ class OdometryMotionModel(MotionModel):
         self.alfa_4 = alfas[3]
         pass
 
+    def propagate_particles_vec(self, states, control_input):
+        """
+        states: n by 3 numpy array
+        """
+
+        delta_rot_1, delta_trans, delta_rot_2 = self.transform_control_input(
+            control_input
+        )
+
+        control_covar = self.calc_control_noise_covar(
+            delta_rot_1, delta_trans, delta_rot_2
+        )
+
+        # sample the transformed control inputs for each state individually
+        delta_hat_rot_1 = self.calc_angle_diff(
+            delta_rot_1, np.sqrt(control_covar[0, 0]) * np.random.randn(states.shape[0]))
+        delta_hat_trans = self.calc_angle_diff(
+            delta_trans, np.sqrt(control_covar[1, 1]) * np.random.randn(states.shape[0]))
+        delta_hat_rot_2 = self.calc_angle_diff(
+            delta_rot_2, np.sqrt(control_covar[2, 2]) * np.array([0.2, 0.3])
+        )
+
+        # propagate the states
+        state_angles = states[:, 2]
+
+        diff_x = np.multiply(delta_hat_trans, np.cos(state_angles + delta_hat_rot_1))
+        diff_y = np.multiply(delta_hat_trans, np.sin(state_angles + delta_hat_rot_1))
+        diff_fi = delta_hat_rot_1 + delta_hat_rot_2
+
+        diff_array = np.array([diff_x, diff_y, diff_fi]).T
+        prop_states = states + diff_array
+
+        return prop_states
+
+    def transform_control_input(self, control_input):
+        state_odom_prev = control_input[0]
+        state_odom_now = control_input[1]
+
+        if np.linalg.norm(state_odom_now[1] - state_odom_prev[1]) < 0.01:
+            delta_rot_1 = 0
+        else:
+            delta_rot_1 = self.calc_angle_diff(
+                np.arctan2(
+                    state_odom_now[1] - state_odom_prev[1],
+                    state_odom_now[0] - state_odom_prev[0],
+                ),
+                state_odom_prev[2],
+            )
+
+        delta_trans = np.sqrt(
+            (state_odom_now[0] - state_odom_prev[0]) ** 2
+            + (state_odom_now[1] - state_odom_prev[1]) ** 2
+        )
+
+        delta_rot_2 = self.calc_angle_diff(
+            state_odom_now[2] - state_odom_prev[2], delta_rot_1
+        )
+
+        # We want to treat backward and forward motion symmetrically for the
+        # noise model to be applied below.  The standard model seems to assume
+        # forward motion.
+        # From https://github.com/ros-planning/navigation/blob/noetic-devel/amcl/src/amcl/sensors/amcl_odom.cpp
+        delta_rot_1 = min(
+            abs(self.calc_angle_diff(delta_rot_1, 0)),
+            abs(self.calc_angle_diff(delta_rot_1, np.pi)),
+        )
+        delta_rot_2 = min(
+            abs(self.calc_angle_diff(delta_rot_2, 0)),
+            abs(self.calc_angle_diff(delta_rot_2, np.pi)),
+        )
+
+        return delta_rot_1, delta_trans, delta_rot_2
+
     def propagate(
         self, state: StateHypothesis, control_input, noise=False, particles=False
     ) -> StateHypothesis:
