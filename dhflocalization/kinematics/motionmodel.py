@@ -17,13 +17,45 @@ class OdometryMotionModel(MotionModel):
         self.alfa_4 = alfas[3]
         pass
 
-    def propagate(
-        self, state: StateHypothesis, control_input, noise=False, particles=False
-    ) -> StateHypothesis:
+    def propagate_particles(self, states, control_input):
+        """
+        states: n by 3 numpy array
+        """
 
+        delta_rot_1, delta_trans, delta_rot_2 = self.transform_control_input(
+            control_input
+        )
+
+        control_covar = self.calc_control_noise_covar(
+            delta_rot_1, delta_trans, delta_rot_2
+        )
+
+        # sample the transformed control inputs for each state individually
+        delta_hat_rot_1 = self.calc_angle_diff(
+            delta_rot_1, np.sqrt(control_covar[0, 0]) * np.random.randn(states.shape[0])
+        )
+        delta_hat_trans = self.calc_angle_diff(
+            delta_trans, np.sqrt(control_covar[1, 1]) * np.random.randn(states.shape[0])
+        )
+        delta_hat_rot_2 = self.calc_angle_diff(
+            delta_rot_2, np.sqrt(control_covar[2, 2]) * np.random.randn(states.shape[0])
+        )
+
+        # propagate the states
+        state_angles = states[:, 2]
+
+        diff_x = np.multiply(delta_hat_trans, np.cos(state_angles + delta_hat_rot_1))
+        diff_y = np.multiply(delta_hat_trans, np.sin(state_angles + delta_hat_rot_1))
+        diff_fi = delta_hat_rot_1 + delta_hat_rot_2
+
+        diff_array = np.array([diff_x, diff_y, diff_fi]).T
+        prop_states = states + diff_array
+
+        return prop_states
+
+    def transform_control_input(self, control_input):
         state_odom_prev = control_input[0]
         state_odom_now = control_input[1]
-        fi = state.pose[2, 0]
 
         if np.linalg.norm(state_odom_now[1] - state_odom_prev[1]) < 0.01:
             delta_rot_1 = 0
@@ -58,64 +90,39 @@ class OdometryMotionModel(MotionModel):
             abs(self.calc_angle_diff(delta_rot_2, np.pi)),
         )
 
+        return delta_rot_1, delta_trans, delta_rot_2
+
+    def propagate(self, state: StateHypothesis, control_input) -> StateHypothesis:
+
+        delta_rot_1, delta_trans, delta_rot_2 = self.transform_control_input(
+            control_input
+        )
         control_covar = self.calc_control_noise_covar(
-            delta_rot_1, delta_rot_2, delta_trans
+            delta_rot_1, delta_trans, delta_rot_2
         )
 
-        if noise:
-            delta_hat_rot_1 = self.calc_angle_diff(
-                delta_rot_1, np.sqrt(control_covar[0, 0]) * np.random.randn()
-            )
-            delta_hat_trans = self.calc_angle_diff(
-                delta_trans, np.sqrt(control_covar[1, 1]) * np.random.randn()
-            )
-            delta_hat_rot_2 = self.calc_angle_diff(
-                delta_rot_2, np.sqrt(control_covar[2, 2]) * np.random.randn()
-            )
-        else:
-            delta_hat_rot_1 = delta_rot_1
-            delta_hat_trans = delta_trans
-            delta_hat_rot_2 = delta_rot_2
-
+        fi = state.pose[2, 0]
         prop_pose = (
             state.pose
             + np.array(
                 [
                     [
-                        delta_hat_trans * np.cos(fi + delta_hat_rot_1),
-                        delta_hat_trans * np.sin(fi + delta_hat_rot_1),
-                        delta_hat_rot_1 + delta_hat_rot_2,
+                        delta_trans * np.cos(fi + delta_rot_1),
+                        delta_trans * np.sin(fi + delta_rot_1),
+                        delta_rot_1 + delta_rot_2,
                     ]
                 ]
             ).T
         )
 
-        if not particles:
-            jacobi_state, jacobi_input = self.calc_jacobians(
-                delta_rot_1, delta_trans, fi
-            )
-            prop_covar = (
-                jacobi_state @ state.covar @ jacobi_state.T
-                + jacobi_input @ control_covar @ jacobi_input.T
-            )
-        else:
-            prop_covar = None
+        jacobi_state, jacobi_input = self.calc_jacobians(delta_rot_1, delta_trans, fi)
+        prop_covar = (
+            jacobi_state @ state.covar @ jacobi_state.T
+            + jacobi_input @ control_covar @ jacobi_input.T
+        )
 
         prop_state = StateHypothesis(pose=prop_pose, covar=prop_covar)
         return prop_state
-
-    def propagate_particles(
-        self, particle_poses: np.ndarray, control_input
-    ) -> np.ndarray:
-        def propagate(pose):
-            return self.propagate(
-                StateHypothesis(pose), control_input, noise=True, particles=True
-            ).pose
-
-        particle_poses_next = np.array(list(map(propagate, particle_poses)))
-
-        particle_poses_next = particle_poses_next.squeeze(axis=2)
-        return particle_poses_next
 
     def calc_jacobians(self, delta_rot_1, delta_trans, fi):
 
@@ -134,7 +141,7 @@ class OdometryMotionModel(MotionModel):
 
         return [J_state, J_input]
 
-    def calc_control_noise_covar(self, delta_rot_1, delta_rot_2, delta_trans):
+    def calc_control_noise_covar(self, delta_rot_1, delta_trans, delta_rot_2):
 
         control_var_11 = self.alfa_1 * delta_rot_1**2 + self.alfa_2 * delta_trans**2
         control_var_22 = self.alfa_3 * delta_trans**2 + self.alfa_4 * (
@@ -152,9 +159,16 @@ class OdometryMotionModel(MotionModel):
         b = self.normalize_angle(b)
         d1 = a - b
         d2 = 2 * np.pi - abs(d1)
-        if d1 > 0:
-            d2 *= -1.0
-        if abs(d1) < abs(d2):
-            return d1
+
+        if type(d1) is np.ndarray:
+            return_arr = d2
+            d2[d1 > 0] *= -1.0
+            return_arr[abs(d1) < abs(d2)] = d1[abs(d1) < abs(d2)]
+            return return_arr
         else:
-            return d2
+            if d1 > 0:
+                d2 *= -1.0
+            if abs(d1) < abs(d2):
+                return d1
+            else:
+                return d2
