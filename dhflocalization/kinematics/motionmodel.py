@@ -36,7 +36,7 @@ class OdometryMotionModel(MotionModel):
         delta_hat_trans = self.calc_angle_diff(
             delta_trans, np.sqrt(control_covar[1, 1]) * np.random.randn(states.shape[0]))
         delta_hat_rot_2 = self.calc_angle_diff(
-            delta_rot_2, np.sqrt(control_covar[2, 2]) * np.array([0.2, 0.3])
+            delta_rot_2, np.sqrt(control_covar[2, 2]) * np.random.randn(states.shape[0])
         )
 
         # propagate the states
