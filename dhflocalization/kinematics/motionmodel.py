@@ -59,7 +59,7 @@ class OdometryMotionModel(MotionModel):
         )
 
         control_covar = self.calc_control_noise_covar(
-            delta_rot_1, delta_rot_2, delta_trans
+            delta_rot_1, delta_trans, delta_rot_2
         )
 
         if noise:
@@ -134,7 +134,7 @@ class OdometryMotionModel(MotionModel):
 
         return [J_state, J_input]
 
-    def calc_control_noise_covar(self, delta_rot_1, delta_rot_2, delta_trans):
+    def calc_control_noise_covar(self, delta_rot_1, delta_trans, delta_rot_2):
 
         control_var_11 = self.alfa_1 * delta_rot_1**2 + self.alfa_2 * delta_trans**2
         control_var_22 = self.alfa_3 * delta_trans**2 + self.alfa_4 * (
@@ -152,9 +152,16 @@ class OdometryMotionModel(MotionModel):
         b = self.normalize_angle(b)
         d1 = a - b
         d2 = 2 * np.pi - abs(d1)
-        if d1 > 0:
-            d2 *= -1.0
-        if abs(d1) < abs(d2):
-            return d1
+
+        if type(d1) is np.ndarray:
+            return_arr = d2
+            d2[d1 > 0] *= -1.0
+            return_arr[abs(d1) < abs(d2)] = d1[abs(d1) < abs(d2)]
+            return return_arr
         else:
-            return d2
+            if d1 > 0:
+                d2 *= -1.0
+            if abs(d1) < abs(d2):
+                return d1
+            else:
+                return d2
