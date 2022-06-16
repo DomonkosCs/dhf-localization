@@ -2,7 +2,7 @@
 # %%
 # import matplotlib
 # from visualization import Plotter
-from filters import EDH
+from filters import EDH, CEDH
 from gridmap import PgmProcesser
 from kinematics import OdometryMotionModel
 from measurement import MeasurementModel, MeasurementProcessor
@@ -32,7 +32,7 @@ def main():
     cfg_map_filename = "tb3_house_lessnoisy"
     cfg_simu_data_filename = "5hz_0001"
 
-    do_plotting = False
+    do_plotting = True
 
     simulation_data = RawDataLoader.load_from_json(cfg_simu_data_filename)
     ogm = GridMap.load_grid_map_from_array(
@@ -60,8 +60,8 @@ def main():
     cfg_measurement_range_noise_std = 0.01
     measurement_model = MeasurementModel(ogm, cfg_measurement_range_noise_std)
 
-    cfg_edh_particle_number = 50
-    cfg_cedh_particle_number = 50
+    cfg_edh_particle_number = 1000
+    cfg_cedh_particle_number = 1000
     cfg_edh_lambda_number = 10
     cfg_init_gaussian_mean = np.array([-3.0, 1.0, 0])
     cfg_init_gaussian_covar = np.array(
@@ -76,17 +76,17 @@ def main():
         particle_num=cfg_edh_particle_number,
         lambda_num=cfg_edh_lambda_number,
     )
-    # cedh = CEDH(
-    #     motion_model=motion_model,
-    #     measurement_model=measurement_model,
-    #     particle_num=cfg_cedh_particle_number,
-    # )
+    cedh = CEDH(
+        motion_model=motion_model,
+        measurement_model=measurement_model,
+        particle_num=cfg_cedh_particle_number,
+    )
     edh.init_particles_from_gaussian(
         cfg_init_gaussian_mean, cfg_init_gaussian_covar, return_state=False
     )
-    # cedh.init_particles_from_gaussian(
-    #     cfg_init_gaussian_mean, cfg_init_gaussian_covar, return_state=False
-    # )
+    cedh.init_particles_from_gaussian(
+        cfg_init_gaussian_mean, cfg_init_gaussian_covar, return_state=False
+    )
 
     # Another option is to set the return_state flag on edh.init_particles_from_gaussian,
     # and use returned state to initialize ekf.
@@ -97,11 +97,11 @@ def main():
         measurement = measurement_processer.filter_measurements(
             simulation_data.measurement[i]
         )
-        # cedh.propagate(control_input)
+        cedh.propagate(control_input)
         edh.propagate(control_input)
         ekf_propagated_state = ekf.propagate(control_input, return_state=True)
 
-        # cedh.update(ekf_propagated_state.covar, measurement)
+        cedh.update(ekf_propagated_state.covar, measurement)
         edh.update(ekf_propagated_state.covar, measurement)
         ekf.update(measurement)
 
@@ -117,7 +117,7 @@ def main():
     true_states = [StateHypothesis(true_pose) for true_pose in simulation_data.x_true]
 
     filtered_states = {
-        # "cedh": cedh.filtered_states,
+        "cedh": cedh.filtered_states,
         "edh": edh.filtered_states,
         "ekf": ekf.filtered_states,
         "amcl": amcl_filtered_states,
@@ -127,7 +127,7 @@ def main():
     # TODO move to results
     cfg_avg_ray_number = measurement_processer.get_avg_ray_number()
     cfg_edh_runtime = edh.get_runtime()
-    # cfg_cedh_runtime = cedh.get_runtime()
+    cfg_cedh_runtime = cedh.get_runtime()
     print("Calcuations completed, saving results...")
     cfg_result_filename = resultExporter().save(filtered_states, reference_states)
     config_exporter.export(locals(), cfg_result_filename)
