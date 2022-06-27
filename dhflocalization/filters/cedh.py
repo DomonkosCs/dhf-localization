@@ -82,5 +82,84 @@ class CEDH:
         time_elapsed = time.time() - start_time
         self.run_time = self.run_time + time_elapsed
 
+    def update_multistep(self, ekf_covar: np.ndarray, measurement, stepnum):
+        num_of_rays = len(measurement)
+        measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(
+            num_of_rays
+        )
+
+        particle_poses = self.propagated_state.particles
+        particle_poses_mean_0 = np.mean(particle_poses, axis=0)
+        particle_poses_mean = particle_poses_mean_0
+
+        lambdas = np.linspace(0, 1, stepnum + 1)
+        cd, grad_cd_x, grad_cd_z, _ = self.measurement_model.process_detection(
+            StateHypothesis(particle_poses_mean), measurement
+        )
+        y = -cd + grad_cd_x.T @ particle_poses_mean
+        M = ekf_covar @ (grad_cd_x @ grad_cd_x.T)
+        p = grad_cd_x.T @ ekf_covar @ grad_cd_x
+        w = (
+            ekf_covar
+            @ grad_cd_x
+            * np.linalg.inv(grad_cd_z.T @ measurement_covar @ grad_cd_z)
+            * y
+        )
+        r = grad_cd_z.T @ measurement_covar @ grad_cd_z
+        for i in range(stepnum):
+
+            lam_0 = lambdas[i]
+            lam_1 = lambdas[i + 1]
+
+            kl0 = lam_0 * p + r
+            kl1 = lam_1 * p + r
+
+            fi = np.eye(3) + M / p * (np.sqrt(kl0 / kl1) - 1)
+            fib0 = 2 / 3 * w / p * (kl1 - kl0 ** (3 / 2) * kl1 ** (-1 / 2))
+            fib1 = (
+                M
+                / p
+                @ particle_poses_mean_0[:, np.newaxis]
+                * (kl1 ** (-1 / 2) * kl0 ** (1 / 2) - 1)
+            )
+            fib2 = (
+                w
+                / p
+                * (
+                    2 * r
+                    - p * lam_1
+                    - kl1 ** (-1 / 2) * kl0 ** (1 / 2) * (2 * r - p * lam_0)
+                )
+            )
+            fib3 = (
+                M
+                @ particle_poses_mean_0[:, np.newaxis]
+                / p
+                * (
+                    (p * lam_1 + 2 * r) * kl1 ** (-1)
+                    - (p * lam_0 + 2 * r) * kl0 ** (-1 / 2) * kl1 ** (-1 / 2)
+                )
+            )
+            fib4 = (
+                1
+                / 3
+                / p
+                * w
+                * kl1 ** (-1 / 2)
+                * (
+                    (p**2 * lam_1**2 - 4 * p * r * lam_1 - 8 * r**2)
+                    * ((p * lam_1 + r) ** (-1 / 2))
+                    - (p**2 * lam_0**2 - 4 * p * r * lam_0 - 8 * r**2)
+                    * ((p * lam_0 + r) ** (-1 / 2))
+                )
+            )
+
+            particle_poses = fi @ particle_poses.T + 1 * (
+                fib0 + fib1 + fib2 + fib3 + fib4
+            )
+            particle_poses = particle_poses.T
+
+        return particle_poses
+
     def get_runtime(self):
         return self.run_time
