@@ -62,6 +62,7 @@ def main():
 
     cfg_edh_particle_number = 1000
     cfg_cedh_particle_number = 1000
+    cfg_cedh_step_num = 10
     cfg_edh_lambda_number = 10
     cfg_init_gaussian_mean = np.array([-3.0, 1.0, 0])
     cfg_init_gaussian_covar = np.array(
@@ -101,7 +102,9 @@ def main():
         edh.propagate(control_input)
         ekf_propagated_state = ekf.propagate(control_input, return_state=True)
 
-        cedh.update(ekf_propagated_state.covar, measurement)
+        cedh.update_multistep(
+            ekf_propagated_state.covar, measurement, cfg_cedh_step_num
+        )
         edh.update(ekf_propagated_state.covar, measurement)
         ekf.update(measurement)
 

@@ -83,6 +83,7 @@ class CEDH:
         self.run_time = self.run_time + time_elapsed
 
     def update_multistep(self, ekf_covar: np.ndarray, measurement, stepnum):
+        start_time = time.time()
         num_of_rays = len(measurement)
         measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(
             num_of_rays
@@ -90,23 +91,23 @@ class CEDH:
 
         particle_poses = self.propagated_state.particles
         particle_poses_mean_0 = np.mean(particle_poses, axis=0)
-        particle_poses_mean = particle_poses_mean_0
 
         lambdas = np.linspace(0, 1, stepnum + 1)
-        cd, grad_cd_x, grad_cd_z, _ = self.measurement_model.process_detection(
-            StateHypothesis(particle_poses_mean), measurement
-        )
-        y = -cd + grad_cd_x.T @ particle_poses_mean
-        M = ekf_covar @ (grad_cd_x @ grad_cd_x.T)
-        p = grad_cd_x.T @ ekf_covar @ grad_cd_x
-        w = (
-            ekf_covar
-            @ grad_cd_x
-            * np.linalg.inv(grad_cd_z.T @ measurement_covar @ grad_cd_z)
-            * y
-        )
-        r = grad_cd_z.T @ measurement_covar @ grad_cd_z
         for i in range(stepnum):
+            particle_poses_mean = np.mean(particle_poses, axis=0)
+            cd, grad_cd_x, grad_cd_z, _ = self.measurement_model.process_detection(
+                StateHypothesis(particle_poses_mean), measurement
+            )
+            y = -cd + grad_cd_x.T @ particle_poses_mean
+            M = ekf_covar @ (grad_cd_x @ grad_cd_x.T)
+            p = grad_cd_x.T @ ekf_covar @ grad_cd_x
+            w = (
+                ekf_covar
+                @ grad_cd_x
+                * np.linalg.inv(grad_cd_z.T @ measurement_covar @ grad_cd_z)
+                * y
+            )
+            r = grad_cd_z.T @ measurement_covar @ grad_cd_z
 
             lam_0 = lambdas[i]
             lam_1 = lambdas[i + 1]
@@ -159,7 +160,12 @@ class CEDH:
             )
             particle_poses = particle_poses.T
 
-        return particle_poses
+        updated_state = StateHypothesis.create_from_particles(particle_poses)
+        self.filtered_states.append(updated_state)
+
+        time_elapsed = time.time() - start_time
+        self.run_time = self.run_time + time_elapsed
 
     def get_runtime(self):
         return self.run_time
+ 
