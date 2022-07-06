@@ -101,13 +101,8 @@ class CEDH:
             y = -cd + grad_cd_x.T @ particle_poses_mean
             M = ekf_covar @ (grad_cd_x @ grad_cd_x.T)
             p = grad_cd_x.T @ ekf_covar @ grad_cd_x
-            w = (
-                ekf_covar
-                @ grad_cd_x
-                * np.linalg.inv(grad_cd_z.T @ measurement_covar @ grad_cd_z)
-                * y
-            )
             r = grad_cd_z.T @ measurement_covar @ grad_cd_z
+            w = ekf_covar @ grad_cd_x * np.linalg.inv(r) * y
 
             lam_0 = lambdas[i]
             lam_1 = lambdas[i + 1]
@@ -116,30 +111,21 @@ class CEDH:
             kl1 = lam_1 * p + r
 
             fi = np.eye(3) + M / p * (np.sqrt(kl0 / kl1) - 1)
-            fib0 = 2 / 3 * w / p * (kl1 - kl0 ** (3 / 2) * kl1 ** (-1 / 2))
-            fib1 = (
-                M
-                / p
-                @ particle_poses_mean_0[:, np.newaxis]
-                * (kl1 ** (-1 / 2) * kl0 ** (1 / 2) - 1)
-            )
             fib2 = (
                 w
                 / p
                 * (
-                    2 * r
-                    - p * lam_1
-                    - kl1 ** (-1 / 2) * kl0 ** (1 / 2) * (2 * r - p * lam_0)
+                    -1 / 3 * kl1
+                    + 3 * r
+                    - kl1 ** (-1 / 2) * kl0 ** (1 / 2) * (3 * r - 1 / 3 * kl0)
                 )
             )
             fib3 = (
                 M
                 @ particle_poses_mean_0[:, np.newaxis]
+                * r
                 / p
-                * (
-                    (p * lam_1 + 2 * r) * kl1 ** (-1)
-                    - (p * lam_0 + 2 * r) * kl0 ** (-1 / 2) * kl1 ** (-1 / 2)
-                )
+                * (kl1 ** (-1) - kl0 ** (-1 / 2) * kl1 ** (-1 / 2))
             )
             fib4 = (
                 1
@@ -155,9 +141,7 @@ class CEDH:
                 )
             )
 
-            particle_poses = fi @ particle_poses.T + 1 * (
-                fib0 + fib1 + fib2 + fib3 + fib4
-            )
+            particle_poses = fi @ particle_poses.T + 1 * (fib2 + fib3 + fib4)
             particle_poses = particle_poses.T
 
         updated_state = StateHypothesis.create_from_particles(particle_poses)
@@ -168,4 +152,3 @@ class CEDH:
 
     def get_runtime(self):
         return self.run_time
- 
