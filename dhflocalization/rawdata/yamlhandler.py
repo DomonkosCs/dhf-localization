@@ -46,7 +46,7 @@ class ConfigImporter(FileHandler):
         with open(file_path, "r") as file:
             # The FullLoader parameter handles the conversion from YAML
             # scalar values to Python the dictionary format
-            result = ruamel.yaml.load(file)
+            result = ruamel.yaml.load(file, Loader=ruamel.yaml.Loader)
 
         return result["config"]
 
