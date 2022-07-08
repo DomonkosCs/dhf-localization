@@ -1,4 +1,4 @@
-from rawdata import resultLoader
+from rawdata import resultLoader, ConfigImporter
 from gridmap import GridMap
 from gridmap import PgmProcesser
 from visualization import TrackPlotter
@@ -6,7 +6,10 @@ import evaluator.metrics as metrics
 
 
 def main(results_filename):
+    # load results from the pickle file
+    # TODO fix name
     results = resultLoader.load(results_filename)
+    config = ConfigImporter.importData(results_filename)
     (err_mean_sqare, err_mean_abs, std) = metrics.eval(
         filtered_states=results[0],
         reference_states=results[1],
@@ -17,8 +20,8 @@ def main(results_filename):
     print(err_mean_sqare)
     print(err_mean_abs)
     print(std)
-    # TODO load from yaml, or find another solution
-    map_fn = "tb3_house_lessnoisy"
+
+    map_fn = config["cfg_map_filename"]
 
     ogm = GridMap.load_grid_map_from_array(
         PgmProcesser.read_pgm(map_fn), 0.05, 10, 10.05
@@ -29,5 +32,5 @@ def main(results_filename):
 
 
 if __name__ == "__main__":
-    results_filename = "22-02-21T120226"
+    results_filename = "22-07-06T142456"
     main(results_filename)
