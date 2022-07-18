@@ -15,7 +15,6 @@ class TrackPlotter(Plotter):  # TODO remove inheritance
         self.ax = self.fig.add_subplot(1, 1, 1)
         self.ax.set_xlabel(r"$x\,(\mathrm{m})$")
         self.ax.set_ylabel(r"$y\,(\mathrm{m})$")
-        self.ax.axis("equal")
         self.ax.grid(which="major", linestyle="--", alpha=0.5)
         self.ax.grid(which="minor", linestyle=":", alpha=0.2)
 
