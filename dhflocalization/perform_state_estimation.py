@@ -30,6 +30,7 @@ def main():
     np.random.seed(cfg_random_seed)
 
     cfg_map_filename = "tb3_house_lessnoisy"
+    cfg_map_resolution = 0.05  # m/cell
     cfg_simu_data_filename = "5hz_0001"
 
     do_plotting = True
@@ -37,7 +38,7 @@ def main():
     simulation_data = RawDataLoader.load_from_json(cfg_simu_data_filename)
     ogm = GridMap.load_grid_map_from_array(
         PgmProcesser.read_pgm(cfg_map_filename),
-        resolution=0.05,
+        resolution=cfg_map_resolution,
         center_x=10,
         center_y=10.05,
     )
