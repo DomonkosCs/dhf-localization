@@ -11,10 +11,10 @@ import numpy as np
 class TrackPlotter(Plotter):  # TODO remove inheritance
     def __init__(self) -> None:
         Plotter.__init__(self)
-        self.fig = plt.figure(figsize=(10, 6))
+        self.fig = plt.figure(figsize=(8, 8))
         self.ax = self.fig.add_subplot(1, 1, 1)
-        self.ax.set_xlabel(r"$x\,(\mathrm{cell})$")
-        self.ax.set_ylabel(r"$y\,(\mathrm{cell})$")
+        self.ax.set_xlabel(r"$x\,(\mathrm{m})$")
+        self.ax.set_ylabel(r"$y\,(\mathrm{m})$")
         self.ax.axis("equal")
 
         # Create empty lists for legend handles and labels
@@ -53,23 +53,11 @@ class TrackPlotter(Plotter):  # TODO remove inheritance
 
         if self.background_map is not None:
             self.background_map.plot_grid_map(ax=self.ax)
-            for truth in truths:
-                x_coords = [
-                    (state.pose[mapping[0], 0] - self.background_map.left_lower_x)
-                    / self.background_map.resolution
-                    for state in truth
-                ]
-                y_coords = [
-                    (state.pose[mapping[1], 0] - self.background_map.left_lower_y)
-                    / self.background_map.resolution
-                    for state in truth
-                ]
-                self.ax.plot(x_coords, y_coords, **truths_kwargs, zorder=2)
-        else:
-            for truth in truths:
-                x_coords = [state.pose[mapping[0], 0] for state in truth]
-                y_coords = [state.pose[mapping[1], 0] for state in truth]
-                self.ax.plot(x_coords, y_coords, **truths_kwargs, zorder=2)
+
+        for truth in truths:
+            x_coords = [state.pose[mapping[0], 0] for state in truth]
+            y_coords = [state.pose[mapping[1], 0] for state in truth]
+            self.ax.plot(x_coords, y_coords, **truths_kwargs, zorder=2)
 
         # Generate legend items
         truths_handle = Line2D(
@@ -131,16 +119,8 @@ class TrackPlotter(Plotter):  # TODO remove inheritance
 
             # TODO refactor transformation to a function
             line = self.ax.plot(
-                [
-                    (state.pose[mapping[0], 0] - self.background_map.left_lower_x)
-                    / self.background_map.resolution
-                    for state in track
-                ],
-                [
-                    (state.pose[mapping[1], 0] - self.background_map.left_lower_y)
-                    / self.background_map.resolution
-                    for state in track
-                ],
+                [state.pose[mapping[0], 0] for state in track],
+                [state.pose[mapping[1], 0] for state in track],
                 **tracks_kwargs
             )
             track_colors[track] = plt.getp(line[0], "color")
@@ -170,16 +150,11 @@ class TrackPlotter(Plotter):  # TODO remove inheritance
                     max_ind = np.argmax(w)
                     min_ind = np.argmin(w)
                     orient = np.arctan2(v[1, max_ind], v[0, max_ind])
-                    coords = (
-                        (state.pose[mapping[0], 0] - self.background_map.left_lower_x)
-                        / self.background_map.resolution,
-                        (state.pose[mapping[1], 0] - self.background_map.left_lower_y)
-                        / self.background_map.resolution,
-                    )
+                    coords = ((state.pose[mapping[0], 0]), (state.pose[mapping[1], 0]))
                     ellipse = Ellipse(
                         xy=coords,
-                        width=2 * np.sqrt(w[max_ind]) / self.background_map.resolution,
-                        height=2 * np.sqrt(w[min_ind]) / self.background_map.resolution,
+                        width=2 * np.sqrt(w[max_ind]),
+                        height=2 * np.sqrt(w[min_ind]),
                         angle=np.rad2deg(orient),
                         alpha=0.2,
                         color=track_colors[track],
@@ -208,10 +183,8 @@ class TrackPlotter(Plotter):  # TODO remove inheritance
                 for state in track:
                     data = state.particles[:, mapping[:2]]
                     self.ax.plot(
-                        (data[:, 0] - self.background_map.left_lower_x)
-                        / self.background_map.resolution,
-                        (data[:, 1] - self.background_map.left_lower_y)
-                        / self.background_map.resolution,
+                        data[:, 0],
+                        data[:, 1],
                         linestyle="",
                         marker=".",
                         markersize=1,

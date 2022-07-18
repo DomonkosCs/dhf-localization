@@ -279,14 +279,27 @@ class GridMap:
     def plot_grid_map(self, ax=None, zorder=1):
 
         grid_data = np.reshape(np.array(self.data), (self.height, self.width))
+
+        # plot tick labels in meters, so that (0,0) is at the origin of the map
+        extent = [
+            -self.center_x,
+            -self.center_x + self.width * self.resolution,
+            -self.center_y,
+            -self.center_y + self.height * self.resolution,
+        ]
         if not ax:
             fig, ax = plt.subplots()
-        heat_map = ax.imshow(
-            grid_data, cmap="Greys", vmin=0.0, vmax=1.0, zorder=zorder, origin="lower"
+        ax.imshow(
+            grid_data,
+            cmap="Greys",
+            vmin=0.0,
+            vmax=1.0,
+            zorder=zorder,
+            origin="lower",
+            extent=extent,
         )
         plt.axis("equal")
         plt.grid()
-        return heat_map
 
     def plot_distance_transform(self, fig):
 
