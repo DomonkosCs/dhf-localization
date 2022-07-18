@@ -4,6 +4,7 @@ author: Atsushi Sakai
 """
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import AutoMinorLocator, MultipleLocator
 import numpy as np
 from scipy import ndimage
 from scipy.interpolate.fitpack2 import RectBivariateSpline
@@ -298,8 +299,12 @@ class GridMap:
             origin="lower",
             extent=extent,
         )
-        plt.axis("equal")
-        plt.grid()
+        ax.xaxis.set_major_locator(MultipleLocator(1))
+        ax.yaxis.set_major_locator(MultipleLocator(1))
+        ax.xaxis.set_minor_locator(AutoMinorLocator(20))
+        ax.yaxis.set_minor_locator(AutoMinorLocator(20))
+        # hide ticks
+        ax.tick_params(which="minor", bottom=False, left=False)
 
     def plot_distance_transform(self, fig):
 

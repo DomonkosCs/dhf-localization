@@ -16,6 +16,8 @@ class TrackPlotter(Plotter):  # TODO remove inheritance
         self.ax.set_xlabel(r"$x\,(\mathrm{m})$")
         self.ax.set_ylabel(r"$y\,(\mathrm{m})$")
         self.ax.axis("equal")
+        self.ax.grid(which="major", linestyle="--", alpha=0.5)
+        self.ax.grid(which="minor", linestyle=":", alpha=0.2)
 
         # Create empty lists for legend handles and labels
         self.handles_list = []
