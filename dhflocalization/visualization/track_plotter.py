@@ -1,5 +1,5 @@
-from gridmap import GridMap
-from visualization import Plotter
+from ..gridmap import GridMap
+from ..visualization import Plotter
 from matplotlib.lines import Line2D
 from matplotlib.patches import Ellipse
 from matplotlib.legend_handler import HandlerPatch

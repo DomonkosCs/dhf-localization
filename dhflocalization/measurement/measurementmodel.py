@@ -1,5 +1,5 @@
-from gridmap import GridMap
-from customtypes import StateHypothesis
+from ..gridmap import GridMap
+from ..customtypes import StateHypothesis
 import numpy as np
 
 

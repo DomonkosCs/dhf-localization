@@ -1,6 +1,6 @@
-from kinematics import MotionModel
-from measurement import MeasurementModel
-from customtypes import StateHypothesis
+from ..kinematics import MotionModel
+from ..measurement import MeasurementModel
+from ..customtypes import StateHypothesis
 import numpy as np
 
 

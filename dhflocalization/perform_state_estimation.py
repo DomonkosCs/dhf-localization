@@ -2,21 +2,20 @@
 # %%
 # import matplotlib
 # from visualization import Plotter
-from filters import EDH, CEDH
-from gridmap import PgmProcesser
-from kinematics import OdometryMotionModel
-from measurement import MeasurementModel, MeasurementProcessor
-from rawdata import RawDataLoader, ConfigExporter
+from dhflocalization.filters import EDH, CEDH
+from dhflocalization.gridmap import PgmProcesser
+from dhflocalization.kinematics import OdometryMotionModel
+from dhflocalization.measurement import MeasurementModel, MeasurementProcessor
+from dhflocalization.rawdata import RawDataLoader, ConfigExporter
 
-from customtypes import StateHypothesis
+from dhflocalization.customtypes import StateHypothesis
 
-from rawdata import resultExporter
-from filters import EKF
-from gridmap import GridMap
+from dhflocalization.rawdata import resultExporter
+from dhflocalization.filters import EKF
+from dhflocalization.gridmap import GridMap
 import numpy as np
 
-import perform_evaluation as evaluate
-
+from dhflocalization import perform_evaluation as evaluate
 # import matplotlib.pyplot as plt
 
 
@@ -31,6 +30,7 @@ def main():
 
     cfg_map_filename = "tb3_house_lessnoisy"
     cfg_map_resolution = 0.05  # m/cell
+
     cfg_simu_data_filename = "5hz_0001"
 
     do_plotting = True

@@ -1,7 +1,7 @@
 import ruamel.yaml
 import numpy as np
 
-from rawdata.filehandler import FileHandler
+from ..rawdata.filehandler import FileHandler
 
 
 class ConfigExporter(FileHandler):

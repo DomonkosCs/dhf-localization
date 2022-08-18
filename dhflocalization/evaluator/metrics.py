@@ -1,5 +1,5 @@
 import numpy as np
-from rawdata import YamlWriter
+from ..rawdata import YamlWriter
 
 
 def _normalize_angle(angle):

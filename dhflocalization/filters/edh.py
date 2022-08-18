@@ -1,11 +1,11 @@
-from kinematics import MotionModel
-from measurement import MeasurementModel
+from ..kinematics import MotionModel
+from ..measurement import MeasurementModel
 from typing import Optional
 import numpy as np
 import time
 
 
-from customtypes import StateHypothesis
+from ..customtypes import StateHypothesis
 
 
 class EDH:

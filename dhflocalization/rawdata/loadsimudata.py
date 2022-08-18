@@ -1,7 +1,7 @@
 import json
 import numpy as np
-from customtypes import SimulationData
-from rawdata.filehandler import FileHandler
+from ..customtypes import SimulationData
+from ..rawdata.filehandler import FileHandler
 
 
 class RawDataLoader(FileHandler):

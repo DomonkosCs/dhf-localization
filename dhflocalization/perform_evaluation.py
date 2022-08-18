@@ -1,9 +1,8 @@
-from rawdata import resultLoader, ConfigImporter
-from gridmap import GridMap
-from gridmap import PgmProcesser
-from visualization import TrackPlotter
-import evaluator.metrics as metrics
-
+from .rawdata import resultLoader, ConfigImporter
+from .gridmap import GridMap
+from .gridmap import PgmProcesser
+from .visualization import TrackPlotter
+from .evaluator import metrics as metrics
 
 def main(results_filename):
     # load results from the pickle file

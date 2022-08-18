@@ -1,7 +1,7 @@
 import pickle
 from datetime import datetime
 
-from rawdata.filehandler import FileHandler
+from ..rawdata.filehandler import FileHandler
 
 
 class resultExporter(FileHandler):
