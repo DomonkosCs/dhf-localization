@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dhflocalization"
+description = "Mobile robot localization using the Daum--Huang filter"
+requires-python = ">=3.7"
+license = {text = "MIT License"}
+classifiers = [
+    'Development Status :: 1 - Planning',
+    'License :: OSI Approved :: MIT License',
+    'Operating System :: OS Independent',
+    'Programming Language :: Python :: 3 :: Only',
+    'Intended Audience :: Science/Research',
+    'Topic :: Scientific/Engineering',  
+]
+version = "0.0.1"
+dependencies = [
+    "numpy > 1.17",
+    "ruamel.yaml >=0.15.80",
+    "matplotlib >= 3.5.1",
+    "scipy >=1.9.0"
+]
+
+[tool.setuptools.packages.find]
+include = ["dhflocalization*"]
+
+[project.scripts]
+perform-estimation = "dhflocalization.perform_state_estimation:main"

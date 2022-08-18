@@ -1,0 +1,3 @@
+# resources to be included in the build
+
+graft dhflocalization/resources
