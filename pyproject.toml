@@ -15,12 +15,12 @@ classifiers = [
     'Intended Audience :: Science/Research',
     'Topic :: Scientific/Engineering',  
 ]
-version = "0.0.1"
+version = "0.0.3"
 dependencies = [
-    "numpy > 1.17",
-    "ruamel.yaml >=0.15.80",
-    "matplotlib >= 3.5.1",
-    "scipy >=1.9.0"
+    "numpy>1.17",
+    "ruamel.yaml>=0.16.5",
+    "matplotlib",
+    "scipy"
 ]
 
 [tool.setuptools.packages.find]
