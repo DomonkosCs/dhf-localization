@@ -1,3 +1,4 @@
 # resources to be included in the build
 
 graft dhflocalization/resources
+recursive-exclude dhflocalization/resources *.p *.yaml

@@ -1,0 +1,2 @@
+Do not delete, required for the building process. 
+Without this file the results directory is not included in the install.
