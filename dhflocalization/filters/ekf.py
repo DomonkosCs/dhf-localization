@@ -15,40 +15,33 @@ class EKF:
         state = StateHypothesis(pose=mean, covar=covar)
         self.filtered_states.append(state)
 
-    def propagate(self, control_input, return_state=False) -> StateHypothesis:
-        propagated_state = self.motion_model.propagate(
-            self.filtered_states[-1], control_input
-        )
-        self.propagated_state = propagated_state
+    def propagate(self, prior, control_input) -> StateHypothesis:
+        return self.motion_model.propagate(prior, control_input)
 
-        if return_state:
-            return propagated_state
-
-    def update(self, measurement) -> StateHypothesis:
-        state = self.propagated_state
+    def update(self, prior, measurement) -> StateHypothesis:
 
         (
             cd,
             grad_cd_x,
             grad_cd_z,
             _,
-        ) = self.measurement_model.process_detection(state, measurement)
+        ) = self.measurement_model.process_detection(prior.state_vector, measurement)
 
         measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(
             grad_cd_z.shape[0]
         )
 
         K = (
-            state.covar
+            prior.covar
             @ grad_cd_x
             / (
-                grad_cd_x.T @ state.covar @ grad_cd_x
+                grad_cd_x.T @ prior.covar @ grad_cd_x
                 + grad_cd_z.T @ measurement_covar @ grad_cd_z
             )
         )
 
-        updated_pose = state.pose - K * cd
-        updated_covar = (np.eye(3) - K @ grad_cd_x.T) @ state.covar
-        updated_state = StateHypothesis(pose=updated_pose, covar=updated_covar)
+        posterior_mean = prior.state_vector - K.flatten() * cd
+        posterior_covar = (np.eye(3) - K @ grad_cd_x.T) @ prior.covar
+        posterior = StateHypothesis(state_vector=posterior_mean, covar=posterior_covar)
 
-        self.filtered_states.append(updated_state)
+        return posterior

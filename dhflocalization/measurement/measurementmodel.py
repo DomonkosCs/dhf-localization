@@ -8,7 +8,7 @@ class MeasurementModel:
         self.ogm = ogm
         self.range_noise_std = range_noise_std
 
-    def process_detection(self, state: StateHypothesis, measurement):
+    def process_detection(self, state_vector, measurement):
 
         ranges = [ray[1] for ray in measurement]
         angles = [ray[0] for ray in measurement]
@@ -16,10 +16,10 @@ class MeasurementModel:
         x_o = np.zeros([len(ranges), 2])
         ogm = self.ogm
 
-        r_cos = np.multiply(ranges, np.cos(angles + state.pose[2]))
-        r_sin = np.multiply(ranges, np.sin(angles + state.pose[2]))
-        x_o[:, 0] = r_cos + state.pose[0, 0]
-        x_o[:, 1] = r_sin + state.pose[1, 0]
+        r_cos = np.multiply(ranges, np.cos(angles + state_vector[2]))
+        r_sin = np.multiply(ranges, np.sin(angles + state_vector[2]))
+        x_o[:, 0] = r_cos + state_vector[0]
+        x_o[:, 1] = r_sin + state_vector[1]
 
         df = ogm.calc_distance_transform_xy_pos(x_o)
 
@@ -33,8 +33,8 @@ class MeasurementModel:
         grad_cd_z = np.array(
             [
                 (
-                    df_d_x * np.cos(angles + state.pose[2])
-                    + df_d_y * np.sin(angles + state.pose[2])
+                    df_d_x * np.cos(angles + state_vector[2])
+                    + df_d_y * np.sin(angles + state_vector[2])
                 )
                 * 1
                 / len(angles)

@@ -1,3 +1,4 @@
+from customtypes.state import ParticleState
 from ..kinematics import MotionModel
 from ..measurement import MeasurementModel
 from typing import Optional
@@ -28,23 +29,10 @@ class EDH:
         self.propagated_state: Optional[StateHypothesis] = None
         self.run_time = 0
 
-    def init_particles_from_gaussian(
-        self, init_mean: np.ndarray, init_covar: np.ndarray, return_state=False
-    ) -> StateHypothesis:
-        init_state = StateHypothesis.init_particles_from_gaussian(
-            self.particle_num, init_mean, init_covar
-        )
-        self.filtered_states.append(init_state)
-        if return_state:
-            return init_state
+    def propagate(self, prior, control_input):
+        return self.motion_model.propagate_particles(prior, control_input)
 
-    def propagate(self, control_input):
-        particle_poses = self.motion_model.propagate_particles(
-            self.filtered_states[-1].particles, control_input
-        )
-        self.propagated_state = StateHypothesis.create_from_particles(particle_poses)
-
-    def update(self, ekf_covar: np.ndarray, measurement) -> None:
+    def update(self, prediction, ekf_prediction, measurement) -> None:
 
         start_time = time.time()
         num_of_rays = len(measurement)
@@ -52,12 +40,13 @@ class EDH:
             num_of_rays
         )
 
-        particle_poses = self.propagated_state.particles
-        particle_poses_mean = np.mean(particle_poses, axis=0)
+        ekf_covar = ekf_prediction.covar
+        particle_poses = prediction.state_vectors
+        particle_poses_mean = prediction.mean()
         particle_poses_mean_0 = particle_poses_mean
         for lamb in self.lambdas:
             cd, grad_cd_x, grad_cd_z, _ = self.measurement_model.process_detection(
-                StateHypothesis(particle_poses_mean), measurement
+                particle_poses_mean, measurement
             )
 
             y = -cd + grad_cd_x.T @ particle_poses_mean
@@ -86,11 +75,12 @@ class EDH:
             )
             particle_poses_mean = np.mean(particle_poses, axis=0)
 
-        updated_state = StateHypothesis.create_from_particles(particle_poses)
-        self.filtered_states.append(updated_state)
+        posterior = ParticleState(state_vectors=particle_poses)
 
         time_elapsed = time.time() - start_time
         self.run_time = self.run_time + time_elapsed
+
+        return posterior
 
     def get_runtime(self):
         return self.run_time

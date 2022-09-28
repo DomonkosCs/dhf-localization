@@ -8,7 +8,7 @@ from dhflocalization.kinematics import OdometryMotionModel
 from dhflocalization.measurement import MeasurementModel, MeasurementProcessor
 from dhflocalization.rawdata import RawDataLoader, ConfigExporter
 
-from dhflocalization.customtypes import StateHypothesis
+from dhflocalization.customtypes import StateHypothesis, ParticleState
 
 from dhflocalization.rawdata import resultExporter
 from dhflocalization.filters import EKF
@@ -16,6 +16,7 @@ from dhflocalization.gridmap import GridMap
 import numpy as np
 
 from dhflocalization import perform_evaluation as evaluate
+
 # import matplotlib.pyplot as plt
 
 
@@ -62,8 +63,6 @@ def main():
     measurement_model = MeasurementModel(ogm, cfg_measurement_range_noise_std)
 
     cfg_edh_particle_number = 1000
-    cfg_cedh_particle_number = 1000
-    cfg_cedh_step_num = 10
     cfg_edh_lambda_number = 10
     cfg_init_gaussian_mean = np.array([-3.0, 1.0, 0])
     cfg_init_gaussian_covar = np.array(
@@ -78,36 +77,31 @@ def main():
         particle_num=cfg_edh_particle_number,
         lambda_num=cfg_edh_lambda_number,
     )
-    cedh = CEDH(
-        motion_model=motion_model,
-        measurement_model=measurement_model,
-        particle_num=cfg_cedh_particle_number,
+
+    prior = ParticleState.init_from_gaussian(
+        cfg_init_gaussian_mean, cfg_init_gaussian_covar, cfg_edh_particle_number
     )
-    edh.init_particles_from_gaussian(
-        cfg_init_gaussian_mean, cfg_init_gaussian_covar, return_state=False
-    )
-    cedh.init_particles_from_gaussian(
-        cfg_init_gaussian_mean, cfg_init_gaussian_covar, return_state=False
+    ekf_prior = StateHypothesis(
+        state_vector=cfg_init_gaussian_mean, covar=cfg_init_gaussian_covar
     )
 
-    # Another option is to set the return_state flag on edh.init_particles_from_gaussian,
-    # and use returned state to initialize ekf.
-    ekf.init_state(mean=cfg_init_gaussian_mean, covar=cfg_init_gaussian_covar)
-
+    ekf_track = []
+    edh_track = []
     for i in range(1, simulation_data.simulation_steps, 1):
         control_input = [simulation_data.x_odom[i - 1], simulation_data.x_odom[i]]
         measurement = measurement_processer.filter_measurements(
             simulation_data.measurement[i]
         )
-        cedh.propagate(control_input)
-        edh.propagate(control_input)
-        ekf_propagated_state = ekf.propagate(control_input, return_state=True)
+        prediction = edh.propagate(prior, control_input)
+        ekf_prediction = ekf.propagate(ekf_prior, control_input)
 
-        cedh.update_multistep(
-            ekf_propagated_state.covar, measurement, cfg_cedh_step_num
-        )
-        edh.update(ekf_propagated_state.covar, measurement)
-        ekf.update(measurement)
+        posterior = edh.update(prediction, ekf_prediction, measurement)
+        ekf_posterior = ekf.update(ekf_prediction, measurement)
+
+        ekf_track.append(ekf_posterior.state_vector)
+        edh_track.append(posterior.mean())
+        prior = posterior
+        ekf_prior = ekf_posterior
 
     amcl_filtered_states = [
         StateHypothesis(amcl_pose) for amcl_pose in simulation_data.x_amcl
@@ -121,7 +115,6 @@ def main():
     true_states = [StateHypothesis(true_pose) for true_pose in simulation_data.x_true]
 
     filtered_states = {
-        "cedh": cedh.filtered_states,
         "edh": edh.filtered_states,
         "ekf": ekf.filtered_states,
         "amcl": amcl_filtered_states,
@@ -131,7 +124,6 @@ def main():
     # TODO move to results
     cfg_avg_ray_number = measurement_processer.get_avg_ray_number()
     cfg_edh_runtime = edh.get_runtime()
-    cfg_cedh_runtime = cedh.get_runtime()
     print("Calcuations completed, saving results...")
     cfg_result_filename = resultExporter().save(filtered_states, reference_states)
     config_exporter.export(locals(), cfg_result_filename)
