@@ -227,18 +227,8 @@ class GridMap:
         x_transf = xy_pos[:, 0] - self.left_lower_x - self.resolution / 2.0
         y_transf = xy_pos[:, 1] - self.left_lower_y - self.resolution / 2.0
 
-        df_d_x = edt_interp.ev(
-            y_transf,
-            x_transf,
-            0,
-            1,
-        )
-        df_d_y = edt_interp.ev(
-            y_transf,
-            x_transf,
-            1,
-            0,
-        )
+        df_d_x = edt_interp.ev(y_transf, x_transf, 0, 1,)
+        df_d_y = edt_interp.ev(y_transf, x_transf, 1, 0,)
         return df_d_x, df_d_y
 
     def check_occupied_from_xy_index(self, xind, yind, occupied_val=1.0):
