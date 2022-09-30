@@ -23,17 +23,6 @@ def _angle_set_diff(set_1, set_2):
     return [_calc_angle_diff(a, b) for a, b in zip(set_1, set_2)]
 
 
-def _calc_pose_from_state_array(filtered_states, reference_states):
-    filtered_poses = {}
-    for key, value in filtered_states.items():
-        filtered_poses[key] = np.array([state.pose for state in value])
-    reference_poses = {}
-    for key, value in reference_states.items():
-        reference_poses[key] = np.array([state.pose for state in value])
-
-    return filtered_poses, reference_poses
-
-
 def _calc_error_metrics(filtered_poses, reference_poses):
 
     err_mean_sqare = {"position": {}, "orientation": {}}
@@ -99,12 +88,9 @@ def eval(
     export_filename=None,
     return_results=False,
 ):
-    filtered_poses, reference_poses = _calc_pose_from_state_array(
-        filtered_states, reference_states
-    )
 
     err_mean_sqare, err_mean_abs, std = _calc_error_metrics(
-        filtered_poses, reference_poses
+        filtered_states, reference_states
     )
     if export_filename:
         metrics_dict = {

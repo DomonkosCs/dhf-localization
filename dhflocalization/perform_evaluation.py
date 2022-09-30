@@ -1,13 +1,12 @@
-from .rawdata import resultLoader, ConfigImporter
-from .gridmap import GridMap
-from .gridmap import PgmProcesser
-from .visualization import TrackPlotter
-from .evaluator import metrics as metrics
+from dhflocalization.rawdata import resultLoader, ConfigImporter
+from dhflocalization.gridmap import GridMap
+from dhflocalization.gridmap import PgmProcesser
+from dhflocalization.visualization import TrackPlotter
+from dhflocalization.evaluator import metrics as metrics
 
 
 def main(results_filename):
     # load results from the pickle file
-    # TODO fix name
     results = resultLoader.load(results_filename)
     config = ConfigImporter.importData(results_filename)
     (err_mean_sqare, err_mean_abs, std) = metrics.eval(
@@ -26,11 +25,10 @@ def main(results_filename):
     ogm = GridMap.load_grid_map_from_array(
         PgmProcesser.read_pgm(map_fn), 0.05, 10, 10.05
     )
-    track_plotter = TrackPlotter()
-    track_plotter.background_map = ogm
+    track_plotter = TrackPlotter(background_map=ogm)
     track_plotter.plot_tracks(results[0], results[1])
 
 
 if __name__ == "__main__":
-    results_filename = "22-07-06T142456"
+    results_filename = "22-09-30T084254"
     main(results_filename)

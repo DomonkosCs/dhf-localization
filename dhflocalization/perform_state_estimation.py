@@ -2,7 +2,7 @@
 # %%
 # import matplotlib
 # from visualization import Plotter
-from dhflocalization.filters import EDH, CEDH
+from dhflocalization.filters import EDH
 from dhflocalization.gridmap import PgmProcesser
 from dhflocalization.kinematics import OdometryMotionModel
 from dhflocalization.measurement import MeasurementModel, MeasurementProcessor
@@ -87,6 +87,9 @@ def main():
 
     ekf_track = []
     edh_track = []
+    ekf_track.append(ekf_prior.state_vector)
+    edh_track.append(prior.mean())
+
     for i in range(1, simulation_data.simulation_steps, 1):
         control_input = [simulation_data.x_odom[i - 1], simulation_data.x_odom[i]]
         measurement = measurement_processer.filter_measurements(
@@ -103,23 +106,16 @@ def main():
         prior = posterior
         ekf_prior = ekf_posterior
 
-    amcl_filtered_states = [
-        StateHypothesis(amcl_pose) for amcl_pose in simulation_data.x_amcl
-    ]
-
-    odom_states = [
-        StateHypothesis(odom_pose + np.array([-3, 1, 0]))
-        for odom_pose in simulation_data.x_odom
-    ]
-
-    true_states = [StateHypothesis(true_pose) for true_pose in simulation_data.x_true]
-
     filtered_states = {
-        "edh": edh.filtered_states,
-        "ekf": ekf.filtered_states,
-        "amcl": amcl_filtered_states,
+        "edh": np.asarray(edh_track),
+        "ekf": np.asarray(ekf_track),
+        "amcl": simulation_data.x_amcl,
     }
-    reference_states = {"odom": odom_states, "true": true_states}
+
+    reference_states = {
+        "odom": simulation_data.x_odom + np.array([-3, 1, 0]),
+        "true": simulation_data.x_true,
+    }
 
     # TODO move to results
     cfg_avg_ray_number = measurement_processer.get_avg_ray_number()
