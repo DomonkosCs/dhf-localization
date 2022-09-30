@@ -5,6 +5,8 @@ import numpy as np
 import time
 from ..customtypes import StateHypothesis
 
+# TODO sync with edh.py
+
 
 class CEDH:
     def __init__(

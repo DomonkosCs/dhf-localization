@@ -1,12 +1,8 @@
 from customtypes.state import ParticleState
 from ..kinematics import MotionModel
 from ..measurement import MeasurementModel
-from typing import Optional
 import numpy as np
 import time
-
-
-from ..customtypes import StateHypothesis
 
 
 class EDH:
@@ -25,8 +21,6 @@ class EDH:
             0, 1, self.lambda_num, endpoint=False, retstep=True
         )
         self.lambdas = lambdas + self.d_lambda
-        self.filtered_states: list[StateHypothesis] = []
-        self.propagated_state: Optional[StateHypothesis] = None
         self.run_time = 0
 
     def propagate(self, prior, control_input):

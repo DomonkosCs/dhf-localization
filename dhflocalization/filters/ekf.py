@@ -8,12 +8,6 @@ class EKF:
     def __init__(self, motion_model: MotionModel, measurement_model: MeasurementModel):
         self.motion_model = motion_model
         self.measurement_model = measurement_model
-        self.filtered_states = []
-        self.propagated_state = None
-
-    def init_state(self, mean: np.ndarray, covar: np.ndarray) -> None:
-        state = StateHypothesis(pose=mean, covar=covar)
-        self.filtered_states.append(state)
 
     def propagate(self, prior, control_input) -> StateHypothesis:
         return self.motion_model.propagate(prior, control_input)
