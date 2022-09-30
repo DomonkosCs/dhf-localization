@@ -13,7 +13,9 @@ class RawDataLoader(FileHandler):
         relative_path = "../resources/simulations/" + filename + ".json"
         file_path = super().convert_path_to_absolute(cls, relative_path)
         try:
-            json_file = open(file_path,)
+            json_file = open(
+                file_path,
+            )
         except AttributeError:
             raise ValueError("File not found at {}".format(file_path))
 
