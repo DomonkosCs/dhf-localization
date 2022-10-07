@@ -1,4 +1,4 @@
-from customtypes.state import ParticleState
+from ..customtypes import ParticleState
 from ..kinematics import MotionModel
 from ..measurement import MeasurementModel
 import numpy as np
