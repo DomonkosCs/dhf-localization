@@ -81,7 +81,7 @@ class TrackPlotter(Plotter):  # TODO remove inheritance
         else:
             self.ax.legend(handles=self.handles_list, labels=self.labels_list)
 
-    def plot_tracks(self, filtered_states, reference_states):
+    def plot_tracks(self, filtered_states, reference_states=None):
         for key in filtered_states:
             self._plot_track(
                 filtered_states[key],
@@ -90,14 +90,15 @@ class TrackPlotter(Plotter):  # TODO remove inheritance
                 linestyle="--",
                 track_label=key,
             )
-        for key in reference_states:
-            self._plot_track(
-                reference_states[key],
-                [0, 1],
-                marker=None,
-                linestyle=":" if key == "odom" else "-",
-                track_label=key,
-            )
+        if reference_states is not None:
+            for key in reference_states:
+                self._plot_track(
+                    reference_states[key],
+                    [0, 1],
+                    marker=None,
+                    linestyle=":" if key == "odom" else "-",
+                    track_label=key,
+                )
         plt.show()
 
 
