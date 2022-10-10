@@ -14,14 +14,11 @@ class EKF:
 
     def update(self, prior, measurement) -> StateHypothesis:
 
-        (
-            cd,
-            grad_cd_x,
-            grad_cd_z,
-            _,
-        ) = self.measurement_model.process_detection(prior.state_vector, measurement)
+        (cd, grad_cd_x, grad_cd_z, _,) = self.measurement_model.process_detection(
+            prior.state_vector, measurement
+        )
 
-        measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(
+        measurement_covar = self.measurement_model.range_noise_std ** 2 * np.eye(
             grad_cd_z.shape[0]
         )
 

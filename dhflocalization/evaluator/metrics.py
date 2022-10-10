@@ -83,10 +83,7 @@ def _calc_error_metrics(filtered_poses, reference_poses):
 
 
 def eval(
-    filtered_states,
-    reference_states,
-    export_filename=None,
-    return_results=False,
+    filtered_states, reference_states, export_filename=None, return_results=False,
 ):
 
     err_mean_sqare, err_mean_abs, std = _calc_error_metrics(
@@ -99,8 +96,7 @@ def eval(
             "STD": std,
         }
         YamlWriter().updateFile(
-            payload=metrics_dict,
-            filename=export_filename,
+            payload=metrics_dict, filename=export_filename,
         )
     if return_results:
         return err_mean_sqare, err_mean_abs, std

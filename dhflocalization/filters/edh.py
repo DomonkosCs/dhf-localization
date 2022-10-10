@@ -30,7 +30,7 @@ class EDH:
 
         start_time = time.time()
         num_of_rays = len(measurement)
-        measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(
+        measurement_covar = self.measurement_model.range_noise_std ** 2 * np.eye(
             num_of_rays
         )
 

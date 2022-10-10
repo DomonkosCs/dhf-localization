@@ -14,10 +14,7 @@ class ConfigExporter(FileHandler):
         relative_path = "../resources/results/" + filename + ".yaml"
         file_path = super().convert_path_to_absolute(relative_path)
 
-        with open(
-            file_path,
-            "w",
-        ) as file:
+        with open(file_path, "w",) as file:
             ruamel.yaml.dump({"config": data, "results": ""}, file)
 
     def __extract_variables(self, payload):

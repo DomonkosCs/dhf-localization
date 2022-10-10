@@ -142,11 +142,11 @@ class OdometryMotionModel(MotionModel):
 
     def calc_control_noise_covar(self, delta_rot_1, delta_trans, delta_rot_2):
 
-        control_var_11 = self.alfa_1 * delta_rot_1**2 + self.alfa_2 * delta_trans**2
-        control_var_22 = self.alfa_3 * delta_trans**2 + self.alfa_4 * (
-            delta_rot_1**2 + delta_rot_2**2
+        control_var_11 = self.alfa_1 * delta_rot_1 ** 2 + self.alfa_2 * delta_trans ** 2
+        control_var_22 = self.alfa_3 * delta_trans ** 2 + self.alfa_4 * (
+            delta_rot_1 ** 2 + delta_rot_2 ** 2
         )
-        control_var_33 = self.alfa_1 * delta_rot_2**2 + self.alfa_2 * delta_trans**2
+        control_var_33 = self.alfa_1 * delta_rot_2 ** 2 + self.alfa_2 * delta_trans ** 2
 
         return np.diag([control_var_11, control_var_22, control_var_33])
 

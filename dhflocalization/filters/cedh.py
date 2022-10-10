@@ -42,7 +42,7 @@ class CEDH:
 
         start_time = time.time()
         num_of_rays = len(measurement)
-        measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(
+        measurement_covar = self.measurement_model.range_noise_std ** 2 * np.eye(
             num_of_rays
         )
 
@@ -72,9 +72,9 @@ class CEDH:
         fib3 = 2 / p * M @ particle_poses_mean[:, np.newaxis] * (p / 2 + r) / (
             p + r
         ) - 2 / p * M @ particle_poses_mean[:, np.newaxis] * r / np.sqrt(r * (p + r))
-        fib4 = 1 / 3 * w / p * (p**2 - 4 * p * r - 8 * r**2) / (
+        fib4 = 1 / 3 * w / p * (p ** 2 - 4 * p * r - 8 * r ** 2) / (
             p + r
-        ) + 1 / 3 * w / p * 8 * r**2 / np.sqrt(r) / np.sqrt(p + r)
+        ) + 1 / 3 * w / p * 8 * r ** 2 / np.sqrt(r) / np.sqrt(p + r)
         particle_poses = fi @ particle_poses.T + 1 * (fib0 + fib1 + fib2 + fib3 + fib4)
         particle_poses = particle_poses.T
 
@@ -87,7 +87,7 @@ class CEDH:
     def update_multistep(self, ekf_covar: np.ndarray, measurement, stepnum):
         start_time = time.time()
         num_of_rays = len(measurement)
-        measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(
+        measurement_covar = self.measurement_model.range_noise_std ** 2 * np.eye(
             num_of_rays
         )
 
@@ -136,9 +136,9 @@ class CEDH:
                 * w
                 * kl1 ** (-1 / 2)
                 * (
-                    (p**2 * lam_1**2 - 4 * p * r * lam_1 - 8 * r**2)
+                    (p ** 2 * lam_1 ** 2 - 4 * p * r * lam_1 - 8 * r ** 2)
                     * ((p * lam_1 + r) ** (-1 / 2))
-                    - (p**2 * lam_0**2 - 4 * p * r * lam_0 - 8 * r**2)
+                    - (p ** 2 * lam_0 ** 2 - 4 * p * r * lam_0 - 8 * r ** 2)
                     * ((p * lam_0 + r) ** (-1 / 2))
                 )
             )
