@@ -36,6 +36,9 @@ class RawDataLoader(FileHandler):
         scans_raw = np.array(
             [entry["scan"] for entry in data if ([] not in entry.values())]
         )
+
+        times = np.array([entry["t"] for entry in data if ([] not in entry.values())])
+
         angles = np.linspace(0, 2 * np.pi, len(scans_raw[0]), endpoint=False)
         measurement = []
         for scan in scans_raw:
@@ -48,5 +51,9 @@ class RawDataLoader(FileHandler):
             )
 
         return SimulationData(
-            x_odom=x_odom, x_amcl=x_amcl, x_true=x_true, measurement=measurement
+            x_odom=x_odom,
+            x_amcl=x_amcl,
+            x_true=x_true,
+            measurement=measurement,
+            times=times,
         )
