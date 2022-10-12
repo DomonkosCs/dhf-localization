@@ -15,6 +15,6 @@ class ParticleState:
         return np.average(self.state_vectors, axis=0)
 
     @classmethod
-    def init_from_gaussian(cls, mean, covar, particle_num):
-        state_vectors = np.random.multivariate_normal(mean, covar, particle_num)
+    def init_from_gaussian(cls, mean, covar, particle_num, rng=np.random.default_rng()):
+        state_vectors = rng.multivariate_normal(mean, covar, particle_num)
         return cls(state_vectors=state_vectors)

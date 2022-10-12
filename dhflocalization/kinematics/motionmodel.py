@@ -11,11 +11,12 @@ class MotionModel(ABC):
 
 
 class OdometryMotionModel(MotionModel):
-    def __init__(self, alfas):
+    def __init__(self, alfas, rng=np.random.default_rng()):
         self.alfa_1 = alfas[0]
         self.alfa_2 = alfas[1]
         self.alfa_3 = alfas[2]
         self.alfa_4 = alfas[3]
+        self.rng = rng
         pass
 
     def propagate_particles(self, prior, control_input):
@@ -35,17 +36,17 @@ class OdometryMotionModel(MotionModel):
         delta_hat_rot_1 = self.calc_angle_diff(
             delta_rot_1,
             np.sqrt(control_covar[0, 0])
-            * np.random.randn(prior.state_vectors.shape[0]),
+            * self.rng.standard_normal(prior.state_vectors.shape[0]),
         )
         delta_hat_trans = self.calc_angle_diff(
             delta_trans,
             np.sqrt(control_covar[1, 1])
-            * np.random.randn(prior.state_vectors.shape[0]),
+            * self.rng.standard_normal(prior.state_vectors.shape[0]),
         )
         delta_hat_rot_2 = self.calc_angle_diff(
             delta_rot_2,
             np.sqrt(control_covar[2, 2])
-            * np.random.randn(prior.state_vectors.shape[0]),
+            * self.rng.standard_normal(prior.state_vectors.shape[0]),
         )
 
         state_angles = prior.state_vectors[:, 2]
@@ -142,11 +143,11 @@ class OdometryMotionModel(MotionModel):
 
     def calc_control_noise_covar(self, delta_rot_1, delta_trans, delta_rot_2):
 
-        control_var_11 = self.alfa_1 * delta_rot_1 ** 2 + self.alfa_2 * delta_trans ** 2
-        control_var_22 = self.alfa_3 * delta_trans ** 2 + self.alfa_4 * (
-            delta_rot_1 ** 2 + delta_rot_2 ** 2
+        control_var_11 = self.alfa_1 * delta_rot_1**2 + self.alfa_2 * delta_trans**2
+        control_var_22 = self.alfa_3 * delta_trans**2 + self.alfa_4 * (
+            delta_rot_1**2 + delta_rot_2**2
         )
-        control_var_33 = self.alfa_1 * delta_rot_2 ** 2 + self.alfa_2 * delta_trans ** 2
+        control_var_33 = self.alfa_1 * delta_rot_2**2 + self.alfa_2 * delta_trans**2
 
         return np.diag([control_var_11, control_var_22, control_var_33])
 

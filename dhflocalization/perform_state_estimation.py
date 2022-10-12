@@ -27,12 +27,12 @@ def main():
     config_exporter = ConfigExporter()
 
     cfg_random_seed = 2021
-    np.random.seed(cfg_random_seed)
+    rng = np.random.default_rng(cfg_random_seed)
 
-    cfg_map_filename = "tb3_house_lessnoisy"
+    cfg_map_filename = "tb3_house_true"
     cfg_map_resolution = 0.05  # m/cell
 
-    cfg_simu_data_filename = "5hz_0001"
+    cfg_simu_data_filename = "topicexport3"
 
     do_plotting = True
 
@@ -56,7 +56,8 @@ def main():
             cfg_odometry_alpha_2,
             cfg_odometry_alpha_3,
             cfg_odometry_alpha_4,
-        ]
+        ],
+        rng=rng,
     )
 
     cfg_measurement_range_noise_std = 0.01
@@ -79,7 +80,10 @@ def main():
     )
 
     prior = ParticleState.init_from_gaussian(
-        cfg_init_gaussian_mean, cfg_init_gaussian_covar, cfg_edh_particle_number
+        cfg_init_gaussian_mean,
+        cfg_init_gaussian_covar,
+        cfg_edh_particle_number,
+        rng=rng,
     )
     ekf_prior = StateHypothesis(
         state_vector=cfg_init_gaussian_mean, covar=cfg_init_gaussian_covar
