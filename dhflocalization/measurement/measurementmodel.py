@@ -1,12 +1,21 @@
 from ..gridmap import GridMap
-from ..customtypes import StateHypothesis
 import numpy as np
 
 
 class MeasurementModel:
-    def __init__(self, ogm: GridMap, range_noise_std):
+    def __init__(
+        self,
+        ogm: GridMap,
+        range_noise_std,
+        robot_sensor_dx=0,
+        robot_sensor_dy=0,
+        robot_sensor_dyaw=0,
+    ):
         self.ogm = ogm
         self.range_noise_std = range_noise_std
+        self.robot_sensor_tr = np.array(
+            [robot_sensor_dx, robot_sensor_dy, robot_sensor_dyaw]
+        )
 
     def process_detection(self, state_vector, measurement):
 
@@ -16,10 +25,13 @@ class MeasurementModel:
         x_o = np.zeros([len(ranges), 2])
         ogm = self.ogm
 
-        r_cos = np.multiply(ranges, np.cos(angles + state_vector[2]))
-        r_sin = np.multiply(ranges, np.sin(angles + state_vector[2]))
-        x_o[:, 0] = r_cos + state_vector[0]
-        x_o[:, 1] = r_sin + state_vector[1]
+        # Transform readings from sensor frame to global frame.
+        # First, transform to the robot's frame, and then to the global.
+        angle_global = angles + self.robot_sensor_tr[2] + state_vector[2]
+        r_cos = np.multiply(ranges, np.cos(angle_global))
+        r_sin = np.multiply(ranges, np.sin(angle_global))
+        x_o[:, 0] = r_cos + self.robot_sensor_tr[0] + state_vector[0]
+        x_o[:, 1] = r_sin + self.robot_sensor_tr[1] + state_vector[1]
 
         df = ogm.calc_distance_transform_xy_pos(x_o)
 
@@ -32,10 +44,7 @@ class MeasurementModel:
 
         grad_cd_z = np.array(
             [
-                (
-                    df_d_x * np.cos(angles + state_vector[2])
-                    + df_d_y * np.sin(angles + state_vector[2])
-                )
+                (df_d_x * np.cos(angle_global) + df_d_y * np.sin(angle_global))
                 * 1
                 / len(angles)
             ]
