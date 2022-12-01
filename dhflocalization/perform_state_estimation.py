@@ -29,10 +29,10 @@ def main():
     cfg_random_seed = 2021
     rng = np.random.default_rng(cfg_random_seed)
 
-    cfg_map_filename = "tb3_house_true"
+    cfg_map_filename = "sztaki_true"
     cfg_map_resolution = 0.05  # m/cell
 
-    cfg_simu_data_filename = "topicexport3"
+    cfg_simu_data_filename = "real"
 
     do_plotting = True
 
@@ -60,14 +60,15 @@ def main():
         rng=rng,
     )
 
-    cfg_measurement_range_noise_std = 0.01
+    cfg_measurement_range_noise_std = 0.11
     measurement_model = MeasurementModel(ogm, cfg_measurement_range_noise_std)
 
-    cfg_edh_particle_number = 1000
+    cfg_edh_particle_number = 100
     cfg_edh_lambda_number = 10
-    cfg_init_gaussian_mean = np.array([-3.0, 1.0, 0])
+    # cfg_init_gaussian_mean = np.array([-3.0, 1.0, 0])
+    cfg_init_gaussian_mean = np.array([0, 0, 0])
     cfg_init_gaussian_covar = np.array(
-        [[0.1**2, 0, 0], [0, 0.1**2, 0], [0, 0, 0.05**2]]
+        [[0.51**2, 0, 0], [0, 0.51**2, 0], [0, 0, 0.15**2]]
     )
 
     measurement_processer = MeasurementProcessor(max_ray_number=cfg_max_ray_number)
@@ -113,11 +114,12 @@ def main():
     filtered_states = {
         "edh": np.asarray(edh_track),
         "ekf": np.asarray(ekf_track),
-        "amcl": simulation_data.x_amcl,
+        # "amcl": simulation_data.x_amcl,
     }
 
     reference_states = {
-        "odom": simulation_data.x_odom + np.array([-3, 1, 0]),
+        "odom": simulation_data.x_odom,
+        # "odom": simulation_data.x_odom + np.array([-3, 1, 0]),
         "true": simulation_data.x_true,
     }
 

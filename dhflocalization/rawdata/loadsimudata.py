@@ -29,26 +29,34 @@ class RawDataLoader(FileHandler):
         x_true = np.array(
             [entry["truth"] for entry in data if ([] not in entry.values())]
         )
-        x_amcl = np.array(
-            [entry["amcl"] for entry in data if ([] not in entry.values())]
-        )
+        if "amcl" in data[5]:
+            x_amcl = np.array(
+                # [entry["amcl"] for entry in data if ([] not in entry.values())]
+                [entry["amcl"] for entry in data]
+            )
+        else:
+            x_amcl = []
         # TODO move this to another function
         scans_raw = np.array(
             [entry["scan"] for entry in data if ([] not in entry.values())]
         )
 
-        times = np.array([entry["t"] for entry in data if ([] not in entry.values())])
+        # times = np.array([entry["t"] for entry in data if ([] not in entry.values())])
+        times = np.array([entry["t"] for entry in data])
 
-        angles = np.linspace(0, 2 * np.pi, len(scans_raw[0]), endpoint=False)
-        measurement = []
-        for scan in scans_raw:
-            measurement.append(
-                [
-                    (angle, range)
-                    for angle, range in zip(angles, scan)
-                    if range is not None
-                ]
-            )
+        if len(scans_raw):
+            angles = np.linspace(0, 2 * np.pi, len(scans_raw[0]), endpoint=False)
+            measurement = []
+            for scan in scans_raw:
+                measurement.append(
+                    [
+                        (angle, range)
+                        for angle, range in zip(angles, scan)
+                        if range is not None
+                    ]
+                )
+        else:
+            measurement = []
 
         return SimulationData(
             x_odom=x_odom,
