@@ -2,10 +2,12 @@ from dhflocalization.rawdata import resultLoader, ConfigImporter, RawDataLoader
 from dhflocalization.gridmap import GridMap
 from dhflocalization.gridmap import PgmProcesser
 from dhflocalization.visualization import TrackPlotter
-from dhflocalization.evaluator import metrics as metrics
+from dhflocalization.evaluator import metrics, data_association
 from dhflocalization.rawdata import optitrack_reader
 
-import matplotlib.pyplot as plt
+from scipy.spatial.transform import Rotation
+import numpy as np
+import math
 
 
 def main(results_filename):
@@ -35,44 +37,60 @@ def main(results_filename):
 def compare_filtered_with_optitrack(dhf_fn, amcl_fn, optitrack_fn):
     optitrack_data = optitrack_reader.load(optitrack_fn)
     turtlebot_data = optitrack_data.rigid_bodies["turtlebot"]
+    optitrack_stamps = [
+        time + optitrack_data.start_time_epoch for time in turtlebot_data.times
+    ]
+    turtlebot_positions = turtlebot_data.positions
+    turtlebot_rotations_quat = turtlebot_data.rotations
+    turtlebot_rotations = Rotation.from_quat(turtlebot_rotations_quat).as_euler("zxz")
+
+    optitrack_state = np.asarray(
+        [
+            [pos[0], -pos[2], rot[1]]
+            for (pos, rot) in zip(turtlebot_positions, turtlebot_rotations)
+        ]
+    )
+
     dhf_filtered_data = RawDataLoader.load_from_json(dhf_fn)
     amcl_filtered_data = RawDataLoader.load_from_json(amcl_fn)
 
-    optitrack_times = [
-        time + optitrack_data.start_time_epoch for time in turtlebot_data.times
-    ]
-    dhf_filtered_times = list(dhf_filtered_data.times)
-    amcl_filtered_times = list(amcl_filtered_data.times)
+    dhf_stamps = list(dhf_filtered_data.times)
+    amcl_stamps = list(amcl_filtered_data.times)
 
-    dhf_filter_pos_x = [pos[0] for pos in list(dhf_filtered_data.x_true)]
-    optitrack_pos_x = [pos[0] for pos in turtlebot_data.positions]
-    dhf_filter_pos_y = [pos[1] for pos in list(dhf_filtered_data.x_true)]
-    optitrack_pos_y = [-pos[2] for pos in turtlebot_data.positions]
-    amcl_filter_pos_x = [pos[0] for pos in list(amcl_filtered_data.x_amcl)]
-    amcl_filter_pos_y = [pos[1] for pos in list(amcl_filtered_data.x_amcl)]
+    dhf_state = dhf_filtered_data.x_true
+    amcl_state = amcl_filtered_data.x_amcl
 
-    plt.scatter(dhf_filter_pos_x, dhf_filter_pos_y)
-    plt.scatter(amcl_filter_pos_x, amcl_filter_pos_y)
-    plt.scatter(optitrack_pos_x, optitrack_pos_y)
-    plt.legend(["dhf", "amcl", "opti"])
+    dhf_state[:, 2] = abs(np.arctan2(np.sin(dhf_state[:, 2]), np.cos(dhf_state[:, 2])))
+    amcl_state[:, 2] = abs(amcl_state[:, 2])
 
-    plt.figure()
-    plt.plot(dhf_filtered_times, dhf_filter_pos_x)
-    plt.plot(amcl_filtered_times, amcl_filter_pos_x)
-    plt.plot(optitrack_times, optitrack_pos_x)
-    plt.legend()
-    plt.figure()
-    plt.plot(dhf_filtered_times, dhf_filter_pos_y)
-    plt.plot(amcl_filtered_times, amcl_filter_pos_y)
-    plt.plot(optitrack_times, optitrack_pos_y)
-    plt.legend()
+    optitrack_dhf_indices = data_association.optitrack_with_filter(
+        optitrack_stamps, dhf_stamps
+    )
+    optitrack_amcl_indices = data_association.optitrack_with_filter(
+        optitrack_stamps, amcl_stamps
+    )
 
-    plt.show()
+    dhf_results = metrics.eval(
+        {"dhf": dhf_state},
+        {"true": optitrack_state[optitrack_dhf_indices, :]},
+        return_results=True,
+    )
+    amcl_results = metrics.eval(
+        {"amcl": amcl_state},
+        {"true": optitrack_state[optitrack_amcl_indices, :]},
+        return_results=True,
+    )
 
-    print("hi")
+    print("----")
+    print(dhf_results[0], amcl_results[0])
+    print("----")
+    print(dhf_results[1], amcl_results[1])
+    print("----")
+    print(dhf_results[2], amcl_results[2])
+    print("----")
 
 
 if __name__ == "__main__":
-    compare_filtered_with_optitrack("real_3_corr", "amcl", "take01")
+    compare_filtered_with_optitrack("edh_take01", "amcl_take01", "take01")
     # results_filename = "22-09-30T084254"
     # main(results_filename)
