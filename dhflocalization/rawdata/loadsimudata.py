@@ -22,13 +22,20 @@ class RawDataLoader(FileHandler):
         data = json.load(json_file)
         data = data["data"]
 
-        # TODO write for loop
-        x_odom = np.array(
-            [entry["pose"] for entry in data if ([] not in entry.values())]
-        )
-        x_true = np.array(
-            [entry["truth"] for entry in data if ([] not in entry.values())]
-        )
+        if "pose" in data[5]:
+            x_odom = np.array(
+                [entry["pose"] for entry in data if ([] not in entry.values())]
+            )
+        else:
+            x_odom = []
+
+        if "truth" in data[5]:
+            x_true = np.array(
+                [entry["truth"] for entry in data if ([] not in entry.values())]
+            )
+        else:
+            x_true = []
+
         if "amcl" in data[5]:
             x_amcl = np.array(
                 # [entry["amcl"] for entry in data if ([] not in entry.values())]
@@ -36,15 +43,12 @@ class RawDataLoader(FileHandler):
             )
         else:
             x_amcl = []
-        # TODO move this to another function
-        scans_raw = np.array(
-            [entry["scan"] for entry in data if ([] not in entry.values())]
-        )
 
-        # times = np.array([entry["t"] for entry in data if ([] not in entry.values())])
-        times = np.array([entry["t"] for entry in data])
-
-        if len(scans_raw):
+        if "scan" in data[5]:
+            scans_raw = np.array(
+                [entry["scan"] for entry in data if ([] not in entry.values())]
+            )
+            # TODO move this to another function
             angles = np.linspace(0, 2 * np.pi, len(scans_raw[0]), endpoint=False)
             measurement = []
             for scan in scans_raw:
@@ -57,6 +61,9 @@ class RawDataLoader(FileHandler):
                 )
         else:
             measurement = []
+
+        # times = np.array([entry["t"] for entry in data if ([] not in entry.values())])
+        times = np.array([entry["t"] for entry in data])
 
         return SimulationData(
             x_odom=x_odom,
