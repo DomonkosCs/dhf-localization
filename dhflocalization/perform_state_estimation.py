@@ -29,10 +29,10 @@ def main():
     cfg_random_seed = 2021
     rng = np.random.default_rng(cfg_random_seed)
 
-    cfg_map_filename = "sztaki_true"
+    cfg_map_filename = "sztaki_gmapping"
     cfg_map_resolution = 0.05  # m/cell
 
-    cfg_simu_data_filename = "real"
+    cfg_simu_data_filename = "take01"
 
     do_plotting = True
 
@@ -126,7 +126,6 @@ def main():
 
     # TODO move to results
     cfg_avg_ray_number = measurement_processer.get_avg_ray_number()
-    cfg_edh_runtime = edh.get_runtime()
     print("Calcuations completed, saving results...")
     cfg_result_filename = resultExporter().save(filtered_states, reference_states)
     config_exporter.export(locals(), cfg_result_filename)

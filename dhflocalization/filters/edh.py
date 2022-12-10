@@ -356,9 +356,6 @@ class EDH:
         )
         return posterior
 
-    def get_runtime(self):
-        return self.run_time
-
     def pam_clustering(self, flow_vectors, particles, covariance, cluster_num):
         inv_cov = np.linalg.inv(covariance)
         mahal_flow_vectors = pdist(
