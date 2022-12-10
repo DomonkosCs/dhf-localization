@@ -354,3 +354,24 @@ class EDH:
 
     def get_runtime(self):
         return self.run_time
+
+    def pam_clustering(self, flow_vectors, particles, covariance, cluster_num):
+        inv_cov = np.linalg.inv(covariance)
+        mahal_flow_vectors = pdist(
+            np.subtract(flow_vectors, flow_vectors.mean(axis=1)[:, np.newaxis])
+            @ sqrtm(inv_cov),
+            "correlation",
+        )
+
+        mahal_particles = pdist(particles, "mahalanobis", VI=inv_cov)
+        mahal_particles = (
+            2 * (mahal_particles - min(mahal_particles)) / mahal_particles.ptp()
+        )
+
+        alfa = 0.25
+        dist = squareform(alfa * mahal_particles + (1 - alfa) * mahal_flow_vectors)
+
+        clusters = kmedoids.fasterpam(dist, cluster_num)
+        labels = clusters.labels
+        medoids = clusters.medoids
+        return labels, medoids
