@@ -1,7 +1,6 @@
 from ..customtypes import ParticleState
 from ..measurement import MeasurementModel
 import numpy as np
-import time
 
 
 class EDH:
@@ -68,6 +67,11 @@ class EDH:
 
             # recalculate linearization point
             particle_poses_mean = np.mean(particle_poses, axis=0)
+
+        posterior = ParticleState(
+            state_vectors=particle_poses,
+        )
+        return posterior
 
     def update_local_flow(self, prediction, ekf_prediction, measurement):
         num_of_rays = len(measurement)
