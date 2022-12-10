@@ -44,7 +44,7 @@ def main():
         center_y=10.05,
     )
 
-    cfg_max_ray_number = 500
+    cfg_max_ray_number = 180
     cfg_odometry_alpha_1 = 0.1
     cfg_odometry_alpha_2 = 0.1
     cfg_odometry_alpha_3 = 0.1
@@ -60,16 +60,19 @@ def main():
         rng=rng,
     )
 
-    cfg_measurement_range_noise_std = 0.11
+    cfg_measurement_range_noise_std = 0.1
     measurement_model = MeasurementModel(ogm, cfg_measurement_range_noise_std)
 
     cfg_edh_particle_number = 100
+    cfg_ledh_particle_number = 100
+    cfg_cledh_particle_number = 100
+
     cfg_edh_lambda_number = 10
-    # cfg_init_gaussian_mean = np.array([-3.0, 1.0, 0])
-    cfg_init_gaussian_mean = np.array([0, 0, 0])
-    cfg_init_gaussian_covar = np.array(
-        [[0.51**2, 0, 0], [0, 0.51**2, 0], [0, 0, 0.15**2]]
-    )
+    cfg_naedh_step_number = 5
+    cfg_cledh_cluster_number = 5
+
+    cfg_init_gaussian_mean = np.array([0.05, 0.075, 0])
+    cfg_init_gaussian_covar = np.array([[0.01, 0, 0], [0, 0.01, 0], [0, 0, 0.0025]])
 
     measurement_processer = MeasurementProcessor(max_ray_number=cfg_max_ray_number)
     ekf = EKF(measurement_model)
@@ -78,6 +81,27 @@ def main():
         particle_num=cfg_edh_particle_number,
         lambda_num=cfg_edh_lambda_number,
     )
+    aedh = EDH(
+        measurement_model=measurement_model,
+        particle_num=cfg_edh_particle_number,
+        lambda_num=cfg_edh_lambda_number,
+    )
+    naedh = EDH(
+        measurement_model=measurement_model,
+        particle_num=cfg_edh_particle_number,
+        step_num=cfg_naedh_step_number,
+    )
+    ledh = EDH(
+        measurement_model=measurement_model,
+        particle_num=cfg_ledh_particle_number,
+        lambda_num=cfg_edh_lambda_number,
+    )
+    cledh = EDH(
+        measurement_model=measurement_model,
+        particle_num=cfg_cledh_particle_number,
+        lambda_num=cfg_edh_lambda_number,
+        cluster_num=cfg_cledh_cluster_number,
+    )
 
     prior = ParticleState.init_from_gaussian(
         cfg_init_gaussian_mean,
@@ -85,43 +109,97 @@ def main():
         cfg_edh_particle_number,
         rng=rng,
     )
+    ledh_prior = ParticleState.init_from_gaussian(
+        cfg_init_gaussian_mean,
+        cfg_init_gaussian_covar,
+        cfg_ledh_particle_number,
+        rng=rng,
+    )
+    cledh_prior = ParticleState.init_from_gaussian(
+        cfg_init_gaussian_mean,
+        cfg_init_gaussian_covar,
+        cfg_cledh_particle_number,
+        rng=rng,
+    )
+
+    edh_prior = aedh_prior = naedh_prior = prior
+
     ekf_prior = StateHypothesis(
         state_vector=cfg_init_gaussian_mean, covar=cfg_init_gaussian_covar
     )
 
     ekf_track = []
     edh_track = []
+    aedh_track = []
+    naedh_track = []
+    ledh_track = []
+    cledh_track = []
     ekf_track.append(ekf_prior.state_vector)
-    edh_track.append(prior.mean())
+    edh_track.append(edh_prior.mean())
+    aedh_track.append(aedh_prior.mean())
+    naedh_track.append(naedh_prior.mean())
+    ledh_track.append(ledh_prior.mean())
+    cledh_track.append(cledh_prior.mean())
 
     for i in range(1, simulation_data.simulation_steps, 1):
+        print("{}/{}".format(i, simulation_data.simulation_steps))
         control_input = [simulation_data.x_odom[i - 1], simulation_data.x_odom[i]]
         measurement = measurement_processer.filter_measurements(
             simulation_data.measurement[i]
         )
 
         # propagate particles and perform ekf prediction
-        prediction = motion_model.propagate_particles(prior, control_input)
         ekf_prediction = motion_model.propagate(ekf_prior, control_input)
+        edh_prediction = motion_model.propagate_particles(edh_prior, control_input)
+        aedh_prediction = motion_model.propagate_particles(aedh_prior, control_input)
+        naedh_prediction = motion_model.propagate_particles(naedh_prior, control_input)
+        ledh_prediction = motion_model.propagate_particles(ledh_prior, control_input)
+        cledh_prediction = motion_model.propagate_particles(cledh_prior, control_input)
 
-        posterior = edh.update_mean_flow(prediction, ekf_prediction, measurement)
         ekf_posterior = ekf.update(ekf_prediction, measurement)
+        edh_posterior = edh.update_mean_flow(
+            edh_prediction, ekf_prediction, measurement
+        )
+        aedh_posterior = aedh.update_analytic(
+            aedh_prediction, ekf_prediction, measurement
+        )
+        naedh_posterior = naedh.update_analytic_multistep(
+            naedh_prediction, ekf_prediction, measurement
+        )
+        ledh_posterior = ledh.update_local_flow(
+            ledh_prediction, ekf_prediction, measurement
+        )
+        cledh_posterior = cledh.update_clustered_flow(
+            cledh_prediction, ekf_prediction, measurement
+        )
 
         ekf_track.append(ekf_posterior.state_vector)
-        edh_track.append(posterior.mean())
+        edh_track.append(edh_posterior.mean())
+        aedh_track.append(aedh_posterior.mean())
+        naedh_track.append(naedh_posterior.mean())
+        ledh_track.append(ledh_posterior.mean())
+        cledh_track.append(cledh_posterior.mean())
+
         ekf_prior = ekf_posterior
-        prior = posterior
+        edh_prior = edh_posterior
+        aedh_prior = aedh_posterior
+        naedh_prior = naedh_posterior
+        ledh_prior = ledh_posterior
+        cledh_prior = cledh_posterior
 
     filtered_states = {
-        "edh": np.asarray(edh_track),
         "ekf": np.asarray(ekf_track),
-        # "amcl": simulation_data.x_amcl,
+        "edh": np.asarray(edh_track),
+        "aedh": np.asarray(aedh_track),
+        "naedh": np.asarray(naedh_track),
+        "ledh": np.asarray(ledh_track),
+        "cledh": np.asarray(cledh_track),
     }
 
     reference_states = {
         "odom": simulation_data.x_odom,
         # "odom": simulation_data.x_odom + np.array([-3, 1, 0]),
-        "true": simulation_data.x_true,
+        # "true": x_true,
     }
 
     # TODO move to results
