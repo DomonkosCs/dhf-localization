@@ -68,9 +68,7 @@ class EDH:
             # recalculate linearization point
             particle_poses_mean = np.mean(particle_poses, axis=0)
 
-        posterior = ParticleState(
-            state_vectors=particle_poses,
-        )
+        posterior = ParticleState(state_vectors=particle_poses)
         return posterior
 
     def update_local_flow(self, prediction, ekf_prediction, measurement):
@@ -123,9 +121,7 @@ class EDH:
             # recalculate linearization point
             particle_poses_mean = np.mean(particle_poses, axis=0)
 
-        posterior = ParticleState(
-            state_vectors=particle_poses, weights=prediction.weights
-        )
+        posterior = ParticleState(state_vectors=particle_poses)
         return posterior
 
     def update_clustered_flow(
@@ -220,9 +216,7 @@ class EDH:
             # recalculate linearization point
             particle_poses_mean = np.mean(particle_poses, axis=0)
 
-        posterior = ParticleState(
-            state_vectors=particle_poses, weights=prediction.weights
-        )
+        posterior = ParticleState(state_vectors=particle_poses)
         return posterior
 
     def update_analytic(self, prediction, ekf_prediction, measurement):
@@ -273,9 +267,7 @@ class EDH:
         particle_poses = fi @ particle_poses.T + (fib0 + fib1 + fib2 + fib3 + fib4)
         particle_poses = particle_poses.T
 
-        posterior = ParticleState(
-            state_vectors=particle_poses, weights=prediction.weights
-        )
+        posterior = ParticleState(state_vectors=particle_poses)
         return posterior
 
     def update_analytic_multistep(self, prediction, ekf_prediction, measurement, steps):
@@ -351,9 +343,7 @@ class EDH:
             # recalculate linearization point
             particle_poses_mean = np.mean(particle_poses, axis=0)
 
-        posterior = ParticleState(
-            state_vectors=particle_poses, weights=prediction.weights
-        )
+        posterior = ParticleState(state_vectors=particle_poses)
         return posterior
 
     def pam_clustering(self, flow_vectors, particles, covariance, cluster_num):
