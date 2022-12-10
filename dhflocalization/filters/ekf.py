@@ -1,6 +1,7 @@
 from ..measurement import MeasurementModel
 from ..customtypes import StateHypothesis
 import numpy as np
+import time
 
 
 class EKF:
@@ -8,6 +9,7 @@ class EKF:
         self.measurement_model = measurement_model
 
     def update(self, prior, measurement) -> StateHypothesis:
+        start = time.time()
 
         (
             cd,
@@ -33,4 +35,6 @@ class EKF:
         posterior_covar = (np.eye(3) - K @ grad_cd_x.T) @ prior.covar
         posterior = StateHypothesis(state_vector=posterior_mean, covar=posterior_covar)
 
-        return posterior
+        end = time.time()
+        comptime = end - start
+        return posterior, comptime

@@ -64,12 +64,12 @@ def main():
     measurement_model = MeasurementModel(ogm, cfg_measurement_range_noise_std)
 
     cfg_edh_particle_number = 100
-    cfg_ledh_particle_number = 100
-    cfg_cledh_particle_number = 100
+    cfg_ledh_particle_number = 1
+    cfg_cledh_particle_number = 10
 
     cfg_edh_lambda_number = 10
     cfg_naedh_step_number = 5
-    cfg_cledh_cluster_number = 5
+    cfg_cledh_cluster_number = 1
 
     cfg_init_gaussian_mean = np.array([0.05, 0.075, 0])
     cfg_init_gaussian_covar = np.array([[0.01, 0, 0], [0, 0.01, 0], [0, 0, 0.0025]])
@@ -141,6 +141,13 @@ def main():
     ledh_track.append(ledh_prior.mean())
     cledh_track.append(cledh_prior.mean())
 
+    ekf_comptimes = []
+    edh_comptimes = []
+    aedh_comptimes = []
+    naedh_comptimes = []
+    ledh_comptimes = []
+    cledh_comptimes = []
+
     for i in range(1, simulation_data.simulation_steps, 1):
         print("{}/{}".format(i, simulation_data.simulation_steps))
         control_input = [simulation_data.x_odom[i - 1], simulation_data.x_odom[i]]
@@ -149,27 +156,39 @@ def main():
         )
 
         # propagate particles and perform ekf prediction
-        ekf_prediction = motion_model.propagate(ekf_prior, control_input)
-        edh_prediction = motion_model.propagate_particles(edh_prior, control_input)
-        aedh_prediction = motion_model.propagate_particles(aedh_prior, control_input)
-        naedh_prediction = motion_model.propagate_particles(naedh_prior, control_input)
-        ledh_prediction = motion_model.propagate_particles(ledh_prior, control_input)
-        cledh_prediction = motion_model.propagate_particles(cledh_prior, control_input)
+        ekf_prediction, ekf_prop_comptime = motion_model.propagate(
+            ekf_prior, control_input
+        )
+        edh_prediction, edh_prop_comptime = motion_model.propagate_particles(
+            edh_prior, control_input
+        )
+        aedh_prediction, aedh_prop_comptime = motion_model.propagate_particles(
+            aedh_prior, control_input
+        )
+        naedh_prediction, naedh_prop_comptime = motion_model.propagate_particles(
+            naedh_prior, control_input
+        )
+        ledh_prediction, ledh_prop_comptime = motion_model.propagate_particles(
+            ledh_prior, control_input
+        )
+        cledh_prediction, cledh_prop_comptime = motion_model.propagate_particles(
+            cledh_prior, control_input
+        )
 
-        ekf_posterior = ekf.update(ekf_prediction, measurement)
-        edh_posterior = edh.update_mean_flow(
+        ekf_posterior, ekf_update_comptime = ekf.update(ekf_prediction, measurement)
+        edh_posterior, edh_update_comptime = edh.update_mean_flow(
             edh_prediction, ekf_prediction, measurement
         )
-        aedh_posterior = aedh.update_analytic(
+        aedh_posterior, aedh_update_comptime = aedh.update_analytic(
             aedh_prediction, ekf_prediction, measurement
         )
-        naedh_posterior = naedh.update_analytic_multistep(
+        naedh_posterior, naedh_update_comptime = naedh.update_analytic_multistep(
             naedh_prediction, ekf_prediction, measurement
         )
-        ledh_posterior = ledh.update_local_flow(
+        ledh_posterior, ledh_update_comptime = ledh.update_local_flow(
             ledh_prediction, ekf_prediction, measurement
         )
-        cledh_posterior = cledh.update_clustered_flow(
+        cledh_posterior, cledh_update_comptime = cledh.update_clustered_flow(
             cledh_prediction, ekf_prediction, measurement
         )
 
@@ -180,6 +199,13 @@ def main():
         ledh_track.append(ledh_posterior.mean())
         cledh_track.append(cledh_posterior.mean())
 
+        ekf_comptimes.append(ekf_prop_comptime + ekf_update_comptime)
+        edh_comptimes.append(edh_prop_comptime + edh_update_comptime)
+        aedh_comptimes.append(aedh_prop_comptime + aedh_update_comptime)
+        naedh_comptimes.append(naedh_prop_comptime + naedh_update_comptime)
+        ledh_comptimes.append(ledh_prop_comptime + ledh_update_comptime)
+        cledh_comptimes.append(cledh_prop_comptime + cledh_update_comptime)
+
         ekf_prior = ekf_posterior
         edh_prior = edh_posterior
         aedh_prior = aedh_posterior
@@ -188,28 +214,47 @@ def main():
         cledh_prior = cledh_posterior
 
     filtered_states = {
-        "ekf": np.asarray(ekf_track),
-        "edh": np.asarray(edh_track),
-        "aedh": np.asarray(aedh_track),
-        "naedh": np.asarray(naedh_track),
-        "ledh": np.asarray(ledh_track),
-        "cledh": np.asarray(cledh_track),
+        "ekf": {
+            "state": np.asarray(ekf_track),
+            "comptime": np.array(ekf_comptimes).mean(),
+        },
+        "edh": {
+            "state": np.asarray(edh_track),
+            "comptime": np.array(edh_comptimes).mean(),
+        },
+        "aedh": {
+            "state": np.asarray(aedh_track),
+            "comptime": np.array(aedh_comptimes).mean(),
+        },
+        "naedh": {
+            "state": np.asarray(naedh_track),
+            "comptime": np.array(naedh_comptimes).mean(),
+        },
+        "ledh": {
+            "state": np.asarray(ledh_track),
+            "comptime": np.array(ledh_comptimes).mean(),
+        },
+        "cledh": {
+            "state": np.asarray(cledh_track),
+            "comptime": np.array(cledh_comptimes).mean(),
+        },
     }
+    print(filtered_states)
 
-    reference_states = {
-        "odom": simulation_data.x_odom,
-        # "odom": simulation_data.x_odom + np.array([-3, 1, 0]),
-        # "true": x_true,
-    }
+    # reference_states = {
+    #     "odom": simulation_data.x_odom,
+    #     # "odom": simulation_data.x_odom + np.array([-3, 1, 0]),
+    #     # "true": x_true,
+    # }
 
     # TODO move to results
-    cfg_avg_ray_number = measurement_processer.get_avg_ray_number()
-    print("Calcuations completed, saving results...")
-    cfg_result_filename = resultExporter().save(filtered_states, reference_states)
-    config_exporter.export(locals(), cfg_result_filename)
+    # cfg_avg_ray_number = measurement_processer.get_avg_ray_number()
+    # print("Calcuations completed, saving results...")
+    # cfg_result_filename = resultExporter().save(filtered_states, reference_states)
+    # config_exporter.export(locals(), cfg_result_filename)
 
-    if do_plotting:
-        evaluate.main(cfg_result_filename)
+    # if do_plotting:
+    #     evaluate.main(cfg_result_filename)
 
 
 if __name__ == "__main__":
