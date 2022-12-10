@@ -72,9 +72,8 @@ def main():
     )
 
     measurement_processer = MeasurementProcessor(max_ray_number=cfg_max_ray_number)
-    ekf = EKF(motion_model, measurement_model)
+    ekf = EKF(measurement_model)
     edh = EDH(
-        motion_model=motion_model,
         measurement_model=measurement_model,
         particle_num=cfg_edh_particle_number,
         lambda_num=cfg_edh_lambda_number,
@@ -100,16 +99,18 @@ def main():
         measurement = measurement_processer.filter_measurements(
             simulation_data.measurement[i]
         )
-        prediction = edh.propagate(prior, control_input)
-        ekf_prediction = ekf.propagate(ekf_prior, control_input)
 
-        posterior = edh.update(prediction, ekf_prediction, measurement)
+        # propagate particles and perform ekf prediction
+        prediction = motion_model.propagate_particles(prior, control_input)
+        ekf_prediction = motion_model.propagate(ekf_prior, control_input)
+
+        posterior = edh.update_mean_flow(prediction, ekf_prediction, measurement)
         ekf_posterior = ekf.update(ekf_prediction, measurement)
 
         ekf_track.append(ekf_posterior.state_vector)
         edh_track.append(posterior.mean())
-        prior = posterior
         ekf_prior = ekf_posterior
+        prior = posterior
 
     filtered_states = {
         "edh": np.asarray(edh_track),

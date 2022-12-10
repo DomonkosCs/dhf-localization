@@ -1,24 +1,22 @@
-from ..kinematics import MotionModel
 from ..measurement import MeasurementModel
 from ..customtypes import StateHypothesis
 import numpy as np
 
 
 class EKF:
-    def __init__(self, motion_model: MotionModel, measurement_model: MeasurementModel):
-        self.motion_model = motion_model
+    def __init__(self, measurement_model: MeasurementModel):
         self.measurement_model = measurement_model
-
-    def propagate(self, prior, control_input) -> StateHypothesis:
-        return self.motion_model.propagate(prior, control_input)
 
     def update(self, prior, measurement) -> StateHypothesis:
 
-        (cd, grad_cd_x, grad_cd_z, _,) = self.measurement_model.process_detection(
-            prior.state_vector, measurement
-        )
+        (
+            cd,
+            grad_cd_x,
+            grad_cd_z,
+            _,
+        ) = self.measurement_model.process_detection(prior.state_vector, measurement)
 
-        measurement_covar = self.measurement_model.range_noise_std ** 2 * np.eye(
+        measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(
             grad_cd_z.shape[0]
         )
 
