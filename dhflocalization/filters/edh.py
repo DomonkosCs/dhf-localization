@@ -1,6 +1,9 @@
 from ..customtypes import ParticleState
 from ..measurement import MeasurementModel
 import numpy as np
+from scipy.spatial.distance import pdist, squareform
+from scipy.linalg import sqrtm
+import kmedoids
 
 
 class EDH:
