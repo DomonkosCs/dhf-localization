@@ -4,6 +4,7 @@ import numpy as np
 from scipy.spatial.distance import pdist, squareform
 from scipy.linalg import sqrtm
 import kmedoids
+import time
 
 
 class EDH:
@@ -11,17 +12,28 @@ class EDH:
         self,
         measurement_model: MeasurementModel,
         particle_num,
-        lambda_num,
+        lambda_num=None,
+        cluster_num=None,
+        step_num=None,
     ) -> None:
         self.measurement_model: MeasurementModel = measurement_model
-        self.lambda_num = lambda_num
         self.particle_num = particle_num
-        lambdas, self.d_lambda = np.linspace(
-            0, 1, self.lambda_num, endpoint=False, retstep=True
-        )
-        self.lambdas = lambdas + self.d_lambda
+
+        if lambda_num is not None:
+            self.lambda_num = lambda_num
+            lambdas, self.d_lambda = np.linspace(
+                0, 1, self.lambda_num, endpoint=False, retstep=True
+            )
+            self.lambdas = lambdas + self.d_lambda
+
+        if cluster_num is not None:
+            self.cluster_num = cluster_num
+
+        if step_num is not None:
+            self.step_num = step_num
 
     def update_mean_flow(self, prediction, ekf_prediction, measurement):
+        start = time.time()
 
         num_of_rays = len(measurement)
         measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(
@@ -72,9 +84,13 @@ class EDH:
             particle_poses_mean = np.mean(particle_poses, axis=0)
 
         posterior = ParticleState(state_vectors=particle_poses)
-        return posterior
+        end = time.time()
+        comptime = end - start
+        return posterior, comptime
 
     def update_local_flow(self, prediction, ekf_prediction, measurement):
+        start = time.time()
+
         num_of_rays = len(measurement)
         measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(
             num_of_rays
@@ -125,11 +141,12 @@ class EDH:
             particle_poses_mean = np.mean(particle_poses, axis=0)
 
         posterior = ParticleState(state_vectors=particle_poses)
-        return posterior
+        end = time.time()
+        comptime = end - start
+        return posterior, comptime
 
-    def update_clustered_flow(
-        self, prediction, ekf_prediction, measurement, cluster_num
-    ):
+    def update_clustered_flow(self, prediction, ekf_prediction, measurement):
+        start = time.time()
         num_of_rays = len(measurement)
         measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(
             num_of_rays
@@ -171,11 +188,11 @@ class EDH:
             flow_vectors[i, :] = (B @ particle_poses[i, :, np.newaxis] + b).T
 
         labels, medoid_idxs = self.pam_clustering(
-            flow_vectors, particle_poses, ekf_covar, cluster_num
+            flow_vectors, particle_poses, ekf_covar, self.cluster_num
         )
         medoid_states = particle_poses[medoid_idxs, :]
         for lamb in self.lambdas:
-            for i in range(cluster_num):
+            for i in range(self.cluster_num):
 
                 # linearize measurement model about the current medoid
                 cd, grad_cd_x, grad_cd_z, _ = self.measurement_model.process_detection(
@@ -220,9 +237,12 @@ class EDH:
             particle_poses_mean = np.mean(particle_poses, axis=0)
 
         posterior = ParticleState(state_vectors=particle_poses)
-        return posterior
+        end = time.time()
+        comptime = end - start
+        return posterior, comptime
 
     def update_analytic(self, prediction, ekf_prediction, measurement):
+        start = time.time()
 
         num_of_rays = len(measurement)
         measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(
@@ -271,10 +291,13 @@ class EDH:
         particle_poses = particle_poses.T
 
         posterior = ParticleState(state_vectors=particle_poses)
-        return posterior
+        end = time.time()
+        comptime = end - start
+        return posterior, comptime
 
-    def update_analytic_multistep(self, prediction, ekf_prediction, measurement, steps):
+    def update_analytic_multistep(self, prediction, ekf_prediction, measurement):
 
+        start = time.time()
         num_of_rays = len(measurement)
         measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(
             num_of_rays
@@ -285,8 +308,8 @@ class EDH:
         particle_poses_mean = prediction.mean()
         particle_poses_mean_0 = particle_poses_mean
 
-        lambdas = np.linspace(0, 1, steps + 1)
-        for i in range(steps):
+        steps = np.linspace(0, 1, self.step_num + 1)
+        for i in range(self.step_num):
 
             # linearize about the mean
             cd, grad_cd_x, grad_cd_z, _ = self.measurement_model.process_detection(
@@ -302,8 +325,8 @@ class EDH:
             r = grad_cd_z.T @ measurement_covar @ grad_cd_z
             w = ekf_covar @ grad_cd_x * np.linalg.inv(r) * y
 
-            lam_0 = lambdas[i]
-            lam_1 = lambdas[i + 1]
+            lam_0 = steps[i]
+            lam_1 = steps[i + 1]
 
             kl0 = lam_0 * p + r
             kl1 = lam_1 * p + r
@@ -347,7 +370,9 @@ class EDH:
             particle_poses_mean = np.mean(particle_poses, axis=0)
 
         posterior = ParticleState(state_vectors=particle_poses)
-        return posterior
+        end = time.time()
+        comptime = end - start
+        return posterior, comptime
 
     def pam_clustering(self, flow_vectors, particles, covariance, cluster_num):
         inv_cov = np.linalg.inv(covariance)
@@ -362,7 +387,7 @@ class EDH:
             2 * (mahal_particles - min(mahal_particles)) / mahal_particles.ptp()
         )
 
-        alfa = 0.25
+        alfa = 0.5
         dist = squareform(alfa * mahal_particles + (1 - alfa) * mahal_flow_vectors)
 
         clusters = kmedoids.fasterpam(dist, cluster_num)

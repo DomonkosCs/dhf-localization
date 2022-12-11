@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
+import time
 
 from ..customtypes import StateHypothesis, ParticleState
 
@@ -24,6 +25,7 @@ class OdometryMotionModel(MotionModel):
         states: n by 3 numpy array
         """
 
+        start = time.time()
         delta_rot_1, delta_trans, delta_rot_2 = self.transform_control_input(
             control_input
         )
@@ -58,7 +60,9 @@ class OdometryMotionModel(MotionModel):
         diff_array = np.array([diff_x, diff_y, diff_fi]).T
         predicted_states = prior.state_vectors + diff_array
 
-        return ParticleState(state_vectors=predicted_states)
+        end = time.time()
+        comptime = end - start
+        return ParticleState(state_vectors=predicted_states), comptime
 
     def transform_control_input(self, control_input):
         state_odom_prev = control_input[0]
@@ -100,6 +104,7 @@ class OdometryMotionModel(MotionModel):
         return delta_rot_1, delta_trans, delta_rot_2
 
     def propagate(self, prior, control_input):
+        start = time.time()
         delta_rot_1, delta_trans, delta_rot_2 = self.transform_control_input(
             control_input
         )
@@ -122,7 +127,12 @@ class OdometryMotionModel(MotionModel):
             + jacobi_input @ control_covar @ jacobi_input.T
         )
 
-        return StateHypothesis(state_vector=predicted_state, covar=predicted_covar)
+        end = time.time()
+        comptime = end - start
+        return (
+            StateHypothesis(state_vector=predicted_state, covar=predicted_covar),
+            comptime,
+        )
 
     def calc_jacobians(self, delta_rot_1, delta_trans, fi):
 
