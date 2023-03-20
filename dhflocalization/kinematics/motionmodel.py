@@ -35,6 +35,7 @@ class OdometryMotionModel(MotionModel):
         )
 
         # sample the transformed control inputs for each state individually
+        control_covar = np.zeros((3,3)) #! No noise
         delta_hat_rot_1 = self.calc_angle_diff(
             delta_rot_1,
             np.sqrt(control_covar[0, 0])
@@ -68,16 +69,16 @@ class OdometryMotionModel(MotionModel):
         state_odom_prev = control_input[0]
         state_odom_now = control_input[1]
 
-        if np.linalg.norm(state_odom_now[1] - state_odom_prev[1]) < 0.01:
-            delta_rot_1 = 0
-        else:
-            delta_rot_1 = self.calc_angle_diff(
-                np.arctan2(
-                    state_odom_now[1] - state_odom_prev[1],
-                    state_odom_now[0] - state_odom_prev[0],
-                ),
-                state_odom_prev[2],
-            )
+        # if np.linalg.norm(state_odom_now[1] - state_odom_prev[1]) < 0.01:
+        #     delta_rot_1 = 0
+        # else:
+        delta_rot_1 = self.calc_angle_diff(
+            np.arctan2(
+                state_odom_now[1] - state_odom_prev[1],
+                state_odom_now[0] - state_odom_prev[0],
+            ),
+            state_odom_prev[2],
+        )
 
         delta_trans = np.sqrt(
             (state_odom_now[0] - state_odom_prev[0]) ** 2
@@ -85,21 +86,9 @@ class OdometryMotionModel(MotionModel):
         )
 
         delta_rot_2 = self.calc_angle_diff(
-            state_odom_now[2] - state_odom_prev[2], delta_rot_1
+            state_odom_now[2]-state_odom_prev[2], delta_rot_1
         )
 
-        # We want to treat backward and forward motion symmetrically for the
-        # noise model to be applied below.  The standard model seems to assume
-        # forward motion.
-        # From https://github.com/ros-planning/navigation/blob/noetic-devel/amcl/src/amcl/sensors/amcl_odom.cpp
-        delta_rot_1 = min(
-            abs(self.calc_angle_diff(delta_rot_1, 0)),
-            abs(self.calc_angle_diff(delta_rot_1, np.pi)),
-        )
-        delta_rot_2 = min(
-            abs(self.calc_angle_diff(delta_rot_2, 0)),
-            abs(self.calc_angle_diff(delta_rot_2, np.pi)),
-        )
 
         return delta_rot_1, delta_trans, delta_rot_2
 
@@ -153,11 +142,24 @@ class OdometryMotionModel(MotionModel):
 
     def calc_control_noise_covar(self, delta_rot_1, delta_trans, delta_rot_2):
 
-        control_var_11 = self.alfa_1 * delta_rot_1**2 + self.alfa_2 * delta_trans**2
-        control_var_22 = self.alfa_3 * delta_trans**2 + self.alfa_4 * (
-            delta_rot_1**2 + delta_rot_2**2
+        # We want to treat backward and forward motion symmetrically for the
+        # noise model to be applied below.  The standard model seems to assume
+        # forward motion.
+        # From https://github.com/ros-planning/navigation/blob/noetic-devel/amcl/src/amcl/sensors/amcl_odom.cpp
+        delta_rot_1_noise = min(
+            abs(self.calc_angle_diff(delta_rot_1, 0)),
+            abs(self.calc_angle_diff(delta_rot_1, np.pi)),
         )
-        control_var_33 = self.alfa_1 * delta_rot_2**2 + self.alfa_2 * delta_trans**2
+        delta_rot_2_noise = min(
+            abs(self.calc_angle_diff(delta_rot_2, 0)),
+            abs(self.calc_angle_diff(delta_rot_2, np.pi)),
+        )
+
+        control_var_11 = self.alfa_1 * delta_rot_1_noise**2 + self.alfa_2 * delta_trans**2
+        control_var_22 = self.alfa_3 * delta_trans**2 + self.alfa_4 * (
+            delta_rot_1_noise**2 + delta_rot_2_noise**2
+        )
+        control_var_33 = self.alfa_1 * delta_rot_2_noise**2 + self.alfa_2 * delta_trans**2
 
         return np.diag([control_var_11, control_var_22, control_var_33])
 
