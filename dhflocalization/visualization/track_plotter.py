@@ -84,7 +84,7 @@ class TrackPlotter(Plotter):  # TODO remove inheritance
     def plot_tracks(self, filtered_states, reference_states=None):
         for key in filtered_states:
             self._plot_track(
-                filtered_states[key],
+                filtered_states[key]["state"],
                 [0, 1],
                 marker=None,
                 linestyle="--",
