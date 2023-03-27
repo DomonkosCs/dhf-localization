@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import time
 
 from ..customtypes import StateHypothesis, ParticleState
 
@@ -25,7 +24,6 @@ class OdometryMotionModel(MotionModel):
         states: n by 3 numpy array
         """
 
-        start = time.time()
         delta_rot_1, delta_trans, delta_rot_2 = self.transform_control_input(
             control_input
         )
@@ -35,7 +33,7 @@ class OdometryMotionModel(MotionModel):
         )
 
         # sample the transformed control inputs for each state individually
-        control_covar = np.zeros((3,3)) #! No noise
+        control_covar = np.zeros((3, 3))  #! No noise
         delta_hat_rot_1 = self.calc_angle_diff(
             delta_rot_1,
             np.sqrt(control_covar[0, 0])
@@ -61,9 +59,7 @@ class OdometryMotionModel(MotionModel):
         diff_array = np.array([diff_x, diff_y, diff_fi]).T
         predicted_states = prior.state_vectors + diff_array
 
-        end = time.time()
-        comptime = end - start
-        return ParticleState(state_vectors=predicted_states), comptime
+        return ParticleState(state_vectors=predicted_states)
 
     def transform_control_input(self, control_input):
         state_odom_prev = control_input[0]
@@ -86,14 +82,12 @@ class OdometryMotionModel(MotionModel):
         )
 
         delta_rot_2 = self.calc_angle_diff(
-            state_odom_now[2]-state_odom_prev[2], delta_rot_1
+            state_odom_now[2] - state_odom_prev[2], delta_rot_1
         )
-
 
         return delta_rot_1, delta_trans, delta_rot_2
 
     def propagate(self, prior, control_input):
-        start = time.time()
         delta_rot_1, delta_trans, delta_rot_2 = self.transform_control_input(
             control_input
         )
@@ -116,12 +110,7 @@ class OdometryMotionModel(MotionModel):
             + jacobi_input @ control_covar @ jacobi_input.T
         )
 
-        end = time.time()
-        comptime = end - start
-        return (
-            StateHypothesis(state_vector=predicted_state, covar=predicted_covar),
-            comptime,
-        )
+        return StateHypothesis(state_vector=predicted_state, covar=predicted_covar)
 
     def calc_jacobians(self, delta_rot_1, delta_trans, fi):
 
@@ -155,11 +144,15 @@ class OdometryMotionModel(MotionModel):
             abs(self.calc_angle_diff(delta_rot_2, np.pi)),
         )
 
-        control_var_11 = self.alfa_1 * delta_rot_1_noise**2 + self.alfa_2 * delta_trans**2
+        control_var_11 = (
+            self.alfa_1 * delta_rot_1_noise**2 + self.alfa_2 * delta_trans**2
+        )
         control_var_22 = self.alfa_3 * delta_trans**2 + self.alfa_4 * (
             delta_rot_1_noise**2 + delta_rot_2_noise**2
         )
-        control_var_33 = self.alfa_1 * delta_rot_2_noise**2 + self.alfa_2 * delta_trans**2
+        control_var_33 = (
+            self.alfa_1 * delta_rot_2_noise**2 + self.alfa_2 * delta_trans**2
+        )
 
         return np.diag([control_var_11, control_var_22, control_var_33])
 
