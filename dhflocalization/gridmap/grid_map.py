@@ -34,6 +34,7 @@ class GridMap:
         self.ndata = self.width * self.height
         self.data = list(np.flipud(raw_map_data).flatten())
 
+        self.distance_transform = None
         self.distance_transform_interp = None
         self.distance_transform_dx = None
         self.distance_transform_dy = None
@@ -45,12 +46,12 @@ class GridMap:
 
     def _init_distance_transform(self):
 
-        distance_transform = self.calc_distance_transform()
+        self.distance_transform = self.calc_distance_transform()
 
         self.distance_transform_interp = RectBivariateSpline(
             np.arange(self.width) * self.resolution,
             np.arange(self.height) * self.resolution,
-            distance_transform * self.resolution,
+            self.distance_transform * self.resolution,
         ) 
         distance_transform_dx,distance_transform_dy,step_size = self.discretize_dt_derivative()
 
@@ -235,38 +236,3 @@ class GridMap:
         ax.yaxis.set_minor_locator(AutoMinorLocator(20))
         # hide ticks
         ax.tick_params(which="minor", bottom=False, left=False)
-
-    def plot_distance_transform(self, fig):
-
-        edt = self.distance_transform.ravel()
-        _x = np.arange(self.width)
-        _y = np.arange(self.height)
-        _xx, _yy = np.meshgrid(_x, _y)
-        x, y = _xx.ravel(), _yy.ravel()
-        bottom = np.zeros_like(edt)
-        width = depth = 1
-
-        ax = fig.add_subplot(121, projection="3d")
-
-        cmap = cm.get_cmap("jet")
-        print(edt.min(), edt.max())
-        rgba = [cmap((bar - edt.min()) / edt.max()) for bar in edt.ravel()]
-
-        ax.bar3d(x, y, bottom, width, depth, edt.ravel(), color=rgba, shade=True)
-
-        return ax
-
-    def plot_distance_transform_interp(self, fig):
-
-        _x = np.linspace(0, self.width, 101)
-        _y = np.linspace(0, self.height, 101)
-        _xx, _yy = np.meshgrid(_x, _y)
-
-        z = [
-            self.calc_distance_transform_xy_pos(x, y)[0][0]
-            for x, y in zip(_xx.ravel(), _yy.ravel())
-        ]
-        ax = fig.add_subplot(122, projection="3d")
-        ax.plot_surface(
-            _xx, _yy, np.array(z).reshape(_xx.shape), cmap="jet", edgecolor="none"
-        )
