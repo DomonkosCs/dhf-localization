@@ -20,27 +20,19 @@ class GridMap:
 
     def __init__(self,config_filename):
 
-        # center_x: center x position  [m]
-        # center_y: center y position [m]
-
         config_path = '../resources/maps/' + config_filename + '.yaml'
         map_config = YamlReader.read(config_path)
 
         raw_map_data = PgmProcesser.read_pgm(map_config['image'])
 
-        # width: number of grid cells
-        # height: number of grid cells
-        # resolution: grid resolution [m]
-        # left_lower_x: x position of the left lower corner [m]
-        # left_lower_y: y position of the left lower corner [m]
-        self.width = raw_map_data.shape[0]
-        self.height = raw_map_data.shape[1]
-        self.resolution = map_config['resolution']
-        self.left_lower_x = map_config['origin'][0]
-        self.left_lower_y = map_config['origin'][1] - self.resolution
+        self.width = raw_map_data.shape[0] # grid cell
+        self.height = raw_map_data.shape[1] # grid cell
+        self.resolution = map_config['resolution'] # meter/cell
+        self.left_lower_x = map_config['origin'][0] # meter
+        self.left_lower_y = map_config['origin'][1] # meter
 
         self.ndata = self.width * self.height
-        self.data = [0] * self.ndata
+        self.data = list(np.flipud(raw_map_data).flatten())
 
         self.distance_transform_interp = None
         self.distance_transform_dx = None
@@ -49,16 +41,7 @@ class GridMap:
         # than the map grid
         self.dt_derivative_resolution = 1
 
-        self._set_map_data(raw_map_data)
         self._init_distance_transform()
-
-
-
-    def _set_map_data(self,raw_map_data):
-
-        for idx, val in np.ndenumerate(raw_map_data):
-            self.set_value_from_xy_index( x_ind=idx[1], y_ind=self.height - idx[0], val=val)
-
 
     def _init_distance_transform(self):
 
@@ -140,7 +123,7 @@ class GridMap:
         """
 
         if (x_ind is None) or (y_ind is None):
-            return False, False
+            return False
 
         grid_ind = int(y_ind * self.width + x_ind)
 
@@ -250,23 +233,6 @@ class GridMap:
             return True
         else:
             return False
-
-    def expand_grid(self):
-        xinds, yinds = [], []
-
-        for ix in range(self.width):
-            for iy in range(self.height):
-                if self.check_occupied_from_xy_index(ix, iy):
-                    xinds.append(ix)
-                    yinds.append(iy)
-
-        for (ix, iy) in zip(xinds, yinds):
-            self.set_value_from_xy_index(ix + 1, iy, val=1.0)
-            self.set_value_from_xy_index(ix, iy + 1, val=1.0)
-            self.set_value_from_xy_index(ix + 1, iy + 1, val=1.0)
-            self.set_value_from_xy_index(ix - 1, iy, val=1.0)
-            self.set_value_from_xy_index(ix, iy - 1, val=1.0)
-            self.set_value_from_xy_index(ix - 1, iy - 1, val=1.0)
 
     def plot_grid_map(self, ax=None, zorder=1):
 
