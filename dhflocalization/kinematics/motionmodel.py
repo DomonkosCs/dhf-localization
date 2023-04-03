@@ -82,7 +82,7 @@ class OdometryMotionModel(MotionModel):
         )
 
         delta_rot_2 = self.calc_angle_diff(
-            state_odom_now[2] - state_odom_prev[2], delta_rot_1
+            self.calc_angle_diff(state_odom_now[2],state_odom_prev[2]), delta_rot_1
         )
 
         return delta_rot_1, delta_trans, delta_rot_2
