@@ -33,22 +33,34 @@ class ConfigExporter(FileHandler):
         return variables_dict
 
 
-class ConfigImporter(FileHandler):
+class ConfigImporter():
     def __init__(self) -> None:
         pass
 
     @classmethod
-    def importData(cls, filename):
+    def read(cls, filename):
 
         relative_path = "../resources/results/" + filename + ".yaml"
+        result = YamlReader.read(relative_path)
+
+        return result["config"]
+
+
+class YamlReader(FileHandler):
+    def __init__(self) -> None:
+        pass
+
+    @classmethod
+    def read(cls,relative_path):
         file_path = super().convert_path_to_absolute(cls, relative_path)
 
         with open(file_path, "r") as file:
             # The FullLoader parameter handles the conversion from YAML
             # scalar values to Python the dictionary format
             result = ruamel.yaml.load(file, Loader=ruamel.yaml.Loader)
+        
+        return result
 
-        return result["config"]
 
 
 class YamlWriter(FileHandler):

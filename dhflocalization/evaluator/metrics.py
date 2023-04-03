@@ -42,7 +42,7 @@ def _calc_error_metrics(filtered_poses, reference_poses):
         err_angle = np.array(_angle_set_diff(true_angle, filtered_angle))
 
         # MSE
-        err_mean_sqare["position"][algo] = float(np.sqrt(np.mean(err_xy_norm ** 2)))
+        err_mean_sqare["position"][algo] = float(np.sqrt(np.mean(err_xy_norm**2)))
         err_mean_sqare["orientation"][algo] = float(np.sqrt(np.mean(err_angle**2)))
 
         # MAE

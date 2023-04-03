@@ -18,7 +18,7 @@ class PgmProcesser:
         """
 
         base_path = Path(__file__).parent
-        relative_path = "../resources/maps/" + file_name + ".pgm"
+        relative_path = "../resources/maps/" + file_name
         file_path = (base_path / relative_path).resolve()
 
         with open(file_path, "rb") as f:
@@ -40,4 +40,6 @@ class PgmProcesser:
             offset=len(header),
         ).reshape((int(height), int(width)))
         # 0 is free, 254 is occupied, 205 is unknown (depends on software)
-        return np.where(raw_array > 205, 0, 1)
+        
+        binary = np.where(raw_array > 205, 0, 1)
+        return binary 

@@ -9,6 +9,8 @@ import numpy as np
 from scipy import ndimage
 from scipy.interpolate.fitpack2 import RectBivariateSpline
 from matplotlib import cm
+from dhflocalization.gridmap.processpgm import PgmProcesser
+from dhflocalization.rawdata.yamlhandler import YamlReader
 
 
 class GridMap:
@@ -16,73 +18,76 @@ class GridMap:
     GridMap class
     """
 
-    def __init__(self, width, height, resolution, center_x, center_y, init_val=0.0):
-        """__init__
-        :param width: number of grid for width
-        :param height: number of grid for heigt
-        :param resolution: grid resolution [m]
-        :param center_x: center x position  [m]
-        :param center_y: center y position [m]
-        :param init_val: initial value for all grid
-        """
-        self.width = width
-        self.height = height
-        self.resolution = resolution
-        self.center_x = center_x
-        self.center_y = center_y
+    def __init__(self,config_filename):
 
-        # self.left_lower_x = self.center_x - self.width / 2.0 * self.resolution
-        # self.left_lower_y = self.center_y - self.height / 2.0 * self.resolution
-        self.left_lower_x = -self.center_x
-        self.left_lower_y = -self.center_y
+        # center_x: center x position  [m]
+        # center_y: center y position [m]
+
+        config_path = '../resources/maps/' + config_filename + '.yaml'
+        map_config = YamlReader.read(config_path)
+
+        raw_map_data = PgmProcesser.read_pgm(map_config['image'])
+
+        # width: number of grid cells
+        # height: number of grid cells
+        # resolution: grid resolution [m]
+        # left_lower_x: x position of the left lower corner [m]
+        # left_lower_y: y position of the left lower corner [m]
+        self.width = raw_map_data.shape[0]
+        self.height = raw_map_data.shape[1]
+        self.resolution = map_config['resolution']
+        self.left_lower_x = map_config['origin'][0]
+        self.left_lower_y = map_config['origin'][1] - self.resolution
 
         self.ndata = self.width * self.height
-        self.data = [init_val] * self.ndata
+        self.data = [0] * self.ndata
 
-        self.distance_transform = None
         self.distance_transform_interp = None
+        self.distance_transform_dx = None
+        self.distance_transform_dy = None
+        # how many times finer grid for derivative discretization
+        # than the map grid
+        self.dt_derivative_resolution = 1
 
-    @classmethod
-    def load_grid_map_from_array(cls, map, resolution, center_x, center_y):
-        height = map.shape[0]
-        width = map.shape[1]
+        self._set_map_data(raw_map_data)
+        self._init_distance_transform()
 
-        gm = cls(
-            height=height,
-            width=width,
-            resolution=resolution,
-            center_x=center_x,
-            center_y=center_y,
-        )
 
-        for idx, val in np.ndenumerate(map):
-            cls.set_value_from_xy_index(
-                self=gm, x_ind=idx[1], y_ind=height - idx[0], val=val
-            )
 
-        gm.distance_transform = cls.calc_distance_transform(gm)
-        gm.distance_transform_interp = RectBivariateSpline(
-            np.arange(width) * resolution,
-            np.arange(height) * resolution,
-            gm.distance_transform * resolution,
-        )
+    def _set_map_data(self,raw_map_data):
 
-        cls.discretize_dt_derivative(gm)
+        for idx, val in np.ndenumerate(raw_map_data):
+            self.set_value_from_xy_index( x_ind=idx[1], y_ind=self.height - idx[0], val=val)
 
-        return gm
+
+    def _init_distance_transform(self):
+
+        distance_transform = self.calc_distance_transform()
+
+        self.distance_transform_interp = RectBivariateSpline(
+            np.arange(self.width) * self.resolution,
+            np.arange(self.height) * self.resolution,
+            distance_transform * self.resolution,
+        ) 
+        distance_transform_dx,distance_transform_dy,step_size = self.discretize_dt_derivative()
+
+        self.distance_transform_dx = distance_transform_dx
+        self.distance_transform_dy = distance_transform_dy
+        self.dt_derivative_stepsize = step_size # TODO might not needed
+
 
     def discretize_dt_derivative(self):
-        n = 10  # how many times finer grid than default
 
-        stepnum = self.width * n
-        gridx, stepsize = np.linspace(
+        stepnum = self.width * self.dt_derivative_resolution
+        gridx, step_size = np.linspace(
             0, self.width * self.resolution, stepnum, retstep=True
         )
         gridy = np.linspace(0, self.height * self.resolution, stepnum)
 
-        self.dt_derivative_stepsize = stepsize
-        self.distance_transform_dx = self.distance_transform_interp(gridy, gridx, 0, 1)
-        self.distance_transform_dy = self.distance_transform_interp(gridy, gridx, 1, 0)
+        dx = self.distance_transform_interp(gridy, gridx, 0, 1)
+        dy = self.distance_transform_interp(gridy, gridx, 1, 0)
+
+        return dx,dy,step_size
 
     def get_value_from_xy_index(self, x_ind, y_ind):
         """get_value_from_xy_index
@@ -177,10 +182,6 @@ class GridMap:
         edt = ndimage.distance_transform_edt(1 - grid_data)
         return edt
 
-    def calc_distance_transform_xy_index(self, x_ind, y_ind):
-        edt = self.distance_transform
-        return edt[y_ind, x_ind]
-
     def calc_distance_transform_xy_pos(self, xy):
         edt_interp = self.distance_transform_interp
         x = xy[:, 0]
@@ -267,26 +268,16 @@ class GridMap:
             self.set_value_from_xy_index(ix, iy - 1, val=1.0)
             self.set_value_from_xy_index(ix - 1, iy - 1, val=1.0)
 
-    def print_grid_map_info(self):
-        print("width:", self.width)
-        print("height:", self.height)
-        print("resolution:", self.resolution)
-        print("center_x:", self.center_x)
-        print("center_y:", self.center_y)
-        print("left_lower_x:", self.left_lower_x)
-        print("left_lower_y:", self.left_lower_y)
-        print("ndata:", self.ndata)
-
     def plot_grid_map(self, ax=None, zorder=1):
 
         grid_data = np.reshape(np.array(self.data), (self.height, self.width))
 
         # plot tick labels in meters, so that (0,0) is at the origin of the map
         extent = [
-            -self.center_x,
-            -self.center_x + self.width * self.resolution,
-            -self.center_y,
-            -self.center_y + self.height * self.resolution,
+            self.left_lower_x,
+            self.left_lower_x + self.width * self.resolution,
+            self.left_lower_y,
+            self.left_lower_y + self.height * self.resolution,
         ]
         if not ax:
             fig, ax = plt.subplots()
@@ -299,32 +290,32 @@ class GridMap:
             origin="lower",
             extent=extent,
         )
-        ax.xaxis.set_major_locator(MultipleLocator(1))
-        ax.yaxis.set_major_locator(MultipleLocator(1))
-        ax.xaxis.set_minor_locator(AutoMinorLocator(20))
-        ax.yaxis.set_minor_locator(AutoMinorLocator(20))
+        # ax.xaxis.set_major_locator(MultipleLocator(1))
+        # ax.yaxis.set_major_locator(MultipleLocator(1))
+        # ax.xaxis.set_minor_locator(AutoMinorLocator(20))
+        # ax.yaxis.set_minor_locator(AutoMinorLocator(20))
         # hide ticks
         ax.tick_params(which="minor", bottom=False, left=False)
 
-    def plot_distance_transform(self, fig):
+    # def plot_distance_transform(self, fig):
 
-        edt = self.distance_transform.ravel()
-        _x = np.arange(self.width)
-        _y = np.arange(self.height)
-        _xx, _yy = np.meshgrid(_x, _y)
-        x, y = _xx.ravel(), _yy.ravel()
-        bottom = np.zeros_like(edt)
-        width = depth = 1
+    #     edt = self.distance_transform.ravel()
+    #     _x = np.arange(self.width)
+    #     _y = np.arange(self.height)
+    #     _xx, _yy = np.meshgrid(_x, _y)
+    #     x, y = _xx.ravel(), _yy.ravel()
+    #     bottom = np.zeros_like(edt)
+    #     width = depth = 1
 
-        ax = fig.add_subplot(121, projection="3d")
+    #     ax = fig.add_subplot(121, projection="3d")
 
-        cmap = cm.get_cmap("jet")
-        print(edt.min(), edt.max())
-        rgba = [cmap((bar - edt.min()) / edt.max()) for bar in edt.ravel()]
+    #     cmap = cm.get_cmap("jet")
+    #     print(edt.min(), edt.max())
+    #     rgba = [cmap((bar - edt.min()) / edt.max()) for bar in edt.ravel()]
 
-        ax.bar3d(x, y, bottom, width, depth, edt.ravel(), color=rgba, shade=True)
+    #     ax.bar3d(x, y, bottom, width, depth, edt.ravel(), color=rgba, shade=True)
 
-        return ax
+    #     return ax
 
     def plot_distance_transform_interp(self, fig):
 
