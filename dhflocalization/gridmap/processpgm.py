@@ -39,4 +39,5 @@ class PgmProcesser:
             count=int(width) * int(height),
             offset=len(header),
         ).reshape((int(height), int(width)))
-        return np.where(raw_array > 0, 0, 1)
+        # 0 is free, 254 is occupied, 205 is unknown (depends on software)
+        return np.where(raw_array > 205, 0, 1)
