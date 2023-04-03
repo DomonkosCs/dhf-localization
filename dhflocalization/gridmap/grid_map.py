@@ -97,6 +97,20 @@ class GridMap:
 
         return x_ind, y_ind
 
+    def calc_xy_index_from_position(self, pos, lower_pos, array_size):
+        # returns the closest cell, if pos is out of boundary
+
+        index = np.floor((pos - lower_pos) / self.resolution)
+        if type(pos) is np.ndarray:
+            # position is less than lower_pos
+            index[index < 0] = 0
+            index[index >= array_size] = array_size - 1
+            return index.astype(int)
+        else:
+            index = 0 if index < 0 else index
+            index = array_size - 1 if index >= array_size else index
+            return int(index)
+
     def set_value_from_xy_pos(self, x_pos, y_pos, val):
         """set_value_from_xy_pos
         return bool flag, which means setting value is succeeded or not
@@ -146,19 +160,6 @@ class GridMap:
     def calc_grid_central_xy_position_from_index(self, index, lower_pos):
         return lower_pos + index * self.resolution + self.resolution / 2.0
 
-    def calc_xy_index_from_position(self, pos, lower_pos, array_size):
-        # returns the closest cell, if pos is out of boundary
-
-        index = np.floor((pos - lower_pos) / self.resolution)
-        if type(pos) is np.ndarray:
-            # position is less than lower_pos
-            index[index < 0] = 0
-            index[index >= array_size] = array_size - 1
-            return index.astype(int)
-        else:
-            index = 0 if index < 0 else index
-            index = array_size - 1 if index >= array_size else index
-            return int(index)
 
     def calc_distance_transform(self):
         grid_data = np.reshape(np.array(self.data), (self.height, self.width))
@@ -197,34 +198,6 @@ class GridMap:
         df_d_y = self.distance_transform_dy[rounded_int[:, 1], rounded_int[:, 0]]
         return df_d_x, df_d_y
 
-    def calc_distance_function_derivate_interp_old(self, xy_pos):
-        edt_interp = self.distance_transform_interp
-
-        """xy is in the coord system of the map
-        (shifted, so the origin is around the middle of the map).
-        However, the DT of the map has the origin in the bottom left corner.
-        So the transformation of xy is needed:
-        x: [-10,9.2) -> [0,19.2)
-        y: [-10.05,9.15) -> [0,19.2).
-        Also, the middle of the cell is considered, instead of the bottom left corner."""
-
-        x_transf = xy_pos[:, 0] - self.left_lower_x - self.resolution / 2.0
-        y_transf = xy_pos[:, 1] - self.left_lower_y - self.resolution / 2.0
-
-        df_d_x = edt_interp.ev(
-            y_transf,
-            x_transf,
-            0,
-            1,
-        )
-        df_d_y = edt_interp.ev(
-            y_transf,
-            x_transf,
-            1,
-            0,
-        )
-        return df_d_x, df_d_y
-
     def check_occupied_from_xy_index(self, xind, yind, occupied_val=1.0):
 
         val = self.get_value_from_xy_index(xind, yind)
@@ -256,32 +229,32 @@ class GridMap:
             origin="lower",
             extent=extent,
         )
-        # ax.xaxis.set_major_locator(MultipleLocator(1))
-        # ax.yaxis.set_major_locator(MultipleLocator(1))
-        # ax.xaxis.set_minor_locator(AutoMinorLocator(20))
-        # ax.yaxis.set_minor_locator(AutoMinorLocator(20))
+        ax.xaxis.set_major_locator(MultipleLocator(1))
+        ax.yaxis.set_major_locator(MultipleLocator(1))
+        ax.xaxis.set_minor_locator(AutoMinorLocator(20))
+        ax.yaxis.set_minor_locator(AutoMinorLocator(20))
         # hide ticks
         ax.tick_params(which="minor", bottom=False, left=False)
 
-    # def plot_distance_transform(self, fig):
+    def plot_distance_transform(self, fig):
 
-    #     edt = self.distance_transform.ravel()
-    #     _x = np.arange(self.width)
-    #     _y = np.arange(self.height)
-    #     _xx, _yy = np.meshgrid(_x, _y)
-    #     x, y = _xx.ravel(), _yy.ravel()
-    #     bottom = np.zeros_like(edt)
-    #     width = depth = 1
+        edt = self.distance_transform.ravel()
+        _x = np.arange(self.width)
+        _y = np.arange(self.height)
+        _xx, _yy = np.meshgrid(_x, _y)
+        x, y = _xx.ravel(), _yy.ravel()
+        bottom = np.zeros_like(edt)
+        width = depth = 1
 
-    #     ax = fig.add_subplot(121, projection="3d")
+        ax = fig.add_subplot(121, projection="3d")
 
-    #     cmap = cm.get_cmap("jet")
-    #     print(edt.min(), edt.max())
-    #     rgba = [cmap((bar - edt.min()) / edt.max()) for bar in edt.ravel()]
+        cmap = cm.get_cmap("jet")
+        print(edt.min(), edt.max())
+        rgba = [cmap((bar - edt.min()) / edt.max()) for bar in edt.ravel()]
 
-    #     ax.bar3d(x, y, bottom, width, depth, edt.ravel(), color=rgba, shade=True)
+        ax.bar3d(x, y, bottom, width, depth, edt.ravel(), color=rgba, shade=True)
 
-    #     return ax
+        return ax
 
     def plot_distance_transform_interp(self, fig):
 
