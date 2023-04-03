@@ -49,7 +49,7 @@ class RawDataLoader(FileHandler):
                 [entry["scan"] for entry in data if ([] not in entry.values())]
             )
             # TODO move this to another function
-            angles = np.linspace(0, 2 * np.pi, len(scans_raw[0]), endpoint=False)
+            angles = np.linspace(0, 2 * np.pi, len(scans_raw[0]))
             measurement = []
             for scan in scans_raw:
                 measurement.append(
