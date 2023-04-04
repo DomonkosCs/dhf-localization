@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # %%
-# import matplotlib
-# from visualization import Plotter
+import numpy as np
+
 from dhflocalization.filters import EDH
 from dhflocalization.filters.updaters import (
     LEDHUpdater,
@@ -10,21 +10,14 @@ from dhflocalization.filters.updaters import (
     NAEDHUpdater,
     CLEDHUpdater,
 )
-from dhflocalization.gridmap import PgmProcesser
 from dhflocalization.kinematics import OdometryMotionModel
 from dhflocalization.measurement import MeasurementModel, MeasurementProcessor
 from dhflocalization.rawdata import RawDataLoader, ConfigExporter
-
-from dhflocalization.customtypes import StateHypothesis, ParticleState
-
+from dhflocalization.customtypes import StateHypothesis 
 from dhflocalization.rawdata import resultExporter
 from dhflocalization.filters import EKF
 from dhflocalization.gridmap import GridMap
-import numpy as np
-
 from dhflocalization import perform_evaluation as evaluate
-
-import matplotlib.pyplot as plt
 
 
 def main():
@@ -33,29 +26,26 @@ def main():
     # Exports every variable starting with cfg_ to a config YAML file.
     config_exporter = ConfigExporter()
 
-    cfg_random_seed = 2021
+    cfg_random_seed = 4302948723190478# 2021
     rng = np.random.default_rng(cfg_random_seed)
 
-    cfg_map_filename = "tb3_house_true"
-    cfg_map_resolution = 0.05  # m/cell
+    cfg_map_config_filename = "gt_map_05"
 
-    cfg_simu_data_filename = "house_true"
+    cfg_simu_data_filename = "house_true_cut"
 
     do_plotting = True
 
     simulation_data = RawDataLoader.load_from_json(cfg_simu_data_filename)
-    ogm = GridMap.load_grid_map_from_array(
-        PgmProcesser.read_pgm(cfg_map_filename),
-        resolution=cfg_map_resolution,
-        center_x=10,
-        center_y=10.05,
-    )
+    
+    ogm = GridMap(cfg_map_config_filename)
+    ogm.plot_distance_transform_interp()
 
     cfg_max_ray_number = 360
-    cfg_odometry_alpha_1 = 0.5
-    cfg_odometry_alpha_2 = 0.5
-    cfg_odometry_alpha_3 = 0.5
-    cfg_odometry_alpha_4 = 0.5
+    odom_alpha = 0.1
+    cfg_odometry_alpha_1 =odom_alpha
+    cfg_odometry_alpha_2 =odom_alpha
+    cfg_odometry_alpha_3 =odom_alpha
+    cfg_odometry_alpha_4 =odom_alpha
 
     motion_model = OdometryMotionModel(
         [
@@ -67,19 +57,20 @@ def main():
         rng=rng,
     )
 
-    cfg_measurement_range_noise_std = 0.1
-    measurement_model = MeasurementModel(ogm, cfg_measurement_range_noise_std)
+    cfg_measurement_range_noise_std = 0.1 
+    robot_sensor_dx = -0.032
+    measurement_model = MeasurementModel(ogm, cfg_measurement_range_noise_std,robot_sensor_dx)
 
-    cfg_medh_particle_number = 100
-    cfg_ledh_particle_number = 1
-    cfg_cledh_particle_number = 10
-    cfg_aedh_particle_number = 100
+    cfg_medh_particle_number = 1
+    cfg_aedh_particle_number = 1
+    cfg_ledh_particle_number = 50
+    cfg_cledh_particle_number = 100
 
-    cfg_medh_lambda_number = 10
-    cfg_naedh_step_number = 5
-    cfg_cledh_cluster_number = 1
+    cfg_medh_lambda_number = 10 
+    cfg_naedh_step_number = 10
+    cfg_cledh_cluster_number = 5
 
-    cfg_init_gaussian_mean = np.array([-3.0, 1.0, 0])
+    cfg_init_gaussian_mean = np.array([-3.0, 1.0, 0.0003])
     cfg_init_gaussian_covar = np.array(
         [[0.01, 0, 0], [0, 0.01, 0], [0, 0, 0.025]]
     )
@@ -94,7 +85,7 @@ def main():
         state_vector=cfg_init_gaussian_mean, covar=cfg_init_gaussian_covar
     )
     ekf_track = []
-    ekf_track.append(ekf_prior.state_vector)
+    ekf_track.append(ekf_prior)
     ekf_comptimes = []
 
     # init edh variants
@@ -118,11 +109,11 @@ def main():
     naedh_updater = NAEDHUpdater(measurement_model,cfg_naedh_step_number,cfg_aedh_particle_number)
     naedh = EDH(naedh_updater,*particle_init_variables)
 
-    edh_variants = [ledh,medh,cledh,aedh,naedh]
+    edh_variants = []
 
     for i in range(1, simulation_data.simulation_steps, 1):
-        print("{}/{}".format(i, simulation_data.simulation_steps))
-        control_input = [simulation_data.x_odom[i - 1], simulation_data.x_odom[i]]
+        # print("{}/{}".format(i, simulation_data.simulation_steps))
+        control_input = [simulation_data.x_odom[i - 1], simulation_data.x_odom[i] ]
         measurement = measurement_processer.filter_measurements(
             simulation_data.measurement[i]
         )
@@ -139,14 +130,14 @@ def main():
 
         ekf_posterior, ekf_update_comptime = ekf.update(ekf_prediction, measurement)
 
-        ekf_track.append(ekf_posterior.state_vector)
+        ekf_track.append(ekf_posterior)
 
         ekf_comptimes.append(ekf_update_comptime)
         ekf_prior = ekf_posterior
 
     filtered_states = {
         "ekf": {
-            "state": np.asarray(ekf_track),
+            "state": np.asarray([timestep.state_vector for timestep in ekf_track]),
             "comptime": np.array(ekf_comptimes).mean(),
         },
     }
@@ -161,13 +152,28 @@ def main():
 
     # TODO move to results
     cfg_avg_ray_number = measurement_processer.get_avg_ray_number()
-    print("Calcuations completed, saving results...")
+    print("Calculations completed")
+
     cfg_result_filename = resultExporter().save(filtered_states, reference_states)
     config_exporter.export(locals(), cfg_result_filename)
 
     if do_plotting:
         evaluate.main(cfg_result_filename)
 
-
 if __name__ == "__main__":
     main()
+
+
+    # alphas = [0.01,0.1,1,10]
+    # sigma_zs = [0.01,0.1,1,10]
+
+
+    # ekf_covar_traces = {} 
+    # for i in range(len(alphas)):
+    #     for j in range(len(sigma_zs)):
+    #         ekf_covar_trace_time = main(alphas[i],sigma_zs[j])
+    #         key = "a" + str(i) + "/s" + str(j)
+    #         ekf_covar_traces.update({key: np.mean(np.array(ekf_covar_trace_time))})
+
+    # plt.plot(np.array(ekf_covar_traces).T)
+
