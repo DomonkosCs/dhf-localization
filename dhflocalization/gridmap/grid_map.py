@@ -18,18 +18,18 @@ class GridMap:
     GridMap class
     """
 
-    def __init__(self,config_filename):
+    def __init__(self, config_filename):
 
-        config_path = '../resources/maps/' + config_filename + '.yaml'
+        config_path = "../resources/maps/" + config_filename + ".yaml"
         map_config = YamlReader.read(config_path)
 
-        raw_map_data = PgmProcesser.read_pgm(map_config['image'])
+        raw_map_data = PgmProcesser.read_pgm(map_config["image"])
 
-        self.width = raw_map_data.shape[0] # grid cell
-        self.height = raw_map_data.shape[1] # grid cell
-        self.resolution = map_config['resolution'] # meter/cell
-        self.left_lower_x = map_config['origin'][0] # meter
-        self.left_lower_y = map_config['origin'][1] # meter
+        self.width = raw_map_data.shape[0]  # grid cell
+        self.height = raw_map_data.shape[1]  # grid cell
+        self.resolution = map_config["resolution"]  # meter/cell
+        self.left_lower_x = map_config["origin"][0]  # meter
+        self.left_lower_y = map_config["origin"][1]  # meter
 
         self.ndata = self.width * self.height
         self.data = list(np.flipud(raw_map_data).flatten())
@@ -52,13 +52,16 @@ class GridMap:
             np.arange(self.width) * self.resolution,
             np.arange(self.height) * self.resolution,
             self.distance_transform * self.resolution,
-        ) 
-        distance_transform_dx,distance_transform_dy,step_size = self.discretize_dt_derivative()
+        )
+        (
+            distance_transform_dx,
+            distance_transform_dy,
+            step_size,
+        ) = self.discretize_dt_derivative()
 
         self.distance_transform_dx = distance_transform_dx
         self.distance_transform_dy = distance_transform_dy
-        self.dt_derivative_stepsize = step_size # TODO might not needed
-
+        self.dt_derivative_stepsize = step_size  # TODO might not needed
 
     def discretize_dt_derivative(self):
 
@@ -71,7 +74,7 @@ class GridMap:
         dx = self.distance_transform_interp(gridy, gridx, 0, 1)
         dy = self.distance_transform_interp(gridy, gridx, 1, 0)
 
-        return dx,dy,step_size
+        return dx, dy, step_size
 
     def get_value_from_xy_index(self, x_ind, y_ind):
         """get_value_from_xy_index
@@ -160,7 +163,6 @@ class GridMap:
 
     def calc_grid_central_xy_position_from_index(self, index, lower_pos):
         return lower_pos + index * self.resolution + self.resolution / 2.0
-
 
     def calc_distance_transform(self):
         grid_data = np.reshape(np.array(self.data), (self.height, self.width))

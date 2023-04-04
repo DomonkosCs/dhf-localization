@@ -2,8 +2,12 @@ import numpy as np
 from ..rawdata import YamlWriter
 from dhflocalization.utils import angle_set_diff, calc_angle_diff
 
-def calc_nees(true_track,filtered_track):
-    covars,states = map(list,zip(*[(timestep.covar,timestep.state_vector) for timestep in filtered_track]))
+
+def calc_nees(true_track, filtered_track):
+    covars, states = map(
+        list,
+        zip(*[(timestep.covar, timestep.state_vector) for timestep in filtered_track]),
+    )
     timesteps = len(covars)
     dims = len(states[0])
     nees_track = np.zeros(timesteps)
@@ -12,13 +16,15 @@ def calc_nees(true_track,filtered_track):
         state = states[t]
         true = true_track[t]
 
-        diff = np.array([state[0]-true[0],state[1]-true[1],calc_angle_diff(state[2],true[2])])
-        nees = diff[np.newaxis] @ np.linalg.inv(covar) @ diff[:,np.newaxis]
+        diff = np.array(
+            [state[0] - true[0], state[1] - true[1], calc_angle_diff(state[2], true[2])]
+        )
+        nees = diff[np.newaxis] @ np.linalg.inv(covar) @ diff[:, np.newaxis]
         nees_track[t] = nees
 
-
-    nees_avg = 1/dims * nees_track.mean()
+    nees_avg = 1 / dims * nees_track.mean()
     return nees_avg
+
 
 def calc_error_metrics(filtered_poses, reference_poses):
 

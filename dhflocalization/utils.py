@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def normalize_angle(angle):
     return np.arctan2(np.sin(angle), np.cos(angle))
 
@@ -15,6 +16,7 @@ def calc_angle_diff(a, b):
         return d1
     else:
         return d2
+
 
 def angle_set_diff(set_1, set_2):
     return [calc_angle_diff(a, b) for a, b in zip(set_1, set_2)]

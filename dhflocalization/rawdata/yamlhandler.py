@@ -33,7 +33,7 @@ class ConfigExporter(FileHandler):
         return variables_dict
 
 
-class ConfigImporter():
+class ConfigImporter:
     def __init__(self) -> None:
         pass
 
@@ -51,16 +51,15 @@ class YamlReader(FileHandler):
         pass
 
     @classmethod
-    def read(cls,relative_path):
+    def read(cls, relative_path):
         file_path = super().convert_path_to_absolute(cls, relative_path)
 
         with open(file_path, "r") as file:
             # The FullLoader parameter handles the conversion from YAML
             # scalar values to Python the dictionary format
             result = ruamel.yaml.load(file, Loader=ruamel.yaml.Loader)
-        
-        return result
 
+        return result
 
 
 class YamlWriter(FileHandler):

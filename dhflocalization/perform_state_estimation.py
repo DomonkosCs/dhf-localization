@@ -13,7 +13,7 @@ from dhflocalization.filters.updaters import (
 from dhflocalization.kinematics import OdometryMotionModel
 from dhflocalization.measurement import MeasurementModel, MeasurementProcessor
 from dhflocalization.rawdata import RawDataLoader, ConfigExporter
-from dhflocalization.customtypes import StateHypothesis 
+from dhflocalization.customtypes import StateHypothesis
 from dhflocalization.rawdata import resultExporter
 from dhflocalization.filters import EKF
 from dhflocalization.gridmap import GridMap
@@ -26,7 +26,7 @@ def main():
     # Exports every variable starting with cfg_ to a config YAML file.
     config_exporter = ConfigExporter()
 
-    cfg_random_seed = 4302948723190478# 2021
+    cfg_random_seed = 4302948723190478  # 2021
     rng = np.random.default_rng(cfg_random_seed)
 
     cfg_map_config_filename = "gt_map_05"
@@ -36,16 +36,16 @@ def main():
     do_plotting = True
 
     simulation_data = RawDataLoader.load_from_json(cfg_simu_data_filename)
-    
+
     ogm = GridMap(cfg_map_config_filename)
     ogm.plot_distance_transform_interp()
 
     cfg_max_ray_number = 360
     odom_alpha = 0.1
-    cfg_odometry_alpha_1 =odom_alpha
-    cfg_odometry_alpha_2 =odom_alpha
-    cfg_odometry_alpha_3 =odom_alpha
-    cfg_odometry_alpha_4 =odom_alpha
+    cfg_odometry_alpha_1 = odom_alpha
+    cfg_odometry_alpha_2 = odom_alpha
+    cfg_odometry_alpha_3 = odom_alpha
+    cfg_odometry_alpha_4 = odom_alpha
 
     motion_model = OdometryMotionModel(
         [
@@ -57,23 +57,23 @@ def main():
         rng=rng,
     )
 
-    cfg_measurement_range_noise_std = 0.1 
+    cfg_measurement_range_noise_std = 0.1
     robot_sensor_dx = -0.032
-    measurement_model = MeasurementModel(ogm, cfg_measurement_range_noise_std,robot_sensor_dx)
+    measurement_model = MeasurementModel(
+        ogm, cfg_measurement_range_noise_std, robot_sensor_dx
+    )
 
     cfg_medh_particle_number = 1
     cfg_aedh_particle_number = 1
     cfg_ledh_particle_number = 50
     cfg_cledh_particle_number = 100
 
-    cfg_medh_lambda_number = 10 
+    cfg_medh_lambda_number = 10
     cfg_naedh_step_number = 10
     cfg_cledh_cluster_number = 5
 
     cfg_init_gaussian_mean = np.array([-3.0, 1.0, 0.0003])
-    cfg_init_gaussian_covar = np.array(
-        [[0.01, 0, 0], [0, 0.01, 0], [0, 0, 0.025]]
-    )
+    cfg_init_gaussian_covar = np.array([[0.01, 0, 0], [0, 0.01, 0], [0, 0, 0.025]])
 
     particle_init_variables = [cfg_init_gaussian_mean, cfg_init_gaussian_covar, rng]
 
@@ -104,16 +104,18 @@ def main():
         cfg_cledh_cluster_number,
     )
     cledh = EDH(cledh_updater, *particle_init_variables)
-    aedh_updater = AEDHUpdater(measurement_model,cfg_aedh_particle_number)
-    aedh = EDH(aedh_updater,*particle_init_variables)
-    naedh_updater = NAEDHUpdater(measurement_model,cfg_naedh_step_number,cfg_aedh_particle_number)
-    naedh = EDH(naedh_updater,*particle_init_variables)
+    aedh_updater = AEDHUpdater(measurement_model, cfg_aedh_particle_number)
+    aedh = EDH(aedh_updater, *particle_init_variables)
+    naedh_updater = NAEDHUpdater(
+        measurement_model, cfg_naedh_step_number, cfg_aedh_particle_number
+    )
+    naedh = EDH(naedh_updater, *particle_init_variables)
 
     edh_variants = []
 
     for i in range(1, simulation_data.simulation_steps, 1):
         # print("{}/{}".format(i, simulation_data.simulation_steps))
-        control_input = [simulation_data.x_odom[i - 1], simulation_data.x_odom[i] ]
+        control_input = [simulation_data.x_odom[i - 1], simulation_data.x_odom[i]]
         measurement = measurement_processer.filter_measurements(
             simulation_data.measurement[i]
         )
@@ -160,20 +162,6 @@ def main():
     if do_plotting:
         evaluate.main(cfg_result_filename)
 
+
 if __name__ == "__main__":
     main()
-
-
-    # alphas = [0.01,0.1,1,10]
-    # sigma_zs = [0.01,0.1,1,10]
-
-
-    # ekf_covar_traces = {} 
-    # for i in range(len(alphas)):
-    #     for j in range(len(sigma_zs)):
-    #         ekf_covar_trace_time = main(alphas[i],sigma_zs[j])
-    #         key = "a" + str(i) + "/s" + str(j)
-    #         ekf_covar_traces.update({key: np.mean(np.array(ekf_covar_trace_time))})
-
-    # plt.plot(np.array(ekf_covar_traces).T)
-
