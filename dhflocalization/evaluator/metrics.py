@@ -58,8 +58,6 @@ def calc_error_metrics(true_states, filtered_track):
 def eval(
     true_states,
     filtered_results,
-    export_filename=None,
-    return_results=False,
 ):
 
     err_mean_squares = {}
@@ -74,15 +72,4 @@ def eval(
         err_stds[algo] = err_std
         
 
-    if export_filename:
-        metrics_dict = {
-            "RMSE": err_mean_squares,
-            "MAE": err_mean_abss,
-            "STD": err_stds,
-        }
-        YamlWriter().updateFile(
-            payload=metrics_dict,
-            filename=export_filename,
-        )
-    if return_results:
-        return err_mean_squares, err_mean_abss, err_stds
+    return err_mean_squares, err_mean_abss, err_stds
