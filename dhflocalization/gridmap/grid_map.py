@@ -19,20 +19,32 @@ class GridMap:
     """
 
     def __init__(self, config_filename):
-
         config_path = "../resources/maps/" + config_filename + ".yaml"
         map_config = YamlReader.read(config_path)
 
         raw_map_data = PgmProcesser.read_pgm(map_config["image"])
-
-        self.width = raw_map_data.shape[0]  # grid cell
-        self.height = raw_map_data.shape[1]  # grid cell
         self.resolution = map_config["resolution"]  # meter/cell
-        self.left_lower_x = map_config["origin"][0]  # meter
-        self.left_lower_y = map_config["origin"][1]  # meter
+
+        # apply symmetric padding
+        self.padding = int(0.1 * raw_map_data.shape[0])  # grid cell
+        self.width = raw_map_data.shape[0] + 2 * self.padding  # grid cell
+        self.height = raw_map_data.shape[1] + 2 * self.padding  # grid cell
+
+        # place original map in the center of the padded one
+        padded_map_data = np.zeros((self.width, self.height))
+        padded_map_data[
+            self.padding : -self.padding, self.padding : -self.padding
+        ] = raw_map_data
+
+        self.left_lower_x = (
+            map_config["origin"][0] - self.padding * self.resolution
+        )  # meter
+        self.left_lower_y = (
+            map_config["origin"][1] - self.padding * self.resolution
+        )  # meter
 
         self.ndata = self.width * self.height
-        self.data = list(np.flipud(raw_map_data).flatten())
+        self.data = list(np.flipud(padded_map_data).flatten())
 
         self.distance_transform = None
         self.distance_transform_interp = None
@@ -45,7 +57,6 @@ class GridMap:
         self._init_distance_transform()
 
     def _init_distance_transform(self):
-
         self.distance_transform = self.calc_distance_transform()
 
         self.distance_transform_interp = RectBivariateSpline(
@@ -64,7 +75,6 @@ class GridMap:
         self.dt_derivative_stepsize = step_size  # TODO might not needed
 
     def discretize_dt_derivative(self):
-
         stepnum = self.width * self.dt_derivative_resolution
         gridx, step_size = np.linspace(
             0, self.width * self.resolution, stepnum, retstep=True
@@ -180,14 +190,14 @@ class GridMap:
         )
 
     def calc_distance_function_derivate_interp(self, xy_pos):
-
         """xy is in the coord system of the map
         (shifted, so the origin is around the middle of the map).
         However, the DT of the map has the origin in the bottom left corner.
         So the transformation of xy is needed:
         x: [-10,9.2) -> [0,19.2)
         y: [-10.05,9.15) -> [0,19.2).
-        Also, the middle of the cell is considered, instead of the bottom left corner."""
+        Also, the middle of the cell is considered, instead of the bottom left corner.
+        """
 
         x_transf = xy_pos[:, 0] - self.left_lower_x - self.resolution / 2.0
         y_transf = xy_pos[:, 1] - self.left_lower_y - self.resolution / 2.0
@@ -202,7 +212,6 @@ class GridMap:
         return df_d_x, df_d_y
 
     def check_occupied_from_xy_index(self, xind, yind, occupied_val=1.0):
-
         val = self.get_value_from_xy_index(xind, yind)
 
         if val is None or val >= occupied_val:
@@ -211,7 +220,6 @@ class GridMap:
             return False
 
     def plot_grid_map(self, ax=None, zorder=1):
-
         grid_data = np.reshape(np.array(self.data), (self.height, self.width))
 
         # plot tick labels in meters, so that (0,0) is at the origin of the map
