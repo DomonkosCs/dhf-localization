@@ -17,23 +17,22 @@ from dhflocalization.customtypes import StateHypothesis, Track
 from dhflocalization.rawdata import ResultExporter
 from dhflocalization.filters import EKF
 from dhflocalization.gridmap import GridMap
-from dhflocalization import perform_evaluation as evaluate
+from dhflocalization import perform_evaluation
 
 
 def main():
     print("Starting state estimation...")
 
-    # Exports every variable starting with cfg_ to a config YAML file.
-    config_exporter = ConfigExporter()
+    save_data = True
+    do_evaluation = True
+    do_plot = False
 
     cfg_random_seed = 4302948723190478  # 2021
     rng = np.random.default_rng(cfg_random_seed)
 
-    cfg_map_config_filename = "gt_map_05"
+    cfg_map_config_filename = "gt_map_01"
 
     cfg_simu_data_filename = "house_true_cut"
-
-    do_plotting = True
 
     simulation_data = RawDataLoader.load_from_json(cfg_simu_data_filename)
 
@@ -62,8 +61,8 @@ def main():
         ogm, cfg_measurement_range_noise_std, robot_sensor_dx
     )
 
-    cfg_medh_particle_number = 1
-    cfg_aedh_particle_number = 1
+    cfg_medh_particle_number = 100
+    cfg_aedh_particle_number = 100
     cfg_ledh_particle_number = 50
     cfg_cledh_particle_number = 100
 
@@ -72,7 +71,7 @@ def main():
     cfg_cledh_cluster_number = 5
 
     cfg_init_gaussian_mean = np.array([-3.0, 1.0, 0.0003])
-    cfg_init_gaussian_covar = np.array([[0.01, 0, 0], [0, 0.01, 0], [0, 0, 0.025]])
+    cfg_init_gaussian_covar = np.array([[0.1, 0, 0], [0, 0.1, 0], [0, 0, 0.025]])
 
     particle_init_variables = [cfg_init_gaussian_mean, cfg_init_gaussian_covar, rng]
 
@@ -112,7 +111,7 @@ def main():
     edh_variants = []
 
     for i in range(1, simulation_data.simulation_steps, 1):
-        # print("{}/{}".format(i, simulation_data.simulation_steps))
+        print("{}/{}".format(i, simulation_data.simulation_steps))
         control_input = [simulation_data.x_odom[i - 1], simulation_data.x_odom[i]]
         measurement = measurement_processer.filter_measurements(
             simulation_data.measurement[i]
@@ -135,7 +134,7 @@ def main():
         ekf_comptimes.append(ekf_update_comptime)
         ekf_prior = ekf_posterior
 
-    filtered_states = {
+    filtered_results = {
         "ekf": {
             "track": ekf_track,
             "comptime": np.array(ekf_comptimes).mean(),
@@ -143,19 +142,21 @@ def main():
     }
 
     for filter in edh_variants:
-        filtered_states.update(filter.get_results())
+        filtered_results.update(filter.get_results())
 
     # TODO move to results
     cfg_avg_ray_number = measurement_processer.get_avg_ray_number()
 
     print("Calculations completed")
 
-    cfg_result_filename = ResultExporter().save(filtered_states)
-    config_exporter.export(locals(), cfg_result_filename)
+    if save_data:
+        print("Saving results")
+        cfg_result_filename = ResultExporter().save(filtered_results)
+        # Exports every variable starting with cfg_ to a config YAML file.
+        ConfigExporter().export(locals(),cfg_result_filename)
 
-    if do_plotting:
-        evaluate.main(cfg_result_filename)
-
+    if do_evaluation:
+        perform_evaluation.from_data(simulation_data.x_true,filtered_results,do_plot,cfg_map_config_filename)
 
 if __name__ == "__main__":
     main()
