@@ -390,17 +390,7 @@ def eval_edh_naedh():
     plt.show()
 
 
-if __name__ == "__main__":
-    # print(eval_dhf(simu=True))true
-    # print(eval_amcl())
 
-    eval_simu_edh_naedh()
-    # eval_simu_ledh_cledh()
-    # print(eval_simu_amcl())
-    # eval_edh_naedh()
-    # runs = []
-    # for lamb in range(10):
-    #     runs.append(eval_dhf(lamb=lamb + 1, simu=True))
 
 
 
