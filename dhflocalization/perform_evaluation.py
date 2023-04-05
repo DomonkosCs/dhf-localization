@@ -1,9 +1,9 @@
 from dhflocalization.rawdata import ResultLoader, ConfigImporter, RawDataLoader
 from dhflocalization.gridmap import GridMap
-from dhflocalization.gridmap import PgmProcesser
 from dhflocalization.visualization import TrackPlotter
 from dhflocalization.evaluator import metrics, data_association
 from dhflocalization.rawdata import optitrack_reader
+from dhflocalization.rawdata import YamlWriter
 
 from scipy.spatial.transform import Rotation
 import numpy as np
@@ -12,18 +12,9 @@ import json
 import matplotlib.pyplot as plt
 
 
-def main(results_filename):
-    results = ResultLoader.load(results_filename)
-    meta_data = ConfigImporter.read(results_filename)
-    simulation_data = RawDataLoader.load_from_json(meta_data['cfg_simu_data_filename'])
+def from_data(true_states,filtered_results,do_plot=False,map_filename=None):
 
-
-    (err_mean_sqare, err_mean_abs, std) = metrics.eval(
-        true_states=simulation_data.x_true,
-        filtered_results=results,
-        export_filename=results_filename,
-        return_results=True,
-    )
+    (err_mean_sqare, err_mean_abs, std) = metrics.eval(true_states,filtered_results)
 
     print(err_mean_sqare)
     print("---")
@@ -31,10 +22,44 @@ def main(results_filename):
     print("---")
     print(std)
 
-    ogm = GridMap(meta_data["cfg_map_config_filename"])
-    
+    if not do_plot or not map_filename:
+        return
+
+    ogm = GridMap(map_filename)
     track_plotter = TrackPlotter(background_map=ogm)
-    track_plotter.plot_results(simulation_data.x_true, results)
+    track_plotter.plot_results(true_states, filtered_results)
+
+def from_file(results_filename, do_plot=False):
+    filtered_results = ResultLoader.load(results_filename)
+    meta_data = ConfigImporter.read(results_filename)
+    simulation_data = RawDataLoader.load_from_json(meta_data['cfg_simu_data_filename'])
+
+    true_states = simulation_data.x_true
+    (err_mean_squares, err_mean_abss, err_stds) = metrics.eval(true_states,filtered_results)
+
+    # update the original config file with the results
+    metrics_dict = {
+        "RMSE": err_mean_squares,
+        "MAE": err_mean_abss,
+        "STD": err_stds,
+    }
+    YamlWriter().updateFile(
+        payload=metrics_dict,
+        filename=results_filename,
+    )
+
+    print(err_mean_squares)
+    print("---")
+    print(err_mean_abss)
+    print("---")
+    print(err_stds)
+
+    if not do_plot:
+        return
+
+    ogm = GridMap(meta_data["cfg_map_config_filename"])
+    track_plotter = TrackPlotter(background_map=ogm)
+    track_plotter.plot_results(simulation_data.x_true, filtered_results)
 
 
 def compare_filtered_with_optitrack(dhf_fn, amcl_fn, optitrack_fn):
@@ -377,19 +402,9 @@ if __name__ == "__main__":
     # for lamb in range(10):
     #     runs.append(eval_dhf(lamb=lamb + 1, simu=True))
 
-    # rmse_pos_edh = [run["edh"]["pos"] for run in runs]
-    # rmse_pos_naedh = [run["naedh"]["pos"] for run in runs]
 
-    # rmse_ori_edh = [run["edh"]["ori"] for run in runs]
-    # rmse_ori_naedh = [run["naedh"]["ori"] for run in runs]
 
-    # comp_edh = [run["edh"]["comptime"] for run in runs]
-    # comp_naedh = [run["naedh"]["comptime"] for run in runs]
 
-    # plt.plot(
-    #     list(range(1, 11)),
-    # )
-    # plt.show()
-    # compare_filtered_with_optitrack("edh_take01", "amcl_take01", "take01")
-    # results_filename = "22-12-10T162512"
-    # main(results_filename)
+if __name__ == "__main__":
+    results_filename = "23-04-05T125650"
+    from_file(results_filename,do_plot=True)
