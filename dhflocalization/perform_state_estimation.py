@@ -153,10 +153,13 @@ def main():
         print("Saving results")
         cfg_result_filename = ResultExporter().save(filtered_results)
         # Exports every variable starting with cfg_ to a config YAML file.
-        ConfigExporter().export(locals(),cfg_result_filename)
+        ConfigExporter().export(locals(), cfg_result_filename)
 
     if do_evaluation:
-        perform_evaluation.from_data(simulation_data.x_true,filtered_results,do_plot,cfg_map_config_filename)
+        perform_evaluation.from_data(
+            simulation_data.x_true, filtered_results, do_plot, cfg_map_config_filename
+        )
+
 
 if __name__ == "__main__":
     main()

@@ -1,3 +1,4 @@
+# TODO is this really needed?
 class SimulationData:
     def __init__(self, x_odom, x_true, x_amcl, measurement, times):
         self.x_odom = x_odom

@@ -10,10 +10,10 @@ class ConfigExporter(FileHandler):
 
     @classmethod
     def export(cls, payload, filename):
-        data = cls._extract_variables(cls,payload)
+        data = cls._extract_variables(cls, payload)
 
         relative_path = "../resources/results/" + filename + ".yaml"
-        file_path = super().convert_path_to_absolute(cls,relative_path)
+        file_path = super().convert_path_to_absolute(cls, relative_path)
 
         with open(
             file_path,

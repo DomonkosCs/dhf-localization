@@ -82,7 +82,7 @@ class TrackPlotter(Plotter):  # TODO remove inheritance
             self.ax.legend(handles=self.handles_list, labels=self.labels_list)
 
     def plot_results(self, true_states, filtered_results):
-        for algo,result in filtered_results.items():
+        for algo, result in filtered_results.items():
             self._plot_track(
                 result["track"].to_np_array(),
                 [0, 1],
@@ -91,11 +91,7 @@ class TrackPlotter(Plotter):  # TODO remove inheritance
                 track_label=algo,
             )
         self._plot_track(
-            true_states,
-            [0, 1],
-            marker=None,
-            linestyle="-",
-            track_label="ground truth"
+            true_states, [0, 1], marker=None, linestyle="-", track_label="ground truth"
         )
         plt.show()
 

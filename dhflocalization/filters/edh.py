@@ -1,4 +1,4 @@
-from ..customtypes import ParticleState,Track
+from ..customtypes import ParticleState, Track
 import numpy as np
 
 
@@ -25,7 +25,7 @@ class EDH:
             prediction, prediction_covar, measurement
         )
 
-        self.filtered_track.append(posterior) # TODO: flag to only save the mean
+        self.filtered_track.append(posterior)  # TODO: flag to only save the mean
         self.comptimes.append(comptime)
 
         self.last_particle_posterior = posterior

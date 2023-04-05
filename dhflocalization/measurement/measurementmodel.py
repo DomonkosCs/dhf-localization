@@ -1,5 +1,6 @@
 from ..gridmap import GridMap
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class MeasurementModel:
@@ -12,16 +13,12 @@ class MeasurementModel:
     ):
         self.ogm = ogm
         self.range_noise_std = range_noise_std
-        self.robot_sensor_tr = np.array(
-            [robot_sensor_dx, robot_sensor_dy]
-        )
+        self.robot_sensor_tr = np.array([robot_sensor_dx, robot_sensor_dy])
 
     def process_detection(self, state_vector, measurement):
 
         ranges = [ray[1] for ray in measurement]
         angles = [ray[0] for ray in measurement]
-
-
 
         x_o = np.zeros([len(ranges), 2])
         ogm = self.ogm
@@ -31,8 +28,21 @@ class MeasurementModel:
         angle_global = angles + state_vector[2]
         r_cos = np.multiply(ranges, np.cos(angle_global))
         r_sin = np.multiply(ranges, np.sin(angle_global))
-        x_o[:, 0] = r_cos + np.cos(state_vector[2]) * self.robot_sensor_tr[0] - np.sin(state_vector[2]) * self.robot_sensor_tr[1] + state_vector[0]
-        x_o[:, 1] = r_sin + np.sin(state_vector[2]) * self.robot_sensor_tr[0] + np.cos(state_vector[2]) * self.robot_sensor_tr[1] + state_vector[1]
+        x_o[:, 0] = (
+            r_cos
+            + np.cos(state_vector[2]) * self.robot_sensor_tr[0]
+            - np.sin(state_vector[2]) * self.robot_sensor_tr[1]
+            + state_vector[0]
+        )
+        x_o[:, 1] = (
+            r_sin
+            + np.sin(state_vector[2]) * self.robot_sensor_tr[0]
+            + np.cos(state_vector[2]) * self.robot_sensor_tr[1]
+            + state_vector[1]
+        )
+
+        # ogm.plot_grid_map()
+        # plt.scatter(x_o[:,0],x_o[:,1],s=2)
 
         df = ogm.calc_distance_transform_xy_pos(x_o)
 

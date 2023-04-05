@@ -2,6 +2,7 @@ import numpy as np
 from ..rawdata import YamlWriter
 from dhflocalization.utils import angle_set_diff, calc_angle_diff
 
+
 def calc_nees(true_states, filtered_track):
     covars, states = map(
         list,
@@ -55,6 +56,7 @@ def calc_error_metrics(true_states, filtered_track):
 
     return err_mean_sqare, err_mean_abs, err_std
 
+
 def eval(
     true_states,
     filtered_results,
@@ -70,6 +72,5 @@ def eval(
         err_mean_squares[algo] = err_mean_square
         err_mean_abss[algo] = err_mean_abs
         err_stds[algo] = err_std
-        
 
     return err_mean_squares, err_mean_abss, err_stds
