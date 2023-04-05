@@ -26,17 +26,18 @@ def calc_nees(true_track, filtered_track):
     return nees_avg
 
 
-def calc_error_metrics(filtered_poses, reference_poses):
+def calc_error_metrics(filtered_poses, true_states):
 
     err_mean_sqare = {"position": {}, "orientation": {}}
     err_mean_abs = {"position": {}, "orientation": {}}
     err_std = {"position": {}, "orientation": {}}
 
     for algo, value in filtered_poses.items():
-        states = np.array(value["state"])
+        states = value['track'].to_np_array()
+        
 
-        true_xy = reference_poses["true"][:, :-1]
-        true_angle = reference_poses["true"][:, 2]
+        true_xy = true_states[:, :-1]
+        true_angle = true_states[:, 2]
 
         filtered_xy = states[:, :-1]
         filtered_angle = states[:, 2]
@@ -61,13 +62,13 @@ def calc_error_metrics(filtered_poses, reference_poses):
 
 def eval(
     filtered_states,
-    reference_states,
+    true_states,
     export_filename=None,
     return_results=False,
 ):
 
     err_mean_sqare, err_mean_abs, err_std = calc_error_metrics(
-        filtered_states, reference_states
+        filtered_states, true_states
     )
     if export_filename:
         metrics_dict = {

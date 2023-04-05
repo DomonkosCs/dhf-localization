@@ -4,7 +4,7 @@ from datetime import datetime
 from ..rawdata.filehandler import FileHandler
 
 
-class resultExporter(FileHandler):
+class ResultExporter(FileHandler):
     @classmethod
     def save(cls, *datas, prefix="") -> str:
         data_list = []
@@ -22,11 +22,11 @@ class resultExporter(FileHandler):
         return file_name
 
 
-class resultLoader(FileHandler):
+class ResultLoader(FileHandler):
     @classmethod
     def load(cls, file_name):
         relative_path = "../resources/results/" + file_name + ".p"
         file_path = super().convert_path_to_absolute(cls, relative_path)
 
         loaded_data = pickle.load(open(file_path, "rb"))
-        return loaded_data
+        return loaded_data[0]

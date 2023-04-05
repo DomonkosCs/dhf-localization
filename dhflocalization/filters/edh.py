@@ -1,4 +1,4 @@
-from ..customtypes import ParticleState
+from ..customtypes import ParticleState,Track
 import numpy as np
 
 
@@ -8,8 +8,7 @@ class EDH:
         self.prior = self._init_particles(init_mean, init_covar, rng)
 
         self.last_particle_posterior = self.prior
-        self.filtered_track = []
-        self.filtered_track.append(self.last_particle_posterior.mean())
+        self.filtered_track = Track(self.prior)
 
         self.comptimes = []
 
@@ -26,7 +25,7 @@ class EDH:
             prediction, prediction_covar, measurement
         )
 
-        self.filtered_track.append(posterior.mean())
+        self.filtered_track.append(posterior) # TODO: flag to only save the mean
         self.comptimes.append(comptime)
 
         self.last_particle_posterior = posterior
@@ -34,7 +33,7 @@ class EDH:
     def get_results(self):
         return {
             self.updater.key: {
-                "state": np.asarray(self.filtered_track),
+                "track": self.filtered_track,
                 "comptime": np.array(self.comptimes).mean(),
             }
         }

@@ -13,8 +13,8 @@ from dhflocalization.filters.updaters import (
 from dhflocalization.kinematics import OdometryMotionModel
 from dhflocalization.measurement import MeasurementModel, MeasurementProcessor
 from dhflocalization.rawdata import RawDataLoader, ConfigExporter
-from dhflocalization.customtypes import StateHypothesis
-from dhflocalization.rawdata import resultExporter
+from dhflocalization.customtypes import StateHypothesis, Track
+from dhflocalization.rawdata import ResultExporter
 from dhflocalization.filters import EKF
 from dhflocalization.gridmap import GridMap
 from dhflocalization import perform_evaluation as evaluate
@@ -83,8 +83,7 @@ def main():
     ekf_prior = StateHypothesis(
         state_vector=cfg_init_gaussian_mean, covar=cfg_init_gaussian_covar
     )
-    ekf_track = []
-    ekf_track.append(ekf_prior)
+    ekf_track = Track(ekf_prior)
     ekf_comptimes = []
 
     # init edh variants
@@ -138,7 +137,7 @@ def main():
 
     filtered_states = {
         "ekf": {
-            "state": np.asarray([timestep.state_vector for timestep in ekf_track]),
+            "track": ekf_track,
             "comptime": np.array(ekf_comptimes).mean(),
         },
     }
@@ -146,16 +145,12 @@ def main():
     for filter in edh_variants:
         filtered_states.update(filter.get_results())
 
-    reference_states = {
-        "odom": simulation_data.x_odom,
-        "true": simulation_data.x_true,
-    }
-
     # TODO move to results
     cfg_avg_ray_number = measurement_processer.get_avg_ray_number()
+
     print("Calculations completed")
 
-    cfg_result_filename = resultExporter().save(filtered_states, reference_states)
+    cfg_result_filename = ResultExporter().save(filtered_states)
     config_exporter.export(locals(), cfg_result_filename)
 
     if do_plotting:
