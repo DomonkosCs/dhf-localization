@@ -1,4 +1,4 @@
-from dhflocalization.rawdata import resultLoader, ConfigImporter, RawDataLoader
+from dhflocalization.rawdata import ResultLoader, ConfigImporter, RawDataLoader
 from dhflocalization.gridmap import GridMap
 from dhflocalization.gridmap import PgmProcesser
 from dhflocalization.visualization import TrackPlotter
@@ -13,25 +13,25 @@ import matplotlib.pyplot as plt
 
 
 def main(results_filename):
-    # load results from the pickle file
-    results = resultLoader.load(results_filename)
-    config = ConfigImporter.importData(results_filename)
-    # (err_mean_sqare, err_mean_abs, std) = metrics.eval(
-    #     filtered_states=results[0],
-    #     reference_states=results[1],
-    #     export_filename=results_filename,
-    #     return_results=True,
-    # )
+    results = ResultLoader.load(results_filename)
+    meta_data = ConfigImporter.read(results_filename)
+    simulation_data = RawDataLoader.load_from_json(meta_data['cfg_simu_data_filename'])
 
-    # print(err_mean_sqare)
-    # print(err_mean_abs)
-    # print(std)
 
-    map_fn = config["cfg_map_filename"]
-
-    ogm = GridMap.load_grid_map_from_array(
-        PgmProcesser.read_pgm(map_fn), 0.05, 10, 10.05
+    (err_mean_sqare, err_mean_abs, std) = metrics.eval(
+        true_states=simulation_data.x_true,
+        filtered_results=results,
+        export_filename=results_filename,
+        return_results=True,
     )
+
+    print(err_mean_sqare)
+    print("---")
+    print(err_mean_abs)
+    print("---")
+    print(std)
+
+    ogm = GridMap(meta_data["cfg_map_config_filename"])
     track_plotter = TrackPlotter(background_map=ogm)
     track_plotter.plot_tracks(results[0], results[1])
 
