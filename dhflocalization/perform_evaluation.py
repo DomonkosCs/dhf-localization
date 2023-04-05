@@ -32,8 +32,9 @@ def main(results_filename):
     print(std)
 
     ogm = GridMap(meta_data["cfg_map_config_filename"])
+    
     track_plotter = TrackPlotter(background_map=ogm)
-    track_plotter.plot_tracks(results[0], results[1])
+    track_plotter.plot_results(simulation_data.x_true, results)
 
 
 def compare_filtered_with_optitrack(dhf_fn, amcl_fn, optitrack_fn):
