@@ -5,14 +5,15 @@ from ..rawdata.filehandler import FileHandler
 
 
 class ConfigExporter(FileHandler):
-    def __init__(self) -> None:
+    def __init__(self):
         pass
 
-    def export(self, payload, filename):
-        data = self.__extract_variables(payload)
+    @classmethod
+    def export(cls, payload, filename):
+        data = cls._extract_variables(cls,payload)
 
         relative_path = "../resources/results/" + filename + ".yaml"
-        file_path = super().convert_path_to_absolute(relative_path)
+        file_path = super().convert_path_to_absolute(cls,relative_path)
 
         with open(
             file_path,
@@ -20,7 +21,7 @@ class ConfigExporter(FileHandler):
         ) as file:
             ruamel.yaml.dump({"config": data, "results": ""}, file)
 
-    def __extract_variables(self, payload):
+    def _extract_variables(self, payload):
         variables_dict = {}
         for key in payload.keys():
             if key.startswith("cfg_"):
