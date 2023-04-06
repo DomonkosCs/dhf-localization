@@ -17,8 +17,13 @@ class ParticleState:
     def mean(self):
         return np.average(self.state_vectors, axis=0)
 
+    def std(self):
+        return np.std(self.state_vectors, axis=0)
+
     @classmethod
-    def init_from_gaussian(cls, mean, covar, particle_num, rng=np.random.default_rng()):
+    def init_from_gaussian(cls, mean, covar, particle_num, rng=None):
+        rng = rng if rng is not None else np.random.default_rng()
+
         state_vectors = rng.multivariate_normal(mean, covar, particle_num)
         return cls(state_vectors=state_vectors)
 
@@ -35,3 +40,9 @@ class Track:
 
     def to_np_array(self):
         return np.array([state.mean() for state in self.states])
+
+    def timesteps(self):
+        return len(self.states)
+
+    def __iter__(self):
+        return iter(self.states)
