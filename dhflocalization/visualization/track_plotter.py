@@ -3,6 +3,8 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Ellipse
 from matplotlib.legend_handler import HandlerPatch
 import matplotlib.pyplot as plt
+from dhflocalization.customtypes import ParticleState
+import numpy as np
 
 # import numpy as np
 
@@ -33,13 +35,21 @@ class TrackPlotter(Plotter):  # TODO remove inheritance
         uncertainty=False,
         particle=False,
         track_label="Track",
-        **kwargs
+        **kwargs,
     ):
-
         track_kwargs = dict(linestyle="-", marker=".", color=None)
         track_kwargs.update(kwargs)
 
-        line = self.ax.plot(track[:, mapping[0]], track[:, mapping[1]], **track_kwargs)
+        if not isinstance(track, np.ndarray):
+            track_array = track.to_np_array()
+        else:
+            track_array = track
+
+        line = self.ax.plot(
+            track_array[:, mapping[0]],
+            track_array[:, mapping[1]],
+            **track_kwargs,
+        )
 
         track_kwargs["color"] = plt.getp(line[0], "color")
 
@@ -57,7 +67,7 @@ class TrackPlotter(Plotter):  # TODO remove inheritance
         if particle:
             # Plot particles
             for state in track:
-                data = state.particles[:, mapping[:2]]
+                data = state.state_vectors[:, mapping[:2]]
                 self.ax.plot(
                     data[:, 0],
                     data[:, 1],
@@ -83,12 +93,17 @@ class TrackPlotter(Plotter):  # TODO remove inheritance
 
     def plot_results(self, true_states, filtered_results):
         for algo, result in filtered_results.items():
+            plot_particles = False
+            if algo == "ledh":
+                plot_particles = True
+
             self._plot_track(
-                result["track"].to_np_array(),
+                result["track"],
                 [0, 1],
                 marker=None,
                 linestyle="--",
                 track_label=algo,
+                particle=plot_particles,
             )
         self._plot_track(
             true_states, [0, 1], marker=None, linestyle="-", track_label="ground truth"
