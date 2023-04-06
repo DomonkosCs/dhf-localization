@@ -33,7 +33,6 @@ class OdometryMotionModel(MotionModel):
         )
 
         # sample the transformed control inputs for each state individually
-        control_covar = np.zeros((3, 3))  #! No noise
         delta_hat_rot_1 = self.calc_angle_diff(
             delta_rot_1,
             np.sqrt(control_covar[0, 0])
