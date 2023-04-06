@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 from ..customtypes import StateHypothesis, ParticleState
+from dhflocalization.utils import calc_angle_diff
 
 
 class MotionModel(ABC):
@@ -33,17 +34,17 @@ class OdometryMotionModel(MotionModel):
         )
 
         # sample the transformed control inputs for each state individually
-        delta_hat_rot_1 = self.calc_angle_diff(
+        delta_hat_rot_1 = calc_angle_diff(
             delta_rot_1,
             np.sqrt(control_covar[0, 0])
             * self.rng.standard_normal(prior.state_vectors.shape[0]),
         )
-        delta_hat_trans = self.calc_angle_diff(
+        delta_hat_trans = calc_angle_diff(
             delta_trans,
             np.sqrt(control_covar[1, 1])
             * self.rng.standard_normal(prior.state_vectors.shape[0]),
         )
-        delta_hat_rot_2 = self.calc_angle_diff(
+        delta_hat_rot_2 = calc_angle_diff(
             delta_rot_2,
             np.sqrt(control_covar[2, 2])
             * self.rng.standard_normal(prior.state_vectors.shape[0]),
@@ -67,7 +68,7 @@ class OdometryMotionModel(MotionModel):
         # if np.linalg.norm(state_odom_now[1] - state_odom_prev[1]) < 0.01:
         #     delta_rot_1 = 0
         # else:
-        delta_rot_1 = self.calc_angle_diff(
+        delta_rot_1 = calc_angle_diff(
             np.arctan2(
                 state_odom_now[1] - state_odom_prev[1],
                 state_odom_now[0] - state_odom_prev[0],
@@ -80,8 +81,8 @@ class OdometryMotionModel(MotionModel):
             + (state_odom_now[1] - state_odom_prev[1]) ** 2
         )
 
-        delta_rot_2 = self.calc_angle_diff(
-            self.calc_angle_diff(state_odom_now[2], state_odom_prev[2]), delta_rot_1
+        delta_rot_2 = calc_angle_diff(
+            calc_angle_diff(state_odom_now[2], state_odom_prev[2]), delta_rot_1
         )
 
         return delta_rot_1, delta_trans, delta_rot_2
@@ -112,7 +113,6 @@ class OdometryMotionModel(MotionModel):
         return StateHypothesis(state_vector=predicted_state, covar=predicted_covar)
 
     def calc_jacobians(self, delta_rot_1, delta_trans, fi):
-
         J_state_13 = -delta_trans * np.sin(fi + delta_rot_1)
         J_state_23 = delta_trans * np.cos(fi + delta_rot_1)
         J_state = np.array([[1, 0, J_state_13], [0, 1, J_state_23], [0, 0, 1]])
@@ -129,18 +129,17 @@ class OdometryMotionModel(MotionModel):
         return [J_state, J_input]
 
     def calc_control_noise_covar(self, delta_rot_1, delta_trans, delta_rot_2):
-
         # We want to treat backward and forward motion symmetrically for the
         # noise model to be applied below.  The standard model seems to assume
         # forward motion.
         # From https://github.com/ros-planning/navigation/blob/noetic-devel/amcl/src/amcl/sensors/amcl_odom.cpp
         delta_rot_1_noise = min(
-            abs(self.calc_angle_diff(delta_rot_1, 0)),
-            abs(self.calc_angle_diff(delta_rot_1, np.pi)),
+            abs(calc_angle_diff(delta_rot_1, 0)),
+            abs(calc_angle_diff(delta_rot_1, np.pi)),
         )
         delta_rot_2_noise = min(
-            abs(self.calc_angle_diff(delta_rot_2, 0)),
-            abs(self.calc_angle_diff(delta_rot_2, np.pi)),
+            abs(calc_angle_diff(delta_rot_2, 0)),
+            abs(calc_angle_diff(delta_rot_2, np.pi)),
         )
 
         control_var_11 = (
@@ -154,25 +153,3 @@ class OdometryMotionModel(MotionModel):
         )
 
         return np.diag([control_var_11, control_var_22, control_var_33])
-
-    def normalize_angle(self, angle):
-        return np.arctan2(np.sin(angle), np.cos(angle))
-
-    def calc_angle_diff(self, a, b):
-        a = self.normalize_angle(a)
-        b = self.normalize_angle(b)
-        d1 = a - b
-        d2 = 2 * np.pi - abs(d1)
-
-        if type(d1) is np.ndarray:
-            return_arr = d2
-            d2[d1 > 0] *= -1.0
-            return_arr[abs(d1) < abs(d2)] = d1[abs(d1) < abs(d2)]
-            return return_arr
-        else:
-            if d1 > 0:
-                d2 *= -1.0
-            if abs(d1) < abs(d2):
-                return d1
-            else:
-                return d2
