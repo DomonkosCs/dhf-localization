@@ -33,22 +33,15 @@ class OdometryMotionModel(MotionModel):
             delta_rot_1, delta_trans, delta_rot_2
         )
 
-        # sample the transformed control inputs for each state individually
-        delta_hat_rot_1 = calc_angle_diff(
-            delta_rot_1,
-            np.sqrt(control_covar[0, 0])
-            * self.rng.standard_normal(prior.state_vectors.shape[0]),
-        )
-        delta_hat_trans = (
-            delta_trans
-            + np.sqrt(control_covar[1, 1])
-            * self.rng.standard_normal(prior.state_vectors.shape[0]),
-        )
-        delta_hat_rot_2 = calc_angle_diff(
-            delta_rot_2,
-            np.sqrt(control_covar[2, 2])
-            * self.rng.standard_normal(prior.state_vectors.shape[0]),
-        )
+        delta_hat_rot_1 = delta_rot_1 + np.sqrt(
+            control_covar[0, 0]
+        ) * self.rng.standard_normal(prior.state_vectors.shape[0])
+        delta_hat_trans = delta_trans + np.sqrt(
+            control_covar[1, 1]
+        ) * self.rng.standard_normal(prior.state_vectors.shape[0])
+        delta_hat_rot_2 = delta_rot_2 + np.sqrt(
+            control_covar[2, 2]
+        ) * self.rng.standard_normal(prior.state_vectors.shape[0])
 
         state_angles = prior.state_vectors[:, 2]
 
