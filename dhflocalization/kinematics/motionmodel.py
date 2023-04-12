@@ -39,9 +39,9 @@ class OdometryMotionModel(MotionModel):
             np.sqrt(control_covar[0, 0])
             * self.rng.standard_normal(prior.state_vectors.shape[0]),
         )
-        delta_hat_trans = calc_angle_diff(
-            delta_trans,
-            np.sqrt(control_covar[1, 1])
+        delta_hat_trans = (
+            delta_trans
+            + np.sqrt(control_covar[1, 1])
             * self.rng.standard_normal(prior.state_vectors.shape[0]),
         )
         delta_hat_rot_2 = calc_angle_diff(
