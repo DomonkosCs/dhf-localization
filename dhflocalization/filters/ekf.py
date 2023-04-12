@@ -1,5 +1,6 @@
 from ..measurement import MeasurementModel
 from ..customtypes import StateHypothesis
+from ..utils import calc_angle_diff
 import numpy as np
 import time
 
@@ -31,7 +32,12 @@ class EKF:
             )
         )
 
-        posterior_mean = prior.state_vector - K.flatten() * cd
+        # cf. Markovic, I., Cesic, J., & Petrovic, I. (2017). On wrapping the Kalman filter and estimating with the SO(2) group
+        # however, it literally makes no difference
+        correction = K.flatten() * cd
+        posterior_mean = np.zeros(3)
+        posterior_mean[:2] = prior.state_vector[:2] - correction[:2]
+        posterior_mean[2] = calc_angle_diff(prior.state_vector[2], correction[2])
         posterior_covar = (np.eye(3) - K @ grad_cd_x.T) @ prior.covar
         posterior = StateHypothesis(state_vector=posterior_mean, covar=posterior_covar)
 
