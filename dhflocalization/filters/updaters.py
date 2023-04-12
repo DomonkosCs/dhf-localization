@@ -29,12 +29,10 @@ class LEDHUpdater:
         )
 
         particle_poses = prediction.state_vectors
-        particle_poses_mean = prediction.mean()
-        particle_poses_mean_0 = particle_poses_mean
+        particle_poses_mean_0 = prediction.mean()
 
         for lamb in self.lambdas:
             for i in range(self.particle_num):
-
                 # linearize measurement model about the current particle
                 cd, grad_cd_x, grad_cd_z, _ = self.measurement_model.process_detection(
                     particle_poses[i, :], measurement
@@ -68,9 +66,6 @@ class LEDHUpdater:
                     particle_poses[i, :] + self.d_lambda * flow_vector.T
                 )
 
-            # recalculate linearization point
-            particle_poses_mean = np.mean(particle_poses, axis=0)
-
         posterior = ParticleState(state_vectors=particle_poses)
         end = time.time()
         comptime = end - start
@@ -103,7 +98,6 @@ class MEDHUpdater:
         particle_poses_mean_0 = particle_poses_mean
 
         for lamb in self.lambdas:
-
             # linearize measurement model about the mean
             cd, grad_cd_x, grad_cd_z, _ = self.measurement_model.process_detection(
                 particle_poses_mean, measurement
@@ -207,7 +201,6 @@ class CLEDHUpdater:
         medoid_states = particle_poses[medoid_idxs, :]
         for lamb in self.lambdas:
             for i in range(self.cluster_num):
-
                 # linearize measurement model about the current medoid
                 cd, grad_cd_x, grad_cd_z, _ = self.measurement_model.process_detection(
                     medoid_states[i, :], measurement
@@ -349,7 +342,6 @@ class NAEDHUpdater:
         self.step_num = step_num
 
     def update(self, prediction, prediction_covar, measurement):
-
         start = time.time()
         num_of_rays = len(measurement)
         measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(
@@ -362,7 +354,6 @@ class NAEDHUpdater:
 
         steps = np.linspace(0, 1, self.step_num + 1)
         for i in range(self.step_num):
-
             # linearize about the mean
             cd, grad_cd_x, grad_cd_z, _ = self.measurement_model.process_detection(
                 particle_poses_mean, measurement
