@@ -9,15 +9,28 @@ class StateHypothesis:
     def mean(self):
         return self.state_vector
 
+    def median(self):
+        return self.state_vector
+
 
 class ParticleState:
     def __init__(self, state_vectors=None):
         self.state_vectors = state_vectors
 
     def mean(self):
+        # position_mean = np.average(self.state_vectors[:, :2], axis=0)
+        # angles = self.state_vectors[:, 2]
+        # angle_mean = np.arctan2(np.sin(angles).mean(), np.cos(angles).mean())
+        # return np.append(position_mean, angle_mean)
+
         return np.average(self.state_vectors, axis=0)
 
+    def median(self):
+        return np.median(self.state_vectors, axis=0)
+
     def std(self):
+        # mathematically not correct due to the neglection of
+        # circular statistics
         return np.std(self.state_vectors, axis=0)
 
     @classmethod
