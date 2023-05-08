@@ -12,7 +12,7 @@ class EDH:
 
         self.comptimes = []
 
-    def _init_particles(self, init_mean, init_covar, rng):
+    def _init_particles(self, init_mean, init_covar, rng=None):
         return ParticleState.init_from_gaussian(
             init_mean,
             init_covar,
