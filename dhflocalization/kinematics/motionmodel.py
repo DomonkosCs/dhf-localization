@@ -20,7 +20,7 @@ class OdometryMotionModel(MotionModel):
         self.rng = rng
         pass
 
-    def propagate_particles(self, prior, control_input):
+    def propagate_particles(self, prior, control_input, noise=True):
         """
         states: n by 3 numpy array
         """
@@ -29,9 +29,12 @@ class OdometryMotionModel(MotionModel):
             control_input
         )
 
-        control_covar = self.calc_control_noise_covar(
-            delta_rot_1, delta_trans, delta_rot_2
-        )
+        if noise:
+            control_covar = self.calc_control_noise_covar(
+                delta_rot_1, delta_trans, delta_rot_2
+            )
+        else:
+            control_covar = np.zeros((3,3))
 
         delta_hat_rot_1 = delta_rot_1 + np.sqrt(
             control_covar[0, 0]
