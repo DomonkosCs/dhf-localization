@@ -12,9 +12,8 @@ import json
 import matplotlib.pyplot as plt
 
 
-def from_data(true_states,filtered_results,do_plot=False,map_filename=None):
-
-    (err_mean_sqare, err_mean_abs, std) = metrics.eval(true_states,filtered_results)
+def from_data(true_states, filtered_results, do_plot=False, map_filename=None):
+    (err_mean_sqare, err_mean_abs, std) = metrics.eval(true_states, filtered_results)
 
     print(err_mean_sqare)
     print("---")
@@ -29,13 +28,18 @@ def from_data(true_states,filtered_results,do_plot=False,map_filename=None):
     track_plotter = TrackPlotter(background_map=ogm)
     track_plotter.plot_results(true_states, filtered_results)
 
+
 def from_file(results_filename, do_plot=False):
     filtered_results = ResultLoader.load(results_filename)
     meta_data = ConfigImporter.read(results_filename)
-    simulation_data = RawDataLoader.load_from_json(meta_data['cfg_simu_data_filename'])
+    simulation_data = RawDataLoader.load_from_json(meta_data["cfg_simu_data_filename"])
+
+    # stds = calc_empiric_std(filtered_results["medh"]["track"])
 
     true_states = simulation_data.x_true
-    (err_mean_squares, err_mean_abss, err_stds) = metrics.eval(true_states,filtered_results)
+    (err_mean_squares, err_mean_abss, err_stds) = metrics.eval(
+        true_states, filtered_results
+    )
 
     # update the original config file with the results
     metrics_dict = {
@@ -60,6 +64,14 @@ def from_file(results_filename, do_plot=False):
     ogm = GridMap(meta_data["cfg_map_config_filename"])
     track_plotter = TrackPlotter(background_map=ogm)
     track_plotter.plot_results(simulation_data.x_true, filtered_results)
+
+
+def calc_empiric_std(filtered_track):
+    stds = np.zeros((filtered_track.timesteps(), 3))
+    for timestep, state in enumerate(filtered_track):
+        stds[timestep, :] = np.std(state.state_vectors, axis=0)
+
+    return stds
 
 
 def compare_filtered_with_optitrack(dhf_fn, amcl_fn, optitrack_fn):
@@ -119,7 +131,6 @@ def compare_filtered_with_optitrack(dhf_fn, amcl_fn, optitrack_fn):
 
 
 def eval_dhf(mc_filepaths, simu=False):
-
     if simu is False:
         dhf_stamps = list(RawDataLoader.load_from_json("real_take01").times)
         optitrack_stamps, optitrack_state = process_optitrack("take01")
@@ -128,7 +139,7 @@ def eval_dhf(mc_filepaths, simu=False):
         )
         ground_truth = optitrack_state[optitrack_dhf_indices, :]
     else:
-        ground_truth = RawDataLoader.load_from_json("simu_take01").x_true
+        ground_truth = RawDataLoader.load_from_json("house_true").x_true
 
     rmse_pos_mc = []
     rmse_ori_mc = []
@@ -177,7 +188,7 @@ def eval_dhf(mc_filepaths, simu=False):
 
 
 def eval_amcl():
-    filenames = ["amcl_take01_" + str(mc + 1) for mc in range(20)]
+    filenames = ["real/amcl/amcl_take01_" + str(mc + 1) for mc in range(20)]
     optitrack_stamps, optitrack_state = process_optitrack("take01")
     rmse_pos_mc = []
     rmse_ori_mc = []
@@ -291,7 +302,6 @@ def eval_simu_amcl():
 
 
 def eval_simu_edh_naedh():
-
     runs = []
     for lamb in range(10):
         mc_filenames = [
@@ -309,8 +319,8 @@ def eval_simu_edh_naedh():
     rmse_ori_edh = [run["edh"]["ori"] for run in runs]
     rmse_ori_naedh = [run["naedh"]["ori"] for run in runs]
 
-    comp_edh = [run["edh"]["comptime"] for run in runs]
-    comp_naedh = [run["naedh"]["comptime"] for run in runs]
+    comp_edh = [run["edh"]["comptime"] * 1000 for run in runs]
+    comp_naedh = [run["naedh"]["comptime"] * 1000 for run in runs]
 
     # rmse_ori_edh = [run["edh"]["ori"] for run in runs]
     # rmse_ori_naedh = [run["naedh"]["ori"] for run in runs]
@@ -318,17 +328,39 @@ def eval_simu_edh_naedh():
     # comp_edh = [run["edh"]["comptime"] for run in runs]
     # comp_naedh = [run["naedh"]["comptime"] for run in runs]
 
-    plt.plot(list(range(1, 11)), rmse_pos_edh, "o")
-    plt.plot(list(range(1, 11)), rmse_pos_naedh, "x")
+    plt.rcParams["text.usetex"] = True
+    fig, axs = plt.subplots(3)
+    axs[0].plot(list(range(1, 11)), rmse_pos_edh, "o")
+    axs[0].plot(list(range(1, 11)), rmse_pos_naedh, "x")
+
+    axs[1].plot(list(range(1, 11)), rmse_ori_edh, "o")
+    axs[1].plot(list(range(1, 11)), rmse_ori_naedh, "x")
+    axs[2].plot(list(range(1, 11)), comp_edh, "o")
+    axs[2].plot(list(range(1, 11)), comp_naedh, "x")
+    axs[0].legend(["EDH", "NA-EDH"])
+
+    axs[0].set_xticks([])
+    axs[1].set_xticks([])
+    axs[2].set_xticks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+    axs[2].set_xlabel(r"$N_{\lambda}$")
+    axs[0].set_ylabel
+
+    axs[0].set_ylabel(r"$\mathrm{RMSE\ pos.\ (\mathrm{m})}$")
+    axs[1].set_ylabel(r"$\mathrm{RMSE\ ori.\ (\mathrm{rad})}$")
+    axs[2].set_ylabel(r"$\mathrm{comp. time}\ (\mathrm{ms})$")
+
     plt.show()
+    plt.savefig("simu_edh_naedh.eps")
+    print("hi")
+    print("hi")
 
 
 def eval_simu_ledh_cledh():
-
     cledh_runs = []
-    for cluster_num in [20]:  # 20,10,5 clusters
+    for cluster_num in [20, 5]:  # 20,10,5 clusters
         cledh_mc_filenames = [
-            "simu/dhf_take01_cledh_simugmapping_p100_c"
+            "simu/ledh-cledh/dhf_take01_cledh_szimugmapping_p100_c"
             + str(cluster_num)
             + "_"
             + str(mc + 1)
@@ -338,17 +370,56 @@ def eval_simu_ledh_cledh():
 
     # ledh_runs = []
     # ledh_mc_filenames = [
-    #     "simu/dhf_take01_ledh_simugmapping_p30_" + str(mc + 1) for mc in range(5)
+    #     "simu/ledh-cledh/dhf_take01_ledh_simugmapping_p30_" + str(mc + 1)
+    #     for mc in range(5)
     # ]
     # ledh_runs.append(eval_dhf(ledh_mc_filenames, simu=True))
 
     rmse_pos_cledh = [run["cledh"]["pos"] for run in cledh_runs]
     # rmse_pos_ledh = [run["ledh"]["pos"] for run in ledh_runs]
 
-    # rmse_ori_edh = [run["edh"]["ori"] for run in runs]
-    # rmse_ori_naedh = [run["naedh"]["ori"] for run in runs]
+    rmse_ori_cledh = [run["cledh"]["ori"] for run in cledh_runs]
+    # rmse_ori_ledh = [run["ledh"]["ori"] for run in ledh_runs]
 
-    comp_cledh = [run["cledh"]["comptime"] for run in cledh_runs]
+    comp_cledh = [run["cledh"]["comptime"] * 1000 for run in cledh_runs]
+    # comp_ledh = [run["ledh"]["comptime"] * 1000 for run in ledh_runs]
+
+    print(rmse_pos_cledh)
+    # comp_ledh = [run["ledh"]["comptime"] for run in ledh_runs]
+
+    # plt.plot([20, 10, 5], rmse_pos_cledh, "x")
+    # plt.plot(30, rmse_pos_ledh, "x")
+    plt.show()
+
+
+def eval_ledh_cledh():
+    cledh_runs = []
+    for cluster_num in [20, 5]:  # 20,10,5 clusters
+        cledh_mc_filenames = [
+            "real/ledh-cledh/dhf_take01_cledh_sztakigmapping_p100_c"
+            + str(cluster_num)
+            + "_"
+            + str(mc + 1)
+            for mc in range(5)
+        ]
+        cledh_runs.append(eval_dhf(cledh_mc_filenames, simu=False))
+
+    # ledh_runs = []
+    # ledh_mc_filenames = [
+    #     "real/ledh-cledh/dhf_take01_ledh_sztakigmapping_p30_" + str(mc + 1)
+    #     for mc in range(5)
+    # ]
+    # ledh_runs.append(eval_dhf(ledh_mc_filenames, simu=False))
+
+    rmse_pos_cledh = [run["cledh"]["pos"] for run in cledh_runs]
+    # rmse_pos_ledh = [run["ledh"]["pos"] for run in ledh_runs]
+
+    rmse_ori_cledh = [run["cledh"]["ori"] for run in cledh_runs]
+    # rmse_ori_ledh = [run["ledh"]["ori"] for run in ledh_runs]
+
+    comp_cledh = [run["cledh"]["comptime"] * 1000 for run in cledh_runs]
+    # comp_ledh = [run["ledh"]["comptime"] * 1000 for run in ledh_runs]
+
     print(rmse_pos_cledh)
     # comp_ledh = [run["ledh"]["comptime"] for run in ledh_runs]
 
@@ -358,11 +429,10 @@ def eval_simu_ledh_cledh():
 
 
 def eval_edh_naedh():
-
     runs = []
     for lamb in range(10):
         mc_filenames = [
-            "real/dhf_take01_edh-naedh_sztakigmapping_p100_l"
+            "real/edh-naedh/dhf_take01_edh-naedh_sztakigmapping_p100_l"
             + str(lamb + 1)
             + "_"
             + str(mc + 1)
@@ -374,10 +444,10 @@ def eval_edh_naedh():
     rmse_pos_naedh = [run["naedh"]["pos"] for run in runs]
 
     rmse_ori_edh = [run["edh"]["ori"] for run in runs]
-    rmse_pos_naedh = [run["naedh"]["ori"] for run in runs]
+    rmse_ori_naedh = [run["naedh"]["ori"] for run in runs]
 
-    comp_edh = [run["edh"]["comptime"] for run in runs]
-    comp_naedh = [run["naedh"]["comptime"] for run in runs]
+    comp_edh = [run["edh"]["comptime"] * 1000 for run in runs]
+    comp_naedh = [run["naedh"]["comptime"] * 1000 for run in runs]
 
     # rmse_ori_edh = [run["edh"]["ori"] for run in runs]
     # rmse_ori_naedh = [run["naedh"]["ori"] for run in runs]
@@ -385,16 +455,32 @@ def eval_edh_naedh():
     # comp_edh = [run["edh"]["comptime"] for run in runs]
     # comp_naedh = [run["naedh"]["comptime"] for run in runs]
 
-    plt.plot(list(range(1, 11)), rmse_pos_edh, "o")
-    plt.plot(list(range(1, 11)), rmse_pos_naedh, "x")
+    plt.rcParams["text.usetex"] = True
+    fig, axs = plt.subplots(3)
+    axs[0].plot(list(range(1, 11)), rmse_pos_edh, "o")
+    axs[0].plot(list(range(1, 11)), rmse_pos_naedh, "x")
+
+    axs[1].plot(list(range(1, 11)), rmse_ori_edh, "o")
+    axs[1].plot(list(range(1, 11)), rmse_ori_naedh, "x")
+    axs[2].plot(list(range(1, 11)), comp_edh, "o")
+    axs[2].plot(list(range(1, 11)), comp_naedh, "x")
+    axs[0].legend(["EDH", "NA-EDH"])
+
+    axs[0].set_xticks([])
+    axs[1].set_xticks([])
+    axs[2].set_xticks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+    axs[2].set_xlabel(r"$N_{\lambda}$")
+    axs[0].set_ylabel
+
+    axs[0].set_ylabel(r"$\mathrm{RMSE\ pos.\ (\mathrm{m})}$")
+    axs[1].set_ylabel(r"$\mathrm{RMSE\ ori.\ (\mathrm{rad})}$")
+    axs[2].set_ylabel(r"$\mathrm{comp. time}\ (\mathrm{ms})$")
+
     plt.show()
-
-
-
-
-
+    plt.savefig("real_edh_naedh.eps")
 
 
 if __name__ == "__main__":
-    results_filename = "23-04-05T125650"
-    from_file(results_filename,do_plot=True)
+    results_filename = "23-04-26T170729"
+    from_file(results_filename, do_plot=True)
