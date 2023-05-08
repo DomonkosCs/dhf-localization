@@ -2,10 +2,12 @@ import numpy as np
 
 
 def normalize_angle(angle):
+    # returns angle in the range [-pi,pi]
     return np.arctan2(np.sin(angle), np.cos(angle))
 
 
 def calc_angle_diff(a, b):
+    # returns angle in the range [-pi,pi]
     a = normalize_angle(a)
     b = normalize_angle(b)
     d1 = a - b
