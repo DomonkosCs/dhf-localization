@@ -20,7 +20,7 @@ class EDH:
             rng=rng,
         )
 
-    def update(self, prediction, prediction_covar, measurement):
+    def update(self, prediction, prediction_covar, measurement, return_posterior=False):
         posterior, comptime = self.updater.update(
             prediction, prediction_covar, measurement
         )
@@ -29,6 +29,9 @@ class EDH:
         self.comptimes.append(comptime)
 
         self.last_particle_posterior = posterior
+
+        if return_posterior:
+            return posterior
 
     def get_results(self):
         return {
