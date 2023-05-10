@@ -22,9 +22,9 @@ class RawDataLoader(FileHandler):
         data = json.load(json_file)
         data = data["data"]
 
-        if "pose" in data[5]:
+        if "odom" in data[5]:
             x_odom = np.array(
-                [entry["pose"] for entry in data if ([] not in entry.values())]
+                [entry["odom"] for entry in data if ([] not in entry.values())]
             )
         else:
             x_odom = []
@@ -38,8 +38,8 @@ class RawDataLoader(FileHandler):
 
         if "amcl" in data[5]:
             x_amcl = np.array(
-                # [entry["amcl"] for entry in data if ([] not in entry.values())]
-                [entry["amcl"] for entry in data]
+                [entry["amcl"] for entry in data if ([] not in entry.values())]
+                # [entry["amcl"] for entry in data]
             )
         else:
             x_amcl = []
