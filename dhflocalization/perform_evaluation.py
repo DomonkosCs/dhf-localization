@@ -24,7 +24,7 @@ def from_data(true_states, filtered_results, do_plot=False, map_filename=None):
     if not do_plot or not map_filename:
         return
 
-    ogm = GridMap(map_filename)
+    ogm = GridMap.load_map_from_config(map_filename)
     track_plotter = TrackPlotter(background_map=ogm)
     track_plotter.plot_results(true_states, filtered_results)
 
@@ -61,7 +61,7 @@ def from_file(results_filename, do_plot=False):
     if not do_plot:
         return
 
-    ogm = GridMap(meta_data["cfg_map_config_filename"])
+    ogm = GridMap.load_map_from_config(meta_data["cfg_map_config_filename"])
     track_plotter = TrackPlotter(background_map=ogm)
     track_plotter.plot_results(simulation_data.x_true, filtered_results)
 

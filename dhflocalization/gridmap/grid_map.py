@@ -18,12 +18,8 @@ class GridMap:
     GridMap class
     """
 
-    def __init__(self, config_filename):
-        config_path = "../resources/maps/" + config_filename + ".yaml"
-        map_config = YamlReader.read(config_path)
-
-        raw_map_data = PgmProcesser.read_pgm(map_config["image"])
-        self.resolution = map_config["resolution"]  # meter/cell
+    def __init__(self, raw_map_data, resolution, center_x, center_y):
+        self.resolution = resolution
 
         # apply symmetric padding
         self.padding = int(0.1 * raw_map_data.shape[0])  # grid cell
@@ -36,12 +32,8 @@ class GridMap:
             self.padding : -self.padding, self.padding : -self.padding
         ] = raw_map_data
 
-        self.left_lower_x = (
-            map_config["origin"][0] - self.padding * self.resolution
-        )  # meter
-        self.left_lower_y = (
-            map_config["origin"][1] - self.padding * self.resolution
-        )  # meter
+        self.left_lower_x = center_x - self.padding * self.resolution  # meter
+        self.left_lower_y = center_y - self.padding * self.resolution  # meter
 
         self.ndata = self.width * self.height
         self.data = list(np.flipud(padded_map_data).flatten())
@@ -55,6 +47,18 @@ class GridMap:
         self.dt_derivative_resolution = 1
 
         self._init_distance_transform()
+
+    @classmethod
+    def load_map_from_config(cls, config_filename):
+        config_path = "../resources/maps/" + config_filename + ".yaml"
+        map_config = YamlReader.read(config_path)
+
+        raw_map_data = PgmProcesser.read_pgm(map_config["image"])
+        resolution = map_config["resolution"]  # meter/cell
+        center_x = map_config["origin"][0]
+        center_y = map_config["origin"][1]
+
+        return cls(raw_map_data, resolution, center_x, center_y)
 
     def _init_distance_transform(self):
         self.distance_transform = self.calc_distance_transform()

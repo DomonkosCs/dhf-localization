@@ -36,7 +36,7 @@ def main():
 
     simulation_data = RawDataLoader.load_from_json(cfg_simu_data_filename)
 
-    ogm = GridMap(cfg_map_config_filename)
+    ogm = GridMap.load_map_from_config(cfg_map_config_filename)
 
     cfg_max_ray_number = 360
     odom_alpha = 0.1
