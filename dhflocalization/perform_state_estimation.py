@@ -4,11 +4,8 @@ import numpy as np
 
 from dhflocalization.filters import EDH
 from dhflocalization.filters.updaters import (
-    LEDHUpdater,
     MEDHUpdater,
-    AEDHUpdater,
     NAEDHUpdater,
-    CLEDHUpdater,
 )
 from dhflocalization.kinematics import OdometryMotionModel
 from dhflocalization.measurement import MeasurementModel, MeasurementProcessor
@@ -23,16 +20,16 @@ from dhflocalization import perform_evaluation
 def main():
     print("Starting state estimation...")
 
-    save_data = True
+    save_data = False
     do_evaluation = True
-    do_plot = False
+    do_plot = True
 
     cfg_random_seed = 4302948723190478  # 2021
     rng = np.random.default_rng(cfg_random_seed)
 
-    cfg_map_config_filename = "gt_map_01"
+    cfg_map_config_filename = "gt_map_01_table"
 
-    cfg_simu_data_filename = "house_true_cut"
+    cfg_simu_data_filename = "5hz_o1e-4_le-2_filtered"
 
     simulation_data = RawDataLoader.load_from_json(cfg_simu_data_filename)
 
@@ -55,7 +52,7 @@ def main():
         rng=rng,
     )
 
-    cfg_measurement_range_noise_std = 0.1
+    cfg_measurement_range_noise_std = 0.01
     robot_sensor_dx = -0.032
     measurement_model = MeasurementModel(
         ogm, cfg_measurement_range_noise_std, robot_sensor_dx
@@ -70,8 +67,8 @@ def main():
     cfg_naedh_step_number = 10
     cfg_cledh_cluster_number = 5
 
-    cfg_init_gaussian_mean = np.array([-3.0, 1.0, 0.0003])
-    cfg_init_gaussian_covar = np.array([[0.1, 0, 0], [0, 0.1, 0], [0, 0, 0.025]])
+    cfg_init_gaussian_mean = np.array([-3.0, 1.0, 0.0])
+    cfg_init_gaussian_covar = np.array([[0.01, 0, 0], [0, 0.01, 0], [0, 0, 0.0025]])
 
     particle_init_variables = [cfg_init_gaussian_mean, cfg_init_gaussian_covar, rng]
 
@@ -86,32 +83,19 @@ def main():
     ekf_comptimes = []
 
     # init edh variants
-    ledh_updater = LEDHUpdater(
-        measurement_model, cfg_medh_lambda_number, cfg_ledh_particle_number
-    )
-    ledh = EDH(ledh_updater, *particle_init_variables)
     medh_updater = MEDHUpdater(
         measurement_model, cfg_medh_lambda_number, cfg_medh_particle_number
     )
     medh = EDH(medh_updater, *particle_init_variables)
-    cledh_updater = CLEDHUpdater(
-        measurement_model,
-        cfg_medh_lambda_number,
-        cfg_cledh_particle_number,
-        cfg_cledh_cluster_number,
-    )
-    cledh = EDH(cledh_updater, *particle_init_variables)
-    aedh_updater = AEDHUpdater(measurement_model, cfg_aedh_particle_number)
-    aedh = EDH(aedh_updater, *particle_init_variables)
     naedh_updater = NAEDHUpdater(
         measurement_model, cfg_naedh_step_number, cfg_aedh_particle_number
     )
     naedh = EDH(naedh_updater, *particle_init_variables)
 
-    edh_variants = []
+    edh_variants = [medh]
 
     for i in range(1, simulation_data.simulation_steps, 1):
-        print("{}/{}".format(i, simulation_data.simulation_steps))
+        # print("{}/{}".format(i, simulation_data.simulation_steps))
         control_input = [simulation_data.x_odom[i - 1], simulation_data.x_odom[i]]
         measurement = measurement_processer.filter_measurements(
             simulation_data.measurement[i]
@@ -135,10 +119,10 @@ def main():
         ekf_prior = ekf_posterior
 
     filtered_results = {
-        "ekf": {
-            "track": ekf_track,
-            "comptime": np.array(ekf_comptimes).mean(),
-        },
+        # "ekf": {
+        #     "track": ekf_track,
+        #     "comptime": np.array(ekf_comptimes).mean(),
+        # },
     }
 
     for filter in edh_variants:
