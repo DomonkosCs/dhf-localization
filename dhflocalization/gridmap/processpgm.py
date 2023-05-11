@@ -41,5 +41,5 @@ class PgmProcesser:
         ).reshape((int(height), int(width)))
         # 0 is free, 254 is occupied, 205 is unknown (depends on software)
 
-        binary = np.where(raw_array > 205, 0, 1)
+        binary = np.where(raw_array > 0, 0, 1)
         return binary
