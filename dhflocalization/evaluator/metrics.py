@@ -26,12 +26,12 @@ def calc_nees(true_states, filtered_track):
     return nees_avg
 
 
-def calc_error_metrics(true_states, filtered_track):
+def calc_error_metrics(true_states, filtered_states):
+    # true and filtered are 2D np arrays
+
     err_mean_sqare = {}
     err_mean_abs = {}
     err_std = {}
-
-    filtered_states = filtered_track.to_np_array()
 
     true_xy = true_states[:, :-1]
     true_angle = true_states[:, 2]
@@ -61,13 +61,12 @@ def eval(
     true_states,
     filtered_results,
 ):
-
     err_mean_squares = {}
     err_mean_abss = {}
     err_stds = {}
     for algo, result in filtered_results.items():
         err_mean_square, err_mean_abs, err_std = calc_error_metrics(
-            true_states, result["track"]
+            true_states, result["track"].to_np_array()
         )
         err_mean_squares[algo] = err_mean_square
         err_mean_abss[algo] = err_mean_abs
