@@ -4,7 +4,7 @@ import time
 
 from scipy.spatial.distance import pdist, squareform
 from scipy.linalg import sqrtm
-import kmedoids
+# import kmedoids
 
 
 class LEDHUpdater:
@@ -249,25 +249,27 @@ class CLEDHUpdater:
         return posterior, comptime
 
     def _pam_clustering(self, flow_vectors, particles, covariance, cluster_num):
-        inv_cov = np.linalg.inv(covariance)
-        mahal_flow_vectors = pdist(
-            np.subtract(flow_vectors, flow_vectors.mean(axis=1)[:, np.newaxis])
-            @ sqrtm(inv_cov),
-            "correlation",
-        )
+        return
 
-        mahal_particles = pdist(particles, "mahalanobis", VI=inv_cov)
-        mahal_particles = (
-            2 * (mahal_particles - min(mahal_particles)) / mahal_particles.ptp()
-        )
+        # inv_cov = np.linalg.inv(covariance)
+        # mahal_flow_vectors = pdist(
+        #     np.subtract(flow_vectors, flow_vectors.mean(axis=1)[:, np.newaxis])
+        #     @ sqrtm(inv_cov),
+        #     "correlation",
+        # )
 
-        alfa = 0.5
-        dist = squareform(alfa * mahal_particles + (1 - alfa) * mahal_flow_vectors)
+        # mahal_particles = pdist(particles, "mahalanobis", VI=inv_cov)
+        # mahal_particles = (
+        #     2 * (mahal_particles - min(mahal_particles)) / mahal_particles.ptp()
+        # )
 
-        clusters = kmedoids.fasterpam(dist, cluster_num)
-        labels = clusters.labels
-        medoids = clusters.medoids
-        return labels, medoids
+        # alfa = 0.5
+        # dist = squareform(alfa * mahal_particles + (1 - alfa) * mahal_flow_vectors)
+
+        # clusters = kmedoids.fasterpam(dist, cluster_num)
+        # labels = clusters.labels
+        # medoids = clusters.medoids
+        # return labels, medoids
 
 
 class AEDHUpdater:
