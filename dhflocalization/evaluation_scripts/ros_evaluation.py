@@ -1,5 +1,6 @@
 import json
 import numpy as np
+import matplotlib.pyplot as plt
 from dhflocalization.rawdata.filehandler import FileHandler
 from dhflocalization.evaluator import metrics
 from dhflocalization.gridmap import GridMap
@@ -172,6 +173,109 @@ def create_highnoise_particle_table():
     create_double_row_table(filters, results, row_label, label_values)
 
 
+def create_rmse_comptime_plot():
+    plt.rcParams["text.usetex"] = True
+    mc_max_particle = 10
+    mc_max_lambda = 20
+    mc_max_ekf = 25
+    mc_max_amclb = 10
+    folder_particle = "highnoise_particle/"
+    folder_lambda = "highnoise_lambda/"
+    folder_ekf = "highnoise_all/"
+    folder_amclb = "highnoise_amcl_basic/"
+    particle_nums = [1, 10, 100, 1000, 10000]
+    lambda_nums = [3, 4, 5, 7, 10, 15, 25]
+    noise = "high"
+    filter = "medh"
+    particle_results_pos = [
+        eval_filter(
+            filter, mc_max_particle, f"full_p{particle_num}", noise, folder_particle
+        )["pos_mean"]
+        for particle_num in particle_nums
+    ]
+    particle_results_comp = [
+        eval_filter(
+            filter, mc_max_particle, f"full_p{particle_num}", noise, folder_particle
+        )["comp_mean"]
+        for particle_num in particle_nums
+    ]
+    lambda_results_pos = [
+        eval_filter(filter, mc_max_particle, f"_l{lambda_num}", noise, folder_lambda)[
+            "pos_mean"
+        ]
+        for lambda_num in lambda_nums
+    ]
+    lambda_results_comp = [
+        eval_filter(filter, mc_max_particle, f"_l{lambda_num}", noise, folder_lambda)[
+            "comp_mean"
+        ]
+        for lambda_num in lambda_nums
+    ]
+    ekf_result_pos = eval_filter("ekf", mc_max_ekf, "full", noise, folder_ekf)[
+        "pos_mean"
+    ]
+    ekf_result_comp = eval_filter("ekf", mc_max_ekf, "full", noise, folder_ekf)[
+        "comp_mean"
+    ]
+    amclp_result_pos = eval_filter("amcl", mc_max_ekf, "full", noise, folder_ekf)[
+        "pos_mean"
+    ]
+    amclp_result_comp = eval_filter("amcl", mc_max_ekf, "full", noise, folder_ekf)[
+        "comp_mean"
+    ]
+    amclb_result_pos = eval_filter(
+        "amcl", mc_max_amclb, "noselective", noise, folder_amclb
+    )["pos_mean"]
+    amclb_result_comp = eval_filter(
+        "amcl", mc_max_amclb, "noselective", noise, folder_amclb
+    )["comp_mean"]
+
+    plt.scatter(
+        lambda_results_comp,
+        lambda_results_pos,
+        marker="x",
+    )
+    plt.scatter(
+        particle_results_comp, particle_results_pos, facecolors="none", edgecolors="red"
+    )
+    plt.scatter(
+        ekf_result_comp,
+        ekf_result_pos,
+        marker="s",
+        facecolors="none",
+        edgecolors="black",
+    )
+    plt.scatter(
+        amclp_result_comp,
+        amclp_result_pos,
+        marker="p",
+        facecolors="none",
+        edgecolors="black",
+    )
+    plt.scatter(
+        amclb_result_comp,
+        amclb_result_pos,
+        marker="v",
+        facecolors="none",
+        edgecolors="black",
+    )
+
+    for i, lambda_value in enumerate(lambda_nums):
+        label_text = rf"$N_\lambda = {lambda_value}$"
+        plt.annotate(
+            label_text, (lambda_results_comp[i] - 2, lambda_results_pos[i] + 0.2)
+        )
+
+    for i, particle_value in enumerate(particle_nums):
+        label_text = rf"$N_p = {particle_value}$"
+        plt.annotate(
+            label_text, (particle_results_comp[i] - 2, particle_results_pos[i] + 0.2)
+        )
+
+    plt.show()
+
+
+create_rmse_comptime_plot()
 # create_highnoise_general_table()
 # create_highnoise_particle_table()
 # create_highnoise_general_table()
