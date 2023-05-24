@@ -6,38 +6,6 @@ from dhflocalization.gridmap import GridMap
 from dhflocalization.visualization import TrackPlotter
 
 
-def eval_mc(filenames, folder=""):
-    rmses = []
-    comptimes = []
-
-    for filename in filenames:
-        rmse, comptime = eval_one(filename, folder)
-        rmses.append(rmse)
-        comptimes.append(comptime)
-
-    comptimes = np.array(comptimes)
-    comp_mean = comptimes.mean()
-    comp_std = comptimes.std()
-
-    rmse_pos = np.array([rmse["pos"] for rmse in rmses])
-    rmse_ori = np.array([rmse["ori"] for rmse in rmses])
-
-    rmse_pos_mean = rmse_pos.mean()
-    rmse_pos_std = rmse_pos.std()
-
-    rmse_ori_mean = rmse_ori.mean()
-    rmse_ori_std = rmse_ori.std()
-
-    return {
-        "comp_mean": comp_mean,
-        "comp_std": comp_std,
-        "pos_mean": rmse_pos_mean,
-        "pos_std": rmse_pos_std,
-        "ori_mean": rmse_ori_mean,
-        "ori_std": rmse_ori_std,
-    }
-
-
 def eval_one(filename, folder=""):
     relative_path = "../resources/results/ros/" + folder + filename + ".json"
     fh = FileHandler()
@@ -62,44 +30,149 @@ def eval_one(filename, folder=""):
     return rmse, comptime.mean()
 
 
-## full path, lambda=10
-# folder = "0511-0512-night/"
-# filename = "amcl_full_final_0511_mc1_5hz_o1e-4_l1e-2_filtered"
+def eval_mc(filenames, folder=""):
+    PRECISION = 2
 
-# amcl_filenames = [
-#     f"amcl_full_final_0511_mc{mc+1}_5hz_o1e-4_l1e-2_filtered" for mc in range(20)
-# ]
-# edh_filenames = [
-#     f"edh_full_final_0511_mc{mc+1}_5hz_o1e-4_l1e-2_filtered" for mc in range(20)
-# ]
-# ekf_filenames = [
-#     f"ekf_full_final_0511_mc{mc+1}_5hz_o1e-4_l1e-2_filtered" for mc in range(20)
-# ]
-# naedh_filenames = [f"naedh_full_mc{mc+1}_5hz_o1e-4_l1e-2_filtered" for mc in range(3)]
-# print(eval_mc(naedh_filenames))
+    rmses = []
+    comptimes = []
+
+    for filename in filenames:
+        rmse, comptime = eval_one(filename, folder)
+        rmses.append(rmse)
+        comptimes.append(comptime)
+
+    comptimes = np.array(comptimes)
+    comp_mean = comptimes.mean()
+    comp_std = comptimes.std()
+
+    rmse_pos = np.array([rmse["pos"] for rmse in rmses])
+    rmse_ori = np.array([rmse["ori"] for rmse in rmses])
+
+    rmse_pos_mean = rmse_pos.mean() * 1000
+    rmse_pos_std = rmse_pos.std() * 1000
+
+    rmse_ori_mean = rmse_ori.mean() * 1000
+    rmse_ori_std = rmse_ori.std() * 1000
+
+    return {
+        "comp_mean": round(comp_mean, PRECISION),
+        "comp_std": round(comp_std, PRECISION),
+        "pos_mean": round(rmse_pos_mean, PRECISION),
+        "pos_std": round(rmse_pos_std, PRECISION),
+        "ori_mean": round(rmse_ori_mean, PRECISION),
+        "ori_std": round(rmse_ori_std, PRECISION),
+    }
 
 
-## lambda inspection
-# medh_filename = "medh_short_lambda1_mc1_5hz_o1e-4_l1e-2_filtered"
-# naedh_filename = "naedh_short_lambda1_mc1_5hz_o1e-4_l1e-2_filtered"
-folder = "lambda/"
-medh_filenames_l3 = [
-    f"medh_short_lambda3_mc{mc+1}_5hz_o1e-4_l1e-2_filtered" for mc in range(10)
-]
-medh_filenames_l5 = [
-    f"medh_short_lambda5_mc{mc+1}_5hz_o1e-4_l1e-2_filtered" for mc in range(10)
-]
-naedh_filenames_l3 = [
-    f"naedh_short_lambda3_mc{mc+1}_5hz_o1e-4_l1e-2_filtered" for mc in range(10)
-]
-naedh_filenames_l5 = [
-    f"naedh_short_lambda5_mc{mc+1}_5hz_o1e-4_l1e-2_filtered" for mc in range(10)
-]
+def eval_filter(filter, mc_max, info="", noise="high", folder=""):
+    bag_str = "5hz_o5e-4_l2e-2" if noise == "high" else "5hz_o1e-4_l1e-2"
+    filenames = [f"{filter}_{info}_mc{mc+1}_{bag_str}" for mc in range(mc_max)]
 
-print(eval_mc(naedh_filenames_l3, folder))
+    results = eval_mc(filenames, folder)
+    return results
 
-# print(eval_one(naedh_filename))
 
-# ogm = GridMap.load_map_from_config("gt_map_01_table")
-# track_plotter = TrackPlotter(background_map=ogm)
-# track_plotter.plot_results(truth, filtered_algo)
+def create_row(filter, result):
+    result_string = f"{filter.upper()}&{result['pos_mean']}$\pm{{{result['pos_std']}}}$&{{{result['ori_mean']}}}$\pm{{{result['ori_std']}}}$&{{{result['comp_mean']}}}$\pm{{{result['comp_std']}}}$\\\\"
+    return result_string
+
+
+def create_double_row(row_label, label_value, filters, results):
+    # \multirow{2}{*}{N\_a = 5} & MEDH  & 11.1 + 0.01 & 11.1 + 0.01 & 11.1 + 0.01 \\
+    # & NAEDH & 11.1 + 0.01 & 11.1 + 0.01 & 11.1 + 0.01 \\ \hline
+
+    string = ""
+    string += f"\\multirow{{2}}{{*}}{{{row_label} = {label_value}}}&"
+    string += create_row(filters[0], results[0])
+    string += "&"
+    string += create_row(filters[1], results[1])
+    string += "\\hline"
+
+    return string
+
+
+def create_general_table(filters, results):
+    print("\\begin{tabular}{@{}llll@{}}")
+    print("\\hline")
+    print("& RMSE pos. (mm) & RMSE ori. (mrad) & TIME (ms) \\\\ \hline ")
+    for filter, result in zip(filters, results):
+        print(create_row(filter, result))
+    print("\\hline")
+    print("\\end{tabular}")
+
+
+def create_double_row_table(filters, results, row_label, label_values):
+    print("\\begin{tabular}{@{}lllll@{}}")
+    print("\\hline")
+    print(" & & RMSE pos. (mm) & RMSE ori. (mrad) & TIME (ms) \\\\ \hline ")
+    for label_value, result in zip(label_values, results):
+        print(create_double_row(row_label, label_value, filters, result))
+    print("\\end{tabular}")
+
+
+def eval_particle():
+    pass
+
+
+def create_lownoise_general_table():
+    mc_max = 20
+    noise = "low"
+    info = "full"
+    folder = "lownoise_all/"
+    filters = ["ekf", "medh", "naedh", "amcl"]
+    results = [eval_filter(filter, mc_max, info, noise, folder) for filter in filters]
+    create_general_table(filters, results)
+
+
+def create_highnoise_general_table():
+    mc_max = 25
+    noise = "high"
+    info = "full"
+    folder = "highnoise_all/"
+    filters = ["ekf", "medh", "naedh", "amcl"]
+    results = [eval_filter(filter, mc_max, info, noise, folder) for filter in filters]
+    create_general_table(filters, results)
+
+
+def create_highnoise_lambda_table():
+    mc_max = 20
+    noise = "high"
+    folder = "highnoise_lambda/"
+    row_label = "$N_\lambda$"
+    filters = ["medh", "naedh"]
+    label_values = [3, 4, 5, 7, 10, 15, 25]
+
+    results = [
+        [
+            eval_filter(filter, mc_max, f"_l{label_value}", noise, folder)
+            for filter in filters
+        ]
+        for label_value in label_values
+    ]
+
+    create_double_row_table(filters, results, row_label, label_values)
+
+
+def create_highnoise_particle_table():
+    mc_max = 10
+    noise = "high"
+    folder = "highnoise_particle/"
+    row_label = "$N_p$"
+    filters = ["medh", "naedh"]
+    label_values = [1, 10, 100, 1000, 10000]
+
+    results = [
+        [
+            eval_filter(filter, mc_max, f"full_p{label_value}", noise, folder)
+            for filter in filters
+        ]
+        for label_value in label_values
+    ]
+
+    create_double_row_table(filters, results, row_label, label_values)
+
+
+# create_highnoise_general_table()
+# create_highnoise_particle_table()
+# create_highnoise_general_table()
+# create_lownoise_general_table()
