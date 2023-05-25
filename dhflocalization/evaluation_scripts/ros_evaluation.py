@@ -5,6 +5,7 @@ from dhflocalization.rawdata.filehandler import FileHandler
 from dhflocalization.evaluator import metrics
 from dhflocalization.gridmap import GridMap
 from dhflocalization.visualization import TrackPlotter
+from matplotlib.ticker import FormatStrFormatter, FixedLocator
 
 
 def eval_one(filename, folder=""):
@@ -173,8 +174,7 @@ def create_highnoise_particle_table():
     create_double_row_table(filters, results, row_label, label_values)
 
 
-def create_rmse_comptime_plot():
-    plt.rcParams["text.usetex"] = True
+def generate_plot_data():
     mc_max_particle = 10
     mc_max_lambda = 20
     mc_max_ekf = 25
@@ -186,96 +186,339 @@ def create_rmse_comptime_plot():
     particle_nums = [1, 10, 100, 1000, 10000]
     lambda_nums = [3, 4, 5, 7, 10, 15, 25]
     noise = "high"
-    filter = "medh"
-    particle_results_pos = [
-        eval_filter(
-            filter, mc_max_particle, f"full_p{particle_num}", noise, folder_particle
-        )["pos_mean"]
-        for particle_num in particle_nums
-    ]
-    particle_results_comp = [
-        eval_filter(
-            filter, mc_max_particle, f"full_p{particle_num}", noise, folder_particle
-        )["comp_mean"]
-        for particle_num in particle_nums
-    ]
-    lambda_results_pos = [
-        eval_filter(filter, mc_max_particle, f"_l{lambda_num}", noise, folder_lambda)[
-            "pos_mean"
-        ]
-        for lambda_num in lambda_nums
-    ]
-    lambda_results_comp = [
-        eval_filter(filter, mc_max_particle, f"_l{lambda_num}", noise, folder_lambda)[
-            "comp_mean"
-        ]
-        for lambda_num in lambda_nums
-    ]
-    ekf_result_pos = eval_filter("ekf", mc_max_ekf, "full", noise, folder_ekf)[
-        "pos_mean"
-    ]
-    ekf_result_comp = eval_filter("ekf", mc_max_ekf, "full", noise, folder_ekf)[
-        "comp_mean"
-    ]
-    amclp_result_pos = eval_filter("amcl", mc_max_ekf, "full", noise, folder_ekf)[
-        "pos_mean"
-    ]
-    amclp_result_comp = eval_filter("amcl", mc_max_ekf, "full", noise, folder_ekf)[
-        "comp_mean"
-    ]
-    amclb_result_pos = eval_filter(
-        "amcl", mc_max_amclb, "noselective", noise, folder_amclb
-    )["pos_mean"]
-    amclb_result_comp = eval_filter(
-        "amcl", mc_max_amclb, "noselective", noise, folder_amclb
-    )["comp_mean"]
 
-    plt.scatter(
-        lambda_results_comp,
-        lambda_results_pos,
-        marker="x",
-    )
-    plt.scatter(
-        particle_results_comp, particle_results_pos, facecolors="none", edgecolors="red"
-    )
-    plt.scatter(
-        ekf_result_comp,
+    ## evaluation
+    # particle
+    particle_results_medh = [
+        eval_filter(
+            "medh", mc_max_particle, f"full_p{particle_num}", noise, folder_particle
+        )
+        for particle_num in particle_nums
+    ]
+    # lambda
+    lambda_results_medh = [
+        eval_filter("medh", mc_max_lambda, f"_l{lambda_num}", noise, folder_lambda)
+        for lambda_num in lambda_nums
+    ]
+    lambda_results_naedh = [
+        eval_filter("naedh", mc_max_lambda, f"_l{lambda_num}", noise, folder_lambda)
+        for lambda_num in lambda_nums
+    ]
+    # baseline
+    ekf_result = eval_filter("ekf", mc_max_ekf, "full", noise, folder_ekf)
+    amclp_result = eval_filter("amcl", mc_max_ekf, "full", noise, folder_ekf)  # amcl+
+    amclb_result = eval_filter(
+        "amcl", mc_max_amclb, "noselective", noise, folder_amclb
+    )  # amcl basic
+
+    ## data extraction
+    particle_results_medh_pos = [result["pos_mean"] for result in particle_results_medh]
+    particle_results_medh_ori = [result["ori_mean"] for result in particle_results_medh]
+    particle_results_medh_comp = [
+        result["comp_mean"] for result in particle_results_medh
+    ]
+
+    lambda_results_medh_pos = [result["pos_mean"] for result in lambda_results_medh]
+    lambda_results_medh_ori = [result["ori_mean"] for result in lambda_results_medh]
+    lambda_results_medh_comp = [result["comp_mean"] for result in lambda_results_medh]
+
+    lambda_results_naedh_pos = [result["pos_mean"] for result in lambda_results_naedh]
+    lambda_results_naedh_ori = [result["ori_mean"] for result in lambda_results_naedh]
+    lambda_results_naedh_comp = [result["comp_mean"] for result in lambda_results_naedh]
+
+    ekf_result_pos = ekf_result["pos_mean"]
+    ekf_result_ori = ekf_result["ori_mean"]
+    ekf_result_comp = ekf_result["comp_mean"]
+
+    amclp_result_pos = amclp_result["pos_mean"]
+    amclp_result_ori = amclp_result["ori_mean"]
+    amclp_result_comp = amclp_result["comp_mean"]
+
+    amclb_result_pos = amclb_result["pos_mean"]
+    amclb_result_ori = amclb_result["ori_mean"]
+    amclb_result_comp = amclb_result["comp_mean"]
+
+    return (
+        particle_results_medh_pos,
+        particle_results_medh_ori,
+        particle_results_medh_comp,
+        lambda_results_medh_pos,
+        lambda_results_medh_ori,
+        lambda_results_medh_comp,
+        lambda_results_naedh_pos,
+        lambda_results_naedh_ori,
+        lambda_results_naedh_comp,
         ekf_result_pos,
+        ekf_result_ori,
+        ekf_result_comp,
+        amclp_result_pos,
+        amclp_result_ori,
+        amclp_result_comp,
+        amclb_result_pos,
+        amclb_result_ori,
+        amclb_result_comp,
+    )
+
+
+def create_rmse_pos_comptime_plot():
+    lambda_nums = [3, 4, 5, 7, 10, 15, 25]
+
+    particle_results_medh_pos = [20.4, 18.78, 15.59, 15.35, 14.43]
+    particle_results_medh_comp = [48.74, 48.9, 49.14, 51.33, 62.98]
+    lambda_results_medh_pos = [20.06, 19.96, 19.24, 17.48, 15.69, 14.91, 14.49]
+    lambda_results_medh_comp = [20.59, 24.74, 28.83, 37.06, 49.63, 62.25, 70.23]
+    lambda_results_naedh_pos = [23.13, 24.08, 21.71, 19.73, 17.33, 17.15, 16.37]
+    lambda_results_naedh_comp = [20.87, 25.38, 29.63, 36.9, 49.44, 61.5, 66.78]
+    ekf_result_pos = 43.04
+    ekf_result_comp = 6.29
+    amclp_result_pos = 68.37
+    amclp_result_comp = 38.25
+    amclb_result_pos = 111.02
+    amclb_result_comp = 5.41
+
+    ## plotting
+    # setup
+    plt.rcParams["text.usetex"] = True
+    plt.rcParams.update({"font.size": 15, "font.family": "serif"})
+
+    time_lim_main = [0, 75]
+    rmse_lim_main = [10, 150]
+
+    # main plot setup
+    fig, ax1 = plt.subplots()
+    fig.set_figheight(7.5)
+    fig.set_figwidth(7)
+    ax1.set_yscale("log")
+    ax1.grid(which="both")
+
+    ax1.set_xlabel(r"TIME (ms)")
+    ax1.set_ylabel(r"RMSE pos. (mm)")
+    ax1.set_xlim(time_lim_main)
+    ax1.set_ylim(rmse_lim_main)
+
+    # ticks
+    ax1.yaxis.set_minor_formatter(FormatStrFormatter("%.0f"))
+    ax1.yaxis.set_major_formatter(FormatStrFormatter("%.0f"))
+
+    minor_locator = ax1.yaxis.get_minor_locator()
+    minor_ticks = minor_locator()
+    minor_ticks = np.append(minor_ticks, 120)
+    updated_minor_locator = FixedLocator(minor_ticks)
+    ax1.yaxis.set_minor_locator(updated_minor_locator)
+
+    # markers
+    lambda_marker_sizes = [l * 7 + 5 for l in lambda_nums]
+    particle_marker_sizes = [20, 50, 70, 90, 110]
+    marker_line_width = 2
+
+    inset_marker_size = 30
+
+    # main plots
+    medh_lambda_handle = ax1.scatter(
+        lambda_results_medh_comp,
+        lambda_results_medh_pos,
         marker="s",
         facecolors="none",
-        edgecolors="black",
+        edgecolors="tab:green",
+        s=lambda_marker_sizes,
+        linewidths=marker_line_width,
+        label="MEDH $N_\lambda$",
     )
-    plt.scatter(
-        amclp_result_comp,
-        amclp_result_pos,
-        marker="p",
+    medh_particle_handle = ax1.scatter(
+        particle_results_medh_comp,
+        particle_results_medh_pos,
+        facecolors="none",
+        edgecolors="tab:purple",
+        s=particle_marker_sizes,
+        linewidths=marker_line_width,
+        label="MEDH $N_p$",
+    )
+    naedh_lambda_handle = ax1.scatter(
+        lambda_results_naedh_comp,
+        lambda_results_naedh_pos,
+        marker="s",
+        facecolors="none",
+        edgecolors="tab:blue",
+        s=lambda_marker_sizes,
+        linewidths=marker_line_width,
+        label="NAEDH $N_\lambda$",
+    )
+    ekf_handle = ax1.scatter(
+        ekf_result_comp,
+        ekf_result_pos,
+        marker="*",
         facecolors="none",
         edgecolors="black",
+        s=inset_marker_size * 3,
+        linewidths=1.5,
+        label="EKF",
     )
-    plt.scatter(
+    amclp_handle = ax1.scatter(
+        amclp_result_comp,
+        amclp_result_pos,
+        marker="d",
+        facecolors="none",
+        edgecolors="black",
+        s=inset_marker_size * 3,
+        linewidths=1.5,
+        label=r"$\mathrm{AMCL}+$",
+    )
+    amclb_handle = ax1.scatter(
         amclb_result_comp,
         amclb_result_pos,
         marker="v",
         facecolors="none",
         edgecolors="black",
+        s=inset_marker_size * 3,
+        linewidths=1.5,
+        label="AMCL",
     )
 
-    for i, lambda_value in enumerate(lambda_nums):
-        label_text = rf"$N_\lambda = {lambda_value}$"
-        plt.annotate(
-            label_text, (lambda_results_comp[i] - 2, lambda_results_pos[i] + 0.2)
-        )
-
-    for i, particle_value in enumerate(particle_nums):
-        label_text = rf"$N_p = {particle_value}$"
-        plt.annotate(
-            label_text, (particle_results_comp[i] - 2, particle_results_pos[i] + 0.2)
-        )
-
+    ax1.legend(
+        handles=[
+            medh_particle_handle,
+            medh_lambda_handle,
+            naedh_lambda_handle,
+            ekf_handle,
+            amclb_handle,
+            amclp_handle,
+        ]
+    )
+    plt.savefig("rmse_pos_time.eps")
     plt.show()
 
 
-create_rmse_comptime_plot()
+def create_rmse_ori_comptime_plot():
+    ## evaluation params
+    lambda_nums = [3, 4, 5, 7, 10, 15, 25]
+
+    particle_results_medh_ori = [22.88, 22.83, 22.4, 22.42, 21.76]
+    particle_results_medh_comp = [48.74, 48.9, 49.14, 51.33, 62.98]
+    lambda_results_medh_ori = [25.97, 25.9, 25.75, 24.37, 22.65, 22.26, 21.78]
+    lambda_results_medh_comp = [20.59, 24.74, 28.83, 37.06, 49.63, 62.25, 70.23]
+    lambda_results_naedh_ori = [25.15, 25.71, 25.68, 24.53, 22.7, 22.3, 22.22]
+    lambda_results_naedh_comp = [20.87, 25.38, 29.63, 36.9, 49.44, 61.5, 66.78]
+    ekf_result_ori = 28.39
+    ekf_result_comp = 6.29
+    amclp_result_ori = 111.06
+    amclp_result_comp = 38.25
+    amclb_result_ori = 148.73
+    amclb_result_comp = 5.41
+
+    ## plotting
+    # setup
+    plt.rcParams["text.usetex"] = True
+    plt.rcParams.update({"font.size": 15, "font.family": "serif"})
+
+    rmse_lim_main = [20, 160]
+    time_lim_main = [0, 75]
+
+    # main plot setup
+    fig, ax1 = plt.subplots()
+    fig.set_figheight(7.5)
+    fig.set_figwidth(7)
+    ax1.set_yscale("log")
+    ax1.grid(which="both")
+
+    ax1.set_xlabel(r"TIME (ms)")
+    ax1.set_ylabel(r"RMSE ori. (mrad)")
+    ax1.set_xlim(time_lim_main)
+    ax1.set_ylim(rmse_lim_main)
+
+    # ticks
+    ax1.yaxis.set_minor_formatter(FormatStrFormatter("%.0f"))
+    ax1.yaxis.set_major_formatter(FormatStrFormatter("%.0f"))
+
+    minor_locator = ax1.yaxis.get_minor_locator()
+    minor_ticks = minor_locator()
+    minor_ticks = np.append(minor_ticks, 150)
+    updated_minor_locator = FixedLocator(minor_ticks)
+    ax1.yaxis.set_minor_locator(updated_minor_locator)
+
+    # markers
+    lambda_marker_sizes = [l * 7 + 5 for l in lambda_nums]
+    particle_marker_sizes = [20, 50, 70, 90, 110]
+    marker_line_width = 2
+
+    inset_marker_size = 30
+
+    # main plots
+    medh_lambda_handle = ax1.scatter(
+        lambda_results_medh_comp,
+        lambda_results_medh_ori,
+        marker="s",
+        facecolors="none",
+        edgecolors="tab:green",
+        linewidths=marker_line_width,
+        s=lambda_marker_sizes,
+        label="MEDH $N_\lambda$",
+    )
+    medh_particle_handle = ax1.scatter(
+        particle_results_medh_comp,
+        particle_results_medh_ori,
+        facecolors="none",
+        edgecolors="tab:purple",
+        linewidths=marker_line_width,
+        s=particle_marker_sizes,
+        label="MEDH $N_p$",
+    )
+    naedh_lambda_handle = ax1.scatter(
+        lambda_results_naedh_comp,
+        lambda_results_naedh_ori,
+        marker="s",
+        facecolors="none",
+        edgecolors="tab:blue",
+        linewidths=marker_line_width,
+        s=lambda_marker_sizes,
+        label="NAEDH $N_\lambda$",
+    )
+    ekf_handle = ax1.scatter(
+        ekf_result_comp,
+        ekf_result_ori,
+        marker="*",
+        facecolors="none",
+        edgecolors="black",
+        s=inset_marker_size * 3,
+        linewidths=1.5,
+        label="EKF",
+    )
+    amclp_handle = ax1.scatter(
+        amclp_result_comp,
+        amclp_result_ori,
+        marker="d",
+        facecolors="none",
+        edgecolors="black",
+        s=inset_marker_size * 3,
+        linewidths=1.5,
+        label=r"$\mathrm{AMCL}+$",
+    )
+    amclb_handle = ax1.scatter(
+        amclb_result_comp,
+        amclb_result_ori,
+        marker="v",
+        facecolors="none",
+        edgecolors="black",
+        s=inset_marker_size * 3,
+        linewidths=1.5,
+        label="AMCL",
+    )
+
+    ax1.legend(
+        handles=[
+            medh_particle_handle,
+            medh_lambda_handle,
+            naedh_lambda_handle,
+            ekf_handle,
+            amclb_handle,
+            amclp_handle,
+        ]
+    )
+    plt.savefig("rmse_ori_time.eps")
+    plt.show()
+
+
+# create_rmse_pos_comptime_plot()
+create_rmse_ori_comptime_plot()
 # create_highnoise_general_table()
 # create_highnoise_particle_table()
 # create_highnoise_general_table()
