@@ -1,6 +1,6 @@
 """
 Grid map library in python
-author: Atsushi Sakai
+based on the work of Atsushi Sakai
 """
 
 import matplotlib.pyplot as plt
