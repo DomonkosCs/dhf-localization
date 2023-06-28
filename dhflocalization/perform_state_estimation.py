@@ -22,14 +22,14 @@ def main():
 
     save_data = False
     do_evaluation = True
-    do_plot = True
+    do_plot = False
 
     cfg_random_seed = 4302948723190478  # 2021
     rng = np.random.default_rng(cfg_random_seed)
 
     cfg_map_config_filename = "gt_map_01_table"
 
-    cfg_simu_data_filename = "5hz_o1e-4_le-2_filtered"
+    cfg_simu_data_filename = "5hz_o1e-4_l1e-2_filtered"
 
     simulation_data = RawDataLoader.load_from_json(cfg_simu_data_filename)
 
@@ -52,7 +52,7 @@ def main():
         rng=rng,
     )
 
-    cfg_measurement_range_noise_std = 0.01
+    cfg_measurement_range_noise_std = 0.02
     robot_sensor_dx = -0.032
     measurement_model = MeasurementModel(
         ogm, cfg_measurement_range_noise_std, robot_sensor_dx
@@ -68,7 +68,7 @@ def main():
     cfg_cledh_cluster_number = 5
 
     cfg_init_gaussian_mean = np.array([-3.0, 1.0, 0.0])
-    cfg_init_gaussian_covar = np.array([[0.01, 0, 0], [0, 0.01, 0], [0, 0, 0.0025]])
+    cfg_init_gaussian_covar = np.array([[0.1, 0, 0], [0, 0.1, 0], [0, 0, 0.025]])
 
     particle_init_variables = [cfg_init_gaussian_mean, cfg_init_gaussian_covar, rng]
 
@@ -84,7 +84,7 @@ def main():
 
     # init edh variants
     medh_updater = MEDHUpdater(
-        measurement_model, cfg_medh_lambda_number, cfg_medh_particle_number
+        measurement_model, cfg_medh_lambda_number, "exp", cfg_medh_particle_number
     )
     medh = EDH(medh_updater, *particle_init_variables)
     naedh_updater = NAEDHUpdater(
@@ -92,10 +92,10 @@ def main():
     )
     naedh = EDH(naedh_updater, *particle_init_variables)
 
-    edh_variants = [medh]
+    edh_variants = [naedh]
 
     for i in range(1, simulation_data.simulation_steps, 1):
-        # print("{}/{}".format(i, simulation_data.simulation_steps))
+        print("{}/{}".format(i, simulation_data.simulation_steps))
         control_input = [simulation_data.x_odom[i - 1], simulation_data.x_odom[i]]
         measurement = measurement_processer.filter_measurements(
             simulation_data.measurement[i]
@@ -119,10 +119,10 @@ def main():
         ekf_prior = ekf_posterior
 
     filtered_results = {
-        # "ekf": {
-        #     "track": ekf_track,
-        #     "comptime": np.array(ekf_comptimes).mean(),
-        # },
+        "ekf": {
+            "track": ekf_track,
+            "comptime": np.array(ekf_comptimes).mean(),
+        },
     }
 
     for filter in edh_variants:

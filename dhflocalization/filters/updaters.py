@@ -4,6 +4,7 @@ import time
 
 from scipy.spatial.distance import pdist, squareform
 from scipy.linalg import sqrtm
+
 # import kmedoids
 
 
@@ -74,16 +75,30 @@ class LEDHUpdater:
 
 class MEDHUpdater:
     # mean EDH (original)
-    def __init__(self, measurement_model, lambda_num, particle_num):
+    def __init__(self, measurement_model, lambda_num, lambda_type, particle_num):
         self.key = "medh"
 
         self.measurement_model = measurement_model
         self.particle_num = particle_num
 
-        lambdas, self.d_lambda = np.linspace(
-            0, 1, lambda_num, endpoint=False, retstep=True
-        )
-        self.lambdas = lambdas + self.d_lambda
+        self.d_lambdas = self.init_lambdas(lambda_num, type=lambda_type)
+
+    def init_lambdas(self, lambda_num, type):
+        # returns a list of every delta_lambda
+        if type == "lin":
+            return [1 / lambda_num] * lambda_num
+        elif type == "exp":
+            d_lambdas = []
+            b = 1.3  # base to use
+
+            d_lambda_0 = (b - 1) / (b**lambda_num - 1)
+            for i in range(lambda_num):
+                d_lambda = d_lambda_0 * b**i
+                d_lambdas.append(d_lambda)
+
+            return d_lambdas
+        else:
+            print("Error: lambda division type should be either 'lin' or 'exp'!")
 
     def update(self, prediction, prediction_covar, measurement):
         start = time.time()
@@ -97,7 +112,9 @@ class MEDHUpdater:
         particle_poses_mean = prediction.mean()
         particle_poses_mean_0 = particle_poses_mean
 
-        for lamb in self.lambdas:
+        lamb = 0
+        for d_lamb in self.d_lambdas:
+            lamb += d_lamb
             # linearize measurement model about the mean
             cd, grad_cd_x, grad_cd_z, _ = self.measurement_model.process_detection(
                 particle_poses_mean, measurement
@@ -127,9 +144,7 @@ class MEDHUpdater:
             )
 
             # update particles
-            particle_poses = particle_poses + self.d_lambda * (
-                (B @ particle_poses.T).T + b.T
-            )
+            particle_poses = particle_poses + d_lamb * ((B @ particle_poses.T).T + b.T)
 
             # recalculate linearization point
             particle_poses_mean = np.mean(particle_poses, axis=0)
