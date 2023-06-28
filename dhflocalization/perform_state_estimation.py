@@ -28,10 +28,15 @@ def main():
     rng = np.random.default_rng(cfg_random_seed)
 
     # from ./resources/maps/
-    cfg_map_config_filename = "gt_map_01_table"
+    ## number means cell resolution in meters
+    cfg_map_config_filename = "gt_map_01"
 
     # from ./resources/simulations/
-    cfg_simu_data_filename = "5hz_o1e-4_l1e-2_filtered"
+    # filename interpretation: param used in generating simu data in Gazebo
+    ## 5hz: sampling rate
+    ## o1e-4: odometry noise parameter \kappa=1e-4
+    ## l1e-2: lidar range noise std \sigma_r=1e-2
+    cfg_simu_data_filename = "5hz_o1e-4_l1e-2"
 
     simulation_data = RawDataLoader.load_from_json(cfg_simu_data_filename)
 

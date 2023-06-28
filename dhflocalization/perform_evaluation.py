@@ -65,5 +65,6 @@ def from_file(results_filename, do_plot=False):
 
 
 if __name__ == "__main__":
-    results_filename = "23-04-26T170729"
+    # from ./resources/results/
+    results_filename = "23-05-30T113500"
     from_file(results_filename, do_plot=True)
