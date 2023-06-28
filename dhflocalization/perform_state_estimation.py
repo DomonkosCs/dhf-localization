@@ -27,8 +27,10 @@ def main():
     cfg_random_seed = 4302948723190478  # 2021
     rng = np.random.default_rng(cfg_random_seed)
 
+    # from ./resources/maps/
     cfg_map_config_filename = "gt_map_01_table"
 
+    # from ./resources/simulations/
     cfg_simu_data_filename = "5hz_o1e-4_l1e-2_filtered"
 
     simulation_data = RawDataLoader.load_from_json(cfg_simu_data_filename)
@@ -53,19 +55,17 @@ def main():
     )
 
     cfg_measurement_range_noise_std = 0.02
-    robot_sensor_dx = -0.032
+    robot_sensor_dx = -0.032  # x offset between the origin of the robot and the lidar
     measurement_model = MeasurementModel(
         ogm, cfg_measurement_range_noise_std, robot_sensor_dx
     )
 
+    # parameters for the MEDH,NAEDH,EKF filters
     cfg_medh_particle_number = 100
-    cfg_aedh_particle_number = 100
-    cfg_ledh_particle_number = 50
-    cfg_cledh_particle_number = 100
+    cfg_naedh_particle_number = 100
 
     cfg_medh_lambda_number = 10
     cfg_naedh_step_number = 10
-    cfg_cledh_cluster_number = 5
 
     cfg_init_gaussian_mean = np.array([-3.0, 1.0, 0.0])
     cfg_init_gaussian_covar = np.array([[0.1, 0, 0], [0, 0.1, 0], [0, 0, 0.025]])
@@ -82,16 +82,17 @@ def main():
     ekf_track = Track(ekf_prior)
     ekf_comptimes = []
 
-    # init edh variants
+    # init MEDH and NAEDH
     medh_updater = MEDHUpdater(
         measurement_model, cfg_medh_lambda_number, "exp", cfg_medh_particle_number
     )
     medh = EDH(medh_updater, *particle_init_variables)
     naedh_updater = NAEDHUpdater(
-        measurement_model, cfg_naedh_step_number, cfg_aedh_particle_number
+        measurement_model, cfg_naedh_step_number, cfg_naedh_particle_number
     )
     naedh = EDH(naedh_updater, *particle_init_variables)
 
+    # which variant to use: either [naedh], [medh] or [naedh,medh]
     edh_variants = [naedh]
 
     for i in range(1, simulation_data.simulation_steps, 1):
@@ -128,10 +129,9 @@ def main():
     for filter in edh_variants:
         filtered_results.update(filter.get_results())
 
-    # TODO move to results
-    cfg_avg_ray_number = measurement_processer.get_avg_ray_number()
-
     print("Calculations completed")
+
+    cfg_avg_ray_number = measurement_processer.get_avg_ray_number()
 
     if save_data:
         print("Saving results")
