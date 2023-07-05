@@ -9,7 +9,7 @@ from matplotlib.ticker import FormatStrFormatter, FixedLocator
 
 
 def eval_one(filename, folder=""):
-    relative_path = "../resources/results/ros/" + folder + filename + ".json"
+    relative_path = "../resources/results/final/" + folder + filename + ".json"
     fh = FileHandler()
     file_path = fh.convert_path_to_absolute(relative_path)
 
@@ -112,34 +112,30 @@ def create_double_row_table(filters, results, row_label, label_values):
     print("\\end{tabular}")
 
 
-def eval_particle():
-    pass
-
-
 def create_lownoise_general_table():
-    mc_max = 20
+    mc_max = 10
     noise = "low"
     info = "full"
-    folder = "lownoise_all/"
-    filters = ["ekf", "medh", "naedh", "amcl"]
+    folder = "low_general/"
+    filters = ["ekf", "medh", "naedh", "amcl", "amclb"]
     results = [eval_filter(filter, mc_max, info, noise, folder) for filter in filters]
     create_general_table(filters, results)
 
 
 def create_highnoise_general_table():
-    mc_max = 25
+    mc_max = 10
     noise = "high"
     info = "full"
-    folder = "highnoise_all/"
-    filters = ["ekf", "medh", "naedh", "amcl"]
+    folder = "high_general/"
+    filters = ["ekf", "amclb", "amcl"]
     results = [eval_filter(filter, mc_max, info, noise, folder) for filter in filters]
     create_general_table(filters, results)
 
 
 def create_highnoise_lambda_table():
-    mc_max = 20
+    mc_max = 50
     noise = "high"
-    folder = "highnoise_lambda/"
+    folder = "lambda/"
     row_label = "$N_\lambda$"
     filters = ["medh", "naedh"]
     label_values = [3, 4, 5, 7, 10, 15, 25]
@@ -158,10 +154,10 @@ def create_highnoise_lambda_table():
 def create_highnoise_particle_table():
     mc_max = 10
     noise = "high"
-    folder = "highnoise_particle/"
+    folder = "particle/"
     row_label = "$N_p$"
     filters = ["medh", "naedh"]
-    label_values = [1, 10, 100, 1000, 10000]
+    label_values = [1, 10, 1000, 10000]
 
     results = [
         [
@@ -263,18 +259,18 @@ def generate_plot_data():
 def create_rmse_pos_comptime_plot():
     lambda_nums = [3, 4, 5, 7, 10, 15, 25]
 
-    particle_results_medh_pos = [20.4, 18.78, 15.59, 15.35, 14.43]
-    particle_results_medh_comp = [48.74, 48.9, 49.14, 51.33, 62.98]
-    lambda_results_medh_pos = [20.06, 19.96, 19.24, 17.48, 15.69, 14.91, 14.49]
-    lambda_results_medh_comp = [20.59, 24.74, 28.83, 37.06, 49.63, 62.25, 70.23]
-    lambda_results_naedh_pos = [23.13, 24.08, 21.71, 19.73, 17.33, 17.15, 16.37]
-    lambda_results_naedh_comp = [20.87, 25.38, 29.63, 36.9, 49.44, 61.5, 66.78]
-    ekf_result_pos = 43.04
-    ekf_result_comp = 6.29
-    amclp_result_pos = 68.37
-    amclp_result_comp = 38.25
-    amclb_result_pos = 111.02
-    amclb_result_comp = 5.41
+    particle_results_medh_pos = [20.4, 18.78, 15.63, 15.35, 14.43]
+    particle_results_medh_comp = [48.74, 48.9, 49.78, 51.33, 62.98]
+    lambda_results_medh_pos = [20.51, 19.71, 19.13, 17.47, 15.63, 14.88, 14.77]
+    lambda_results_medh_comp = [20.79, 24.96, 28.87, 36.99, 49.78, 61.67, 66.96]
+    lambda_results_naedh_pos = [24.28, 23.62, 21.08, 19.46, 17.01, 16.92, 16.08]
+    lambda_results_naedh_comp = [21.13, 25.57, 29.64, 37.01, 49.62, 61.0, 65.1]
+    ekf_result_pos = 44.61
+    ekf_result_comp = 6.23
+    amclp_result_pos = 61.11
+    amclp_result_comp = 38.29
+    amclb_result_pos = 111.13
+    amclb_result_comp = 5.62
 
     ## plotting
     # setup
@@ -384,7 +380,7 @@ def create_rmse_pos_comptime_plot():
             amclp_handle,
         ]
     )
-    plt.savefig("rmse_pos_time.eps")
+    plt.savefig("rmse_pos_time_final.eps")
     plt.show()
 
 
@@ -392,18 +388,18 @@ def create_rmse_ori_comptime_plot():
     ## evaluation params
     lambda_nums = [3, 4, 5, 7, 10, 15, 25]
 
-    particle_results_medh_ori = [22.88, 22.83, 22.4, 22.42, 21.76]
-    particle_results_medh_comp = [48.74, 48.9, 49.14, 51.33, 62.98]
-    lambda_results_medh_ori = [25.97, 25.9, 25.75, 24.37, 22.65, 22.26, 21.78]
-    lambda_results_medh_comp = [20.59, 24.74, 28.83, 37.06, 49.63, 62.25, 70.23]
-    lambda_results_naedh_ori = [25.15, 25.71, 25.68, 24.53, 22.7, 22.3, 22.22]
-    lambda_results_naedh_comp = [20.87, 25.38, 29.63, 36.9, 49.44, 61.5, 66.78]
-    ekf_result_ori = 28.39
-    ekf_result_comp = 6.29
-    amclp_result_ori = 111.06
-    amclp_result_comp = 38.25
-    amclb_result_ori = 148.73
-    amclb_result_comp = 5.41
+    particle_results_medh_ori = [22.88, 22.83, 22.67, 22.42, 21.76]
+    particle_results_medh_comp = [48.74, 48.9, 49.78, 51.33, 62.98]
+    lambda_results_medh_ori = [25.96, 25.91, 25.7, 24.36, 22.67, 22.25, 22.07]
+    lambda_results_medh_comp = [20.79, 24.96, 28.87, 36.99, 49.78, 61.67, 66.96]
+    lambda_results_naedh_ori = [25.25, 25.68, 25.62, 24.58, 22.63, 22.28, 22.3]
+    lambda_results_naedh_comp = [21.13, 25.57, 29.64, 37.01, 49.62, 61.0, 65.1]
+    ekf_result_ori = 28.79
+    ekf_result_comp = 6.23
+    amclp_result_ori = 110.88
+    amclp_result_comp = 38.29
+    amclb_result_ori = 148.06
+    amclb_result_comp = 5.62
 
     ## plotting
     # setup
@@ -513,13 +509,13 @@ def create_rmse_ori_comptime_plot():
             amclp_handle,
         ]
     )
-    plt.savefig("rmse_ori_time.eps")
+    plt.savefig("rmse_ori_time_final.eps")
     plt.show()
 
 
 # create_rmse_pos_comptime_plot()
 create_rmse_ori_comptime_plot()
-# create_highnoise_general_table()
 # create_highnoise_particle_table()
 # create_highnoise_general_table()
 # create_lownoise_general_table()
+# create_highnoise_lambda_table()
