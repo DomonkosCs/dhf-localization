@@ -1,15 +1,8 @@
 from dhflocalization.rawdata import ResultLoader, ConfigImporter, RawDataLoader
 from dhflocalization.gridmap import GridMap
 from dhflocalization.visualization import TrackPlotter
-from dhflocalization.evaluator import metrics, data_association
-from dhflocalization.rawdata import optitrack_reader
+from dhflocalization.evaluator import metrics
 from dhflocalization.rawdata import YamlWriter
-
-from scipy.spatial.transform import Rotation
-import numpy as np
-from pathlib import Path
-import json
-import matplotlib.pyplot as plt
 
 
 def from_data(true_states, filtered_results, do_plot=False, map_filename=None):

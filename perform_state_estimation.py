@@ -14,24 +14,24 @@ from dhflocalization.customtypes import StateHypothesis, Track
 from dhflocalization.rawdata import ResultExporter
 from dhflocalization.filters import EKF
 from dhflocalization.gridmap import GridMap
-from dhflocalization import perform_evaluation
+import perform_evaluation
 
 
 def main():
     print("Starting state estimation...")
 
-    save_data = False
+    save_data = True
     do_evaluation = True
-    do_plot = False
+    do_plot = True
 
     cfg_random_seed = 4302948723190478  # 2021
     rng = np.random.default_rng(cfg_random_seed)
 
-    # from ./resources/maps/
+    # from dhflocalization/resources/maps/
     ## number means cell resolution in meters
     cfg_map_config_filename = "gt_map_01"
 
-    # from ./resources/simulations/
+    # from dhflocalization/resources/simulations/
     # filename interpretation: param used in generating simu data in Gazebo
     ## 5hz: sampling rate
     ## o1e-4: odometry noise parameter \kappa=1e-4
@@ -97,8 +97,9 @@ def main():
     )
     naedh = EDH(naedh_updater, *particle_init_variables)
 
-    # which variant to use: either [naedh], [medh] or [naedh,medh]
-    edh_variants = [naedh]
+    # which variant to use: either [naedh], [medh], [naedh,medh] or []
+    # when empty, only ekf is used
+    edh_variants = []
 
     for i in range(1, simulation_data.simulation_steps, 1):
         print("{}/{}".format(i, simulation_data.simulation_steps))
