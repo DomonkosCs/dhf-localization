@@ -279,7 +279,10 @@ def create_rmse_pos_comptime_plot():
     ## plotting
     # setup
     plt.rcParams["text.usetex"] = True
-    plt.rcParams.update({"font.size": 15, "font.family": "serif"})
+    plt.rcParams["font.family"] = "serif"
+    plt.rcParams["font.serif"] = ["Times New Roman"] + plt.rcParams["font.serif"]
+    plt.rcParams["text.latex.preamble"] = r"\usepackage{amsmath}\usepackage{mathptmx}"
+    plt.rcParams.update({"font.size": 18})
 
     time_lim_main = [0, 75]
     rmse_lim_main = [10, 150]
@@ -305,6 +308,9 @@ def create_rmse_pos_comptime_plot():
     minor_ticks = np.append(minor_ticks, 120)
     updated_minor_locator = FixedLocator(minor_ticks)
     ax1.yaxis.set_minor_locator(updated_minor_locator)
+
+    xticks_values = [0, 10, 20, 30, 40, 50, 60, 70]
+    ax1.set_xticks(xticks_values)
 
     # markers
     lambda_marker_sizes = [l * 7 + 5 for l in lambda_nums]
@@ -384,7 +390,7 @@ def create_rmse_pos_comptime_plot():
             amclp_handle,
         ]
     )
-    plt.savefig("rmse_pos_time.eps")
+    plt.savefig("rmse_pos_time.pdf", bbox_inches="tight")
     plt.show()
 
 
@@ -408,7 +414,10 @@ def create_rmse_ori_comptime_plot():
     ## plotting
     # setup
     plt.rcParams["text.usetex"] = True
-    plt.rcParams.update({"font.size": 15, "font.family": "serif"})
+    plt.rcParams["font.family"] = "serif"
+    plt.rcParams["font.serif"] = ["Times New Roman"] + plt.rcParams["font.serif"]
+    plt.rcParams["text.latex.preamble"] = r"\usepackage{amsmath}\usepackage{mathptmx}"
+    plt.rcParams.update({"font.size": 18})
 
     rmse_lim_main = [20, 160]
     time_lim_main = [0, 75]
@@ -434,6 +443,9 @@ def create_rmse_ori_comptime_plot():
     minor_ticks = np.append(minor_ticks, 150)
     updated_minor_locator = FixedLocator(minor_ticks)
     ax1.yaxis.set_minor_locator(updated_minor_locator)
+
+    xticks_values = [0, 10, 20, 30, 40, 50, 60, 70]
+    ax1.set_xticks(xticks_values)
 
     # markers
     lambda_marker_sizes = [l * 7 + 5 for l in lambda_nums]
@@ -513,12 +525,12 @@ def create_rmse_ori_comptime_plot():
             amclp_handle,
         ]
     )
-    plt.savefig("rmse_ori_time.eps")
+    plt.savefig("rmse_ori_time.pdf", bbox_inches="tight")
     plt.show()
 
 
-# create_rmse_pos_comptime_plot()
-create_rmse_ori_comptime_plot()
+create_rmse_pos_comptime_plot()
+# create_rmse_ori_comptime_plot()
 # create_highnoise_general_table()
 # create_highnoise_particle_table()
 # create_highnoise_general_table()

@@ -7,7 +7,7 @@ from dhflocalization.rawdata import RawDataLoader
 
 # distance transform plot
 def dt_plot():
-    map_filename = "gt_map_01_table"
+    map_filename = "gt_map_01"
     ogm = GridMap.load_map_from_config(map_filename)
 
     fig, ax = plt.subplots()
@@ -29,8 +29,8 @@ def dt_plot():
 def gt_plot():
     plt.rcParams["text.usetex"] = True
     plt.rcParams.update({"font.size": 15, "font.family": "serif"})
-    map_filename = "gt_map_05_table"
-    simu_data_filename = "5hz_o1e-4_l1e-2_filtered"
+    map_filename = "gt_map_05"
+    simu_data_filename = "5hz_o1e-4_l1e-2"
     ogm = GridMap.load_map_from_config(map_filename)
     simulation_data = RawDataLoader.load_from_json(simu_data_filename)
 
