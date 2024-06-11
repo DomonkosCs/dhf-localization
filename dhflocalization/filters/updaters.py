@@ -33,11 +33,6 @@ class MEDHUpdater:
     def update(self, prediction, prediction_covar, measurement):
         start = time.time()
 
-        num_of_rays = len(measurement)
-        measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(
-            num_of_rays
-        )
-
         particle_poses = prediction.state_vectors
         particle_poses_mean = prediction.mean()
         particle_poses_mean_0 = particle_poses_mean
@@ -48,6 +43,10 @@ class MEDHUpdater:
             # linearize measurement model about the mean
             cd, grad_cd_x, grad_cd_z, _ = self.measurement_model.process_detection(
                 particle_poses_mean, measurement
+            )
+            num_of_rays = len(grad_cd_z)
+            measurement_covar = self.measurement_model.range_noise_std**2 * np.eye(
+                num_of_rays
             )
 
             # transform measurement
