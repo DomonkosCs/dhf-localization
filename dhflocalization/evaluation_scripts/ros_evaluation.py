@@ -8,8 +8,20 @@ from dhflocalization.visualization import TrackPlotter
 from matplotlib.ticker import FormatStrFormatter, FixedLocator
 
 
+def get_rot_matrix(angle_deg):
+    angle_rad = angle_deg * 2 * np.pi / 360
+    rot_matrix = np.array(
+        [
+            [np.cos(angle_rad), -np.sin(angle_rad), 0],
+            [np.sin(angle_rad), np.cos(angle_rad), 0],
+            [0, 0, 1],
+        ]
+    )
+    return rot_matrix
+
+
 def eval_one(filename, folder=""):
-    relative_path = "../resources/results/final/" + folder + filename + ".json"
+    relative_path = "../resources/results/ros/" + folder + "/" + filename + ".json"
     fh = FileHandler()
     file_path = fh.convert_path_to_absolute(relative_path)
 
@@ -66,9 +78,9 @@ def eval_mc(filenames, folder=""):
     }
 
 
-def eval_filter(filter, mc_max, info="", noise="high", folder=""):
-    bag_str = "5hz_o5e-4_l2e-2" if noise == "high" else "5hz_o1e-4_l1e-2"
-    filenames = [f"{filter}_{info}_mc{mc+1}_{bag_str}" for mc in range(mc_max)]
+def eval_filter(filter, mc_max, info="", bag="", folder=""):
+    # bag_str = "5hz_o5e-4_l2e-2" if noise == "high" else "5hz_o1e-4_l1e-2"
+    filenames = [f"{filter}_{info}_mc{mc+1}_{bag}" for mc in range(mc_max)]
 
     results = eval_mc(filenames, folder)
     return results
@@ -119,6 +131,17 @@ def create_lownoise_general_table():
     folder = "low_general/"
     filters = ["ekf", "medh", "naedh", "amcl", "amclb"]
     results = [eval_filter(filter, mc_max, info, noise, folder) for filter in filters]
+    create_general_table(filters, results)
+
+
+def create_bmemap_general_table():
+    mc_max = 1
+    folder = "imucalibrated/"
+    filters = ["ekf", "medh", "naedh", "amclp", "amcl"]
+    results = [
+        eval_filter(filter, mc_max, bag="bme_map_take", folder="imucalibrated")
+        for filter in filters
+    ]
     create_general_table(filters, results)
 
 
@@ -526,8 +549,14 @@ def create_rmse_ori_comptime_plot():
 
 
 # create_rmse_pos_comptime_plot()
-create_rmse_ori_comptime_plot()
+# create_rmse_ori_comptime_plot()
 # create_highnoise_particle_table()
 # create_highnoise_general_table()
 # create_lownoise_general_table()
 # create_highnoise_lambda_table()
+# print(
+#     eval_filter(
+#         "medh", 10, 14.8, "p100rays360", "bme_map_take", "medh_particle_rays_comparison"
+#     )
+# )
+create_bmemap_general_table()
