@@ -8,18 +8,6 @@ from dhflocalization.visualization import TrackPlotter
 from matplotlib.ticker import FormatStrFormatter, FixedLocator
 
 
-def get_rot_matrix(angle_deg):
-    angle_rad = angle_deg * 2 * np.pi / 360
-    rot_matrix = np.array(
-        [
-            [np.cos(angle_rad), -np.sin(angle_rad), 0],
-            [np.sin(angle_rad), np.cos(angle_rad), 0],
-            [0, 0, 1],
-        ]
-    )
-    return rot_matrix
-
-
 def eval_one(filename, folder=""):
     relative_path = "../resources/results/ros/" + folder + "/" + filename + ".json"
     fh = FileHandler()
@@ -125,31 +113,36 @@ def create_double_row_table(filters, results, row_label, label_values):
 
 
 def create_lownoise_general_table():
-    mc_max = 10
+    mc_max = 50
     noise = "low"
     info = "full"
-    folder = "low_general/"
+    folder = "low_general_50/"
     filters = ["ekf", "medh", "naedh", "amcl", "amclb"]
     results = [eval_filter(filter, mc_max, info, noise, folder) for filter in filters]
     create_general_table(filters, results)
 
 
 def create_bmemap_general_table():
-    mc_max = 1
-    folder = "imucalibrated/"
+    mc_max = 50
     filters = ["ekf", "medh", "naedh", "amclp", "amcl"]
     results = [
-        eval_filter(filter, mc_max, bag="bme_map_take", folder="imucalibrated")
+        eval_filter(
+            filter,
+            mc_max,
+            info="",
+            bag="bme_map_take",
+            folder="rays360full",
+        )
         for filter in filters
     ]
     create_general_table(filters, results)
 
 
 def create_highnoise_general_table():
-    mc_max = 10
+    mc_max = 50
     noise = "high"
     info = "full"
-    folder = "high_general/"
+    folder = "high_general_50/"
     filters = ["ekf", "amclb", "amcl"]
     results = [eval_filter(filter, mc_max, info, noise, folder) for filter in filters]
     create_general_table(filters, results)
@@ -175,9 +168,9 @@ def create_highnoise_lambda_table():
 
 
 def create_highnoise_particle_table():
-    mc_max = 10
+    mc_max = 50
     noise = "high"
-    folder = "particle/"
+    folder = "particle_50/"
     row_label = "$N_p$"
     filters = ["medh", "naedh"]
     label_values = [1, 10, 1000, 10000]
@@ -194,14 +187,14 @@ def create_highnoise_particle_table():
 
 
 def generate_plot_data():
-    mc_max_particle = 10
-    mc_max_lambda = 20
-    mc_max_ekf = 25
-    mc_max_amclb = 10
-    folder_particle = "highnoise_particle/"
-    folder_lambda = "highnoise_lambda/"
-    folder_ekf = "highnoise_all/"
-    folder_amclb = "highnoise_amcl_basic/"
+    mc_max_particle = 50
+    mc_max_lambda = 50
+    mc_max_ekf = 50
+    mc_max_amclb = 50
+    folder_particle = "highnoise_particle_50/"
+    folder_lambda = "highnoise_lambda_50/"
+    folder_ekf = "highnoise_all_50/"
+    folder_amclb = "highnoise_amcl_basic_50/"
     particle_nums = [1, 10, 100, 1000, 10000]
     lambda_nums = [3, 4, 5, 7, 10, 15, 25]
     noise = "high"
