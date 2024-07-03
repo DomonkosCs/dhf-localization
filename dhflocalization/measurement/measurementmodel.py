@@ -96,4 +96,4 @@ class MeasurementModel:
             ]
         ).T
 
-        return cd_no_outliers, grad_cd_x, grad_cd_z
+        return cd_no_outliers, grad_cd_x, grad_cd_z, x_o_no_outliers
